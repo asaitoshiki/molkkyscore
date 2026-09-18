@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { INITIAL_FORMATION } from '../domain/rules'
+import { AdBanner } from '../ads/AdBanner'
 
 /** 見出しと本文の組。本文は段落か箇条書きで受け取る。 */
 const Section = ({ label, title, children }: { label: string; title: string; children: ReactNode }) => (
@@ -165,6 +166,8 @@ export const RulesPage = () => (
       国際モルック協会および日本モルック協会の公開ルールにもとづく。
       大会ごとに細部が異なることがあるため、出場する際は主催者のレギュレーションを確認してください。
     </p>
+
+    <AdBanner />
   </div>
 )
 

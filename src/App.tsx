@@ -4,6 +4,8 @@ import { HomePage } from './pages/HomePage'
 import { GameSetupPage } from './pages/GameSetupPage'
 import { GamePage } from './pages/GamePage'
 import { TimelinePage } from './pages/TimelinePage'
+import { RemoveAdsPage } from './pages/RemoveAdsPage'
+import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage'
 import { HistoryPage } from './pages/HistoryPage'
 import { MembersPage } from './pages/MembersPage'
 import { PracticePage } from './pages/PracticePage'
@@ -17,6 +19,8 @@ export const App = () => (
   <Routes>
     {/* 試合画面はスコア入力に集中させたいのでレイアウトの外に置く */}
     <Route path="/games/new" element={<GameSetupPage />} />
+    <Route path="/remove-ads" element={<RemoveAdsPage />} />
+    <Route path="/privacy" element={<PrivacyPolicyPage />} />
     <Route path="/games/:gameId" element={<GamePage />} />
     <Route path="/games/:gameId/timeline" element={<TimelinePage />} />
     <Route element={<Layout />}>

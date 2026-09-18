@@ -23,6 +23,14 @@ type AppState = {
   games: Game[]
   tournaments: Tournament[]
   practices: PracticeSession[]
+  /** 広告除去を購入済みか */
+  adFree: boolean
+  /** 前回の全画面広告から何ゲーム終えたか */
+  gamesSinceInterstitial: number
+
+  setAdFree: (adFree: boolean) => void
+  countFinishedGame: () => void
+  resetInterstitialCount: () => void
 
   addMember: (name: string) => Member
   renameMember: (memberId: string, name: string) => void
@@ -88,6 +96,15 @@ export const useAppStore = create<AppState>()(
       games: [],
       tournaments: [],
       practices: [],
+      adFree: false,
+      gamesSinceInterstitial: 0,
+
+      setAdFree: (adFree) => set({ adFree }),
+
+      countFinishedGame: () =>
+        set((state) => ({ gamesSinceInterstitial: state.gamesSinceInterstitial + 1 })),
+
+      resetInterstitialCount: () => set({ gamesSinceInterstitial: 0 }),
 
       addMember: (name) => {
         const member: Member = { id: newId(), name: name.trim(), createdAt: Date.now() }

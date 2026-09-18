@@ -1,6 +1,7 @@
 import { Button, EmptyState, Numeral } from '../components/ui'
 import { ShareActions } from '../components/ShareActions'
 import { summarizeGame } from '../domain/stats'
+import { AdBanner } from '../ads/AdBanner'
 import { useAppStore } from '../store/useAppStore'
 
 export const HistoryPage = () => {
@@ -71,6 +72,8 @@ export const HistoryPage = () => {
           })}
         </ul>
       )}
+
+      <AdBanner />
     </div>
   )
 }

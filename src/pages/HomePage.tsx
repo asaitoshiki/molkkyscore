@@ -1,7 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { Icon } from '../components/Icon'
-import { Button, EmptyState, Numeral, SectionTitle } from '../components/ui'
+import { Button, EmptyState, SectionTitle } from '../components/ui'
 import { summarizeGame } from '../domain/stats'
+import { AdBanner } from '../ads/AdBanner'
 import { useAppStore } from '../store/useAppStore'
 
 export const HomePage = () => {
@@ -104,9 +105,11 @@ export const HomePage = () => {
         ))}
       </section>
 
-      <p className="text-[11px] text-faint">
-        <Numeral>50</Numeral> 点ちょうどで勝ち。超えたら <Numeral>25</Numeral> 点に戻る。
-      </p>
+      <AdBanner />
+
+      <footer className="border-t border-rule pt-4 text-center text-[11px] text-muted">
+        <Link to="/privacy">プライバシーポリシー</Link>
+      </footer>
     </div>
   )
 }

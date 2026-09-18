@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { EmptyState, Numeral } from '../components/ui'
 import { PinHitChart } from '../components/PinHitChart'
 import { computeMemberStats } from '../domain/stats'
+import { AdBanner } from '../ads/AdBanner'
 import { useAppStore } from '../store/useAppStore'
 
 const percent = (value: number) => `${(value * 100).toFixed(0)}%`
@@ -76,6 +77,8 @@ export const StatsPage = () => {
           })}
         </ul>
       )}
+
+      <AdBanner />
     </div>
   )
 }
