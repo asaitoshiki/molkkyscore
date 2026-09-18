@@ -1,0 +1,81 @@
+@import 'tailwindcss';
+
+/*
+ * 配色は「白木のスキットルと芝」から。紙のスコアシートのような明るい地に、
+ * 深緑のアクセントを一点だけ差す。装飾は罫線と余白で済ませ、影と角丸は最小限にする。
+ */
+@theme {
+  --color-paper: #f3f4f1;
+  --color-surface: #fbfbfa;
+  --color-ink: #15191a;
+  --color-muted: #6b7370;
+  --color-faint: #9aa19c;
+  --color-rule: #dcdfd8;
+  --color-accent: #1d5240;
+  --color-accent-soft: #e4eae5;
+  --color-alert: #9c4a32;
+
+  --font-sans:
+    'IBM Plex Sans', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', system-ui,
+    sans-serif;
+  --font-serif: 'IBM Plex Serif', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.7;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* iOS のノッチ・ホームインジケータを避ける */
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* 数字が縦に揃うようにする */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 小さな見出しラベル。字間を開けて本文と役割を分ける */
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--color-muted);
+}
+
+button {
+  font-family: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
