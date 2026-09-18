@@ -11,7 +11,7 @@ export const HistoryPage = () => {
   return (
     <div className="space-y-6">
       <header>
-        <p className="eyebrow">HISTORY</p>
+        <p className="eyebrow text-muted">HISTORY</p>
         <h1 className="mt-1 font-serif text-2xl">試合履歴</h1>
       </header>
 

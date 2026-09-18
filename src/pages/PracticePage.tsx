@@ -28,7 +28,7 @@ export const PracticePage = () => {
   return (
     <div className="space-y-7">
       <header>
-        <p className="eyebrow">PRACTICE</p>
+        <p className="eyebrow text-muted">PRACTICE</p>
         <h1 className="mt-1 font-serif text-2xl">的当て練習</h1>
         <p className="mt-2 text-[13px] text-muted">
           狙うスキットルと距離を決めて、命中したかだけを記録する。

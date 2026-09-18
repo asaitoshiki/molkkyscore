@@ -18,7 +18,7 @@ export const StatsPage = () => {
   return (
     <div className="space-y-6">
       <header>
-        <p className="eyebrow">RECORDS</p>
+        <p className="eyebrow text-muted">RECORDS</p>
         <h1 className="mt-1 font-serif text-2xl">戦績</h1>
       </header>
 

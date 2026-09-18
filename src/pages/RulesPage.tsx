@@ -4,7 +4,7 @@ import { INITIAL_FORMATION } from '../domain/rules'
 /** 見出しと本文の組。本文は段落か箇条書きで受け取る。 */
 const Section = ({ label, title, children }: { label: string; title: string; children: ReactNode }) => (
   <section className="border-t border-rule pt-4">
-    <p className="eyebrow">{label}</p>
+    <p className="eyebrow text-muted">{label}</p>
     <h2 className="mt-1 mb-3 font-serif text-xl">{title}</h2>
     <div className="space-y-2.5 text-[14px] leading-relaxed">{children}</div>
   </section>
@@ -36,7 +36,7 @@ const Glossary = ({ terms }: { terms: [string, string][] }) => (
 export const RulesPage = () => (
   <div className="space-y-7">
     <header>
-      <p className="eyebrow">RULES</p>
+      <p className="eyebrow text-muted">RULES</p>
       <h1 className="mt-1 font-serif text-3xl leading-tight">モルックのルール</h1>
       <p className="mt-2 text-[13px] text-muted">
         フィンランド発祥の投擲競技。木の棒を下手投げで転がし、番号の書かれたスキットルを倒して
@@ -187,7 +187,7 @@ const Formation = () => (
     </div>
     <div className="mt-6 flex items-center gap-3">
       <span className="h-px flex-1 bg-accent" />
-      <span className="eyebrow shrink-0">MÖLKKAARI</span>
+      <span className="eyebrow shrink-0 text-muted">MÖLKKAARI</span>
       <span className="h-px flex-1 bg-accent" />
     </div>
     <figcaption className="mt-2 text-center text-[11px] text-muted">

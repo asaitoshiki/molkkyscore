@@ -35,7 +35,7 @@ export const TournamentDetailPage = () => {
   return (
     <div className="space-y-7">
       <header>
-        <p className="eyebrow">{tournament.format === 'roundRobin' ? 'ROUND ROBIN' : 'KNOCKOUT'}</p>
+        <p className="eyebrow text-muted">{tournament.format === 'roundRobin' ? 'ROUND ROBIN' : 'KNOCKOUT'}</p>
         <h1 className="mt-1 font-serif text-2xl">{tournament.name}</h1>
         <p className="tabular mt-1 text-[12px] text-muted">{tournament.entries.length} 組が参加</p>
       </header>

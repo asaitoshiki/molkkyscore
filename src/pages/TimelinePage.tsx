@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { AppBar } from '../components/AppBar'
 import { Icon } from '../components/Icon'
 import { PinPad } from '../components/PinPad'
 import { Button, EmptyState, Numeral } from '../components/ui'
@@ -37,13 +38,14 @@ export const TimelinePage = () => {
 
   return (
     <div className="mx-auto min-h-full max-w-md bg-paper">
-      <header className="safe-top flex items-center justify-between border-b border-rule px-5 py-3">
-        <Link to={`/games/${game.id}`} className="text-muted" aria-label="試合に戻る">
-          <Icon name="arrowLeft" size={20} />
-        </Link>
-        <span className="eyebrow">TIMELINE</span>
-        <span className="w-5" />
-      </header>
+      <AppBar
+        title="投球の記録"
+        left={
+          <Link to={`/games/${game.id}`} aria-label="試合に戻る">
+            <Icon name="chevronLeft" size={22} />
+          </Link>
+        }
+      />
 
       <div className="px-5 pt-4 pb-10">
         <p className="mb-4 text-[12px] text-muted">

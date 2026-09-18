@@ -24,7 +24,7 @@ export const MembersPage = () => {
   return (
     <div className="space-y-6">
       <header>
-        <p className="eyebrow">MEMBERS</p>
+        <p className="eyebrow text-muted">MEMBERS</p>
         <h1 className="mt-1 font-serif text-2xl">メンバー</h1>
       </header>
 

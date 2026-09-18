@@ -16,11 +16,11 @@ import { TournamentsPage } from './pages/TournamentsPage'
 export const App = () => (
   <Routes>
     {/* 試合画面はスコア入力に集中させたいのでレイアウトの外に置く */}
+    <Route path="/games/new" element={<GameSetupPage />} />
     <Route path="/games/:gameId" element={<GamePage />} />
     <Route path="/games/:gameId/timeline" element={<TimelinePage />} />
     <Route element={<Layout />}>
       <Route path="/" element={<HomePage />} />
-      <Route path="/games/new" element={<GameSetupPage />} />
       <Route path="/history" element={<HistoryPage />} />
       <Route path="/stats" element={<StatsPage />} />
       <Route path="/members" element={<MembersPage />} />

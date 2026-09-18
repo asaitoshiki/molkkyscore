@@ -14,7 +14,7 @@ export const TournamentsPage = () => {
   return (
     <div className="space-y-6">
       <header>
-        <p className="eyebrow">TOURNAMENTS</p>
+        <p className="eyebrow text-muted">TOURNAMENTS</p>
         <h1 className="mt-1 font-serif text-2xl">大会</h1>
       </header>
 

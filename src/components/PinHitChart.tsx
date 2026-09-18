@@ -9,7 +9,7 @@ export const PinHitChart = ({ hits }: { hits: number[] }) => {
 
   return (
     <figure className="m-0">
-      <figcaption className="eyebrow mb-5">よく倒すスキットル</figcaption>
+      <figcaption className="eyebrow mb-5 text-muted">よく倒すスキットル</figcaption>
       <div className="flex h-20 items-end gap-[3px] border-b border-rule">
         {PIN_NUMBERS.map((pin, index) => {
           const value = hits[index]

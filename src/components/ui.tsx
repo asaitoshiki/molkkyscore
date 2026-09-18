@@ -32,7 +32,7 @@ export const TextInput = ({ className = '', ...props }: ComponentProps<'input'>)
 
 /** 小さな見出し。上の細い罫線とセットで区画の始まりを示す。 */
 export const SectionTitle = ({ children }: { children: ReactNode }) => (
-  <h2 className="eyebrow mb-3 border-t border-rule pt-3">{children}</h2>
+  <h2 className="eyebrow mb-3 border-t border-rule pt-3 text-muted">{children}</h2>
 )
 
 export const EmptyState = ({ children }: { children: ReactNode }) => (

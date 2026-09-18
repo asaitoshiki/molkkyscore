@@ -56,12 +56,11 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* 小さな見出しラベル。字間を開けて本文と役割を分ける */
+/* 小さな見出しラベル。字間を開けて本文と役割を分ける。色は使う側で決める */
 .eyebrow {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.14em;
-  color: var(--color-muted);
 }
 
 button {

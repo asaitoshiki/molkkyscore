@@ -25,7 +25,7 @@ export const TournamentSetupPage = () => {
   return (
     <div className="space-y-7">
       <header>
-        <p className="eyebrow">NEW TOURNAMENT</p>
+        <p className="eyebrow text-muted">NEW TOURNAMENT</p>
         <h1 className="mt-1 font-serif text-2xl">大会をつくる</h1>
         <p className="mt-2 text-[13px] text-muted">
           チームとメンバーを登録すると、投球が個人単位で記録されます。

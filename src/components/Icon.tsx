@@ -27,6 +27,10 @@ const paths = {
   // 投球の一覧
   list: 'M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01',
   check: 'M5 13l4 4L19 7',
+  home: 'M4 11 12 4l8 7M6.5 10v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-9',
+  share: 'M12 15V4M8.5 7.5 12 4l3.5 3.5M5 13v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6',
+  grip: 'M5 9.5h14M5 14.5h14',
+  chevronLeft: 'M14 6l-6 6 6 6',
 } as const
 
 export type IconName = keyof typeof paths

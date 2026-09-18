@@ -16,7 +16,7 @@ export const HomePage = () => {
   return (
     <div className="space-y-8">
       <header>
-        <p className="eyebrow">MÖLKKY</p>
+        <p className="eyebrow text-accent">MÖLKKY</p>
         <h1 className="mt-1 font-serif text-3xl leading-tight">モルックノート</h1>
         <p className="mt-2 text-[13px] text-muted">スコアと戦績を、その場で残す。</p>
       </header>
@@ -53,7 +53,7 @@ export const HomePage = () => {
 
       <section>
         <div className="mb-3 flex items-baseline justify-between border-t border-rule pt-3">
-          <h2 className="eyebrow">最近の試合</h2>
+          <h2 className="eyebrow text-muted">最近の試合</h2>
           <Link to="/history" className="eyebrow text-accent">
             すべて
           </Link>
