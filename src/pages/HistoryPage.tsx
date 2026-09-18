@@ -1,4 +1,5 @@
 import { Button, EmptyState, Numeral } from '../components/ui'
+import { ShareActions } from '../components/ShareActions'
 import { summarizeGame } from '../domain/stats'
 import { useAppStore } from '../store/useAppStore'
 
@@ -50,6 +51,11 @@ export const HistoryPage = () => {
                     </li>
                   ))}
                 </ul>
+                {game.finishedAt !== null && (
+                  <div className="mt-3">
+                    <ShareActions game={game} size="small" />
+                  </div>
+                )}
                 <div className="mt-2 flex items-center justify-between">
                   <span className="tabular text-[11px] text-faint">{game.throws.length} 投</span>
                   <Button

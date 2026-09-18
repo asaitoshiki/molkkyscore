@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button, TextInput } from '../components/ui'
 import { EntryBuilder } from '../components/EntryBuilder'
-import { buildEntries, emptyConfig, isPlayable } from '../domain/entryConfig'
+import { buildEntries, isPlayable } from '../domain/entryConfig'
 import { DEFAULT_RULES } from '../domain/rules'
 import { useAppStore } from '../store/useAppStore'
 
@@ -17,10 +17,10 @@ export const GameSetupPage = () => {
   const members = useAppStore((state) => state.members)
   const createGame = useAppStore((state) => state.createGame)
 
-  const [config, setConfig] = useState(emptyConfig)
+  const [selected, setSelected] = useState<string[]>([])
   const [rules, setRules] = useState(DEFAULT_RULES)
 
-  const entries = buildEntries(config, members)
+  const entries = buildEntries(selected, members)
   const ready = isPlayable(entries)
 
   return (
@@ -30,7 +30,7 @@ export const GameSetupPage = () => {
         <h1 className="mt-1 font-serif text-2xl">試合の設定</h1>
       </header>
 
-      <EntryBuilder config={config} onChange={setConfig} />
+      <EntryBuilder selected={selected} onChange={setSelected} />
 
       <details className="border-t border-rule pt-3">
         <summary className="eyebrow cursor-pointer">ルールを変える</summary>

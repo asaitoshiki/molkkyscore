@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button, SectionTitle, TextInput } from '../components/ui'
 import { EntryBuilder } from '../components/EntryBuilder'
-import { buildEntries, emptyConfig, isPlayable } from '../domain/entryConfig'
+import { buildEntries, isPlayable } from '../domain/entryConfig'
 import { DEFAULT_RULES } from '../domain/rules'
 import type { TournamentFormat } from '../domain/types'
 import { useAppStore } from '../store/useAppStore'
@@ -19,9 +19,9 @@ export const TournamentSetupPage = () => {
 
   const [name, setName] = useState('')
   const [format, setFormat] = useState<TournamentFormat>('roundRobin')
-  const [config, setConfig] = useState({ ...emptyConfig, teamCount: 4 })
+  const [selected, setSelected] = useState<string[]>([])
 
-  const entries = buildEntries(config, members)
+  const entries = buildEntries(selected, members)
   const ready = isPlayable(entries) && name.trim() !== ''
 
   return (
@@ -63,7 +63,7 @@ export const TournamentSetupPage = () => {
         </div>
       </section>
 
-      <EntryBuilder config={config} onChange={setConfig} maxTeams={8} />
+      <EntryBuilder selected={selected} onChange={setSelected} />
 
       <Button className="w-full py-4" disabled={!ready} onClick={() => navigate(`/tournaments/${createTournament(name, format, entries, DEFAULT_RULES)}`)}>
         {ready ? '対戦表をつくる' : '大会名と 2 組以上の参加者が必要です'}
