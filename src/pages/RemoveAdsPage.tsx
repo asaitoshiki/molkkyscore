@@ -7,8 +7,7 @@ import { AD_FREE_PRICE } from '../domain/billing'
 import { useAppStore } from '../store/useAppStore'
 
 const BENEFITS = [
-  'バナー広告が消えます',
-  'ゲームの区切りに出る全画面広告が出なくなります',
+  'ゲームの区切りに出る広告が表示されなくなります',
   '一度の買い切りで、追加の支払いはありません',
 ]
 
@@ -22,7 +21,7 @@ export const RemoveAdsPage = () => {
   return (
     <div className="mx-auto flex min-h-full max-w-md flex-col bg-paper">
       <AppBar
-        title="広告を非表示にする"
+        title="広告を表示しない"
         left={
           <button onClick={() => navigate(-1)} aria-label="戻る">
             <Icon name="chevronLeft" size={22} />

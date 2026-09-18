@@ -2,7 +2,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { Button, EmptyState, SectionTitle } from '../components/ui'
 import { summarizeGame } from '../domain/stats'
-import { AdBanner } from '../ads/AdBanner'
 import { useAppStore } from '../store/useAppStore'
 
 export const HomePage = () => {
@@ -105,9 +104,9 @@ export const HomePage = () => {
         ))}
       </section>
 
-      <AdBanner />
 
-      <footer className="border-t border-rule pt-4 text-center text-[11px] text-muted">
+      <footer className="flex justify-between border-t border-rule pt-4 text-[11px] text-muted">
+        <Link to="/remove-ads">広告を表示しない</Link>
         <Link to="/privacy">プライバシーポリシー</Link>
       </footer>
     </div>
