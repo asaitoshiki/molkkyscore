@@ -8,7 +8,10 @@ const PADDING = 88
 const ROW_HEIGHT = 128
 
 /** 試合結果を 1 枚の画像にする。順位・最終得点・勝者が一目で分かる形にまとめる。 */
-export const renderResultCard = async (game: Game): Promise<HTMLCanvasElement> => {
+export const renderResultCard = async (
+  game: Game,
+  seriesGames: Game[],
+): Promise<HTMLCanvasElement> => {
   await document.fonts.ready
 
   const state = computeGameState(game)
@@ -33,7 +36,7 @@ export const renderResultCard = async (game: Game): Promise<HTMLCanvasElement> =
 
   ctx.font = `500 76px ${SERIF}`
   ctx.fillStyle = INK
-  ctx.fillText('試合結果', PADDING, PADDING + 130)
+  ctx.fillText(seriesGames.length > 1 ? `第 ${game.gameNumber} ゲーム` : '試合結果', PADDING, PADDING + 130)
 
   let y = PADDING + 190
   hairline(ctx, PADDING, y, WIDTH - PADDING * 2)
@@ -74,7 +77,8 @@ export const renderResultCard = async (game: Game): Promise<HTMLCanvasElement> =
 
   ctx.font = `400 26px ${SANS}`
   ctx.fillStyle = MUTED
-  ctx.fillText(`${game.throws.length} 投　${state.round} ラウンド`, PADDING, y + 24)
+  const series = seriesGames.length > 1 ? `　セット${seriesGames.length}ゲーム目` : ''
+  ctx.fillText(`${game.throws.length} 投　${state.round} ラウンド${series}`, PADDING, y + 24)
 
   ctx.textAlign = 'right'
   ctx.fillStyle = FAINT

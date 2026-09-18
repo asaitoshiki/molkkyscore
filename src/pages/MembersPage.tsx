@@ -68,8 +68,8 @@ export const MembersPage = () => {
                   </button>
                 )}
                 <Button
-                  variant="quiet"
-                  className="px-2 py-1 text-[12px] text-alert"
+                  variant="danger"
+                  className="px-2 py-1 text-[12px]"
                   onClick={() => removeMember(member.id)}
                 >
                   削除

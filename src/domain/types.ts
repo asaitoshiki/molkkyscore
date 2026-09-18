@@ -36,6 +36,10 @@ export type Game = {
   rules: GameRules
   entries: Entry[]
   throws: ThrowRecord[]
+  /** 同じ顔ぶれで続けて戦うゲーム群（セット）。単発の試合でも必ず 1 つ作る */
+  seriesId: string
+  /** セット内の何ゲーム目か。1 始まり */
+  gameNumber: number
   /** 大会の一戦として作られた場合のみ紐付く */
   tournamentId: string | null
   matchId: string | null

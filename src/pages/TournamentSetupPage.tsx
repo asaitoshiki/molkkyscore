@@ -1,34 +1,35 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button, SectionTitle, TextInput } from '../components/ui'
-import { EntryBuilder } from '../components/EntryBuilder'
-import { buildEntries, isPlayable } from '../domain/entryConfig'
+import { TeamBuilder } from '../components/TeamBuilder'
+import { buildTeamEntries, emptyTeams, isTeamSetReady } from '../domain/teamDraft'
 import { DEFAULT_RULES } from '../domain/rules'
 import type { TournamentFormat } from '../domain/types'
 import { useAppStore } from '../store/useAppStore'
 
 const FORMATS: { value: TournamentFormat; label: string; note: string }[] = [
-  { value: 'roundRobin', label: '総当たり', note: '全員と 1 回ずつ対戦し、順位表で決める' },
+  { value: 'roundRobin', label: '総当たり', note: '全チームと 1 回ずつ対戦し、順位表で決める' },
   { value: 'knockout', label: 'トーナメント', note: '勝ち上がり式。半端な枠は不戦勝になる' },
 ]
 
 export const TournamentSetupPage = () => {
   const navigate = useNavigate()
-  const members = useAppStore((state) => state.members)
   const createTournament = useAppStore((state) => state.createTournament)
 
   const [name, setName] = useState('')
   const [format, setFormat] = useState<TournamentFormat>('roundRobin')
-  const [selected, setSelected] = useState<string[]>([])
+  const [teams, setTeams] = useState(emptyTeams)
 
-  const entries = buildEntries(selected, members)
-  const ready = isPlayable(entries) && name.trim() !== ''
+  const ready = isTeamSetReady(teams) && name.trim() !== ''
 
   return (
     <div className="space-y-7">
       <header>
         <p className="eyebrow">NEW TOURNAMENT</p>
         <h1 className="mt-1 font-serif text-2xl">大会をつくる</h1>
+        <p className="mt-2 text-[13px] text-muted">
+          チームとメンバーを登録すると、投球が個人単位で記録されます。
+        </p>
       </header>
 
       <section>
@@ -63,10 +64,18 @@ export const TournamentSetupPage = () => {
         </div>
       </section>
 
-      <EntryBuilder selected={selected} onChange={setSelected} />
+      <TeamBuilder teams={teams} onChange={setTeams} />
 
-      <Button className="w-full py-4" disabled={!ready} onClick={() => navigate(`/tournaments/${createTournament(name, format, entries, DEFAULT_RULES)}`)}>
-        {ready ? '対戦表をつくる' : '大会名と 2 組以上の参加者が必要です'}
+      <Button
+        className="w-full py-4"
+        disabled={!ready}
+        onClick={() =>
+          navigate(
+            `/tournaments/${createTournament(name, format, buildTeamEntries(teams), DEFAULT_RULES)}`,
+          )
+        }
+      >
+        {ready ? '対戦表をつくる' : '大会名と、各チームに 1 人以上が必要です'}
       </Button>
     </div>
   )

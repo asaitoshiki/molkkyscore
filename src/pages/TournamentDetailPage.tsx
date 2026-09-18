@@ -91,8 +91,8 @@ export const TournamentDetailPage = () => {
       ))}
 
       <Button
-        variant="quiet"
-        className="w-full py-2 text-[12px] text-alert"
+        variant="danger"
+        className="w-full py-2 text-[12px]"
         onClick={() => {
           deleteTournament(tournament.id)
           navigate('/tournaments')

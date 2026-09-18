@@ -1,8 +1,9 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { computeGameState, createThrow } from '../domain/game'
+import { computeGameState } from '../domain/game'
 import { newId } from '../domain/id'
 import { DEFAULT_RULES } from '../domain/rules'
+import { gamesOfSeries } from '../domain/series'
 import { createMatches, propagateWinners } from '../domain/tournament'
 import type {
   Entry,
@@ -10,6 +11,7 @@ import type {
   GameRules,
   Member,
   PracticeSession,
+  ThrowRecord,
   Tournament,
   TournamentFormat,
 } from '../domain/types'
@@ -27,8 +29,13 @@ type AppState = {
   removeMember: (memberId: string) => void
 
   createGame: (entries: Entry[], rules: GameRules, link: MatchLink | null) => string
-  recordThrow: (gameId: string, pins: number[]) => void
-  undoThrow: (gameId: string) => void
+  /** 同じ顔ぶれで次のゲームを始める */
+  addGameToSeries: (seriesId: string) => string
+  recordThrow: (gameId: string, pins: number[], memberId?: string) => void
+  /** 記録した投球を差し替える。誤入力の訂正に使う */
+  editThrow: (gameId: string, index: number, pins: number[]) => void
+  /** 先頭から count 投だけ残して、それ以降を取り消す */
+  rewindTo: (gameId: string, count: number) => void
   deleteGame: (gameId: string) => void
 
   createTournament: (
@@ -68,6 +75,12 @@ const settle = (state: AppState, game: Game): Partial<AppState> => {
   return { games, tournaments }
 }
 
+/** 投球記録を入れ替えた試合を作り、決着判定まで通す。 */
+const replaceThrows = (state: AppState, gameId: string, throws: ThrowRecord[]) => {
+  const game = state.games.find((item) => item.id === gameId)!
+  return settle(state, { ...game, throws, finishedAt: null })
+}
+
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
@@ -100,6 +113,8 @@ export const useAppStore = create<AppState>()(
           rules,
           entries,
           throws: [],
+          seriesId: newId(),
+          gameNumber: 1,
           tournamentId: link?.tournamentId ?? null,
           matchId: link?.matchId ?? null,
         }
@@ -119,18 +134,52 @@ export const useAppStore = create<AppState>()(
         return game.id
       },
 
-      recordThrow: (gameId, pins) => {
-        const state = get()
-        const game = state.games.find((item) => item.id === gameId)!
-        const next: Game = { ...game, throws: [...game.throws, createThrow(computeGameState(game), pins)] }
-        set(settle(state, next))
+      addGameToSeries: (seriesId) => {
+        const previous = gamesOfSeries(get().games, seriesId).at(-1)!
+        const game: Game = {
+          ...previous,
+          id: newId(),
+          createdAt: Date.now(),
+          finishedAt: null,
+          throws: [],
+          gameNumber: previous.gameNumber + 1,
+          matchId: null,
+        }
+        set((state) => ({ games: [...state.games, game] }))
+        return game.id
       },
 
-      undoThrow: (gameId) => {
+      recordThrow: (gameId, pins, memberId) => {
         const state = get()
         const game = state.games.find((item) => item.id === gameId)!
-        const next: Game = { ...game, throws: game.throws.slice(0, -1), finishedAt: null }
-        set(settle(state, next))
+        const computed = computeGameState(game)
+        const record: ThrowRecord = {
+          entryId: computed.currentEntryId!,
+          memberId: memberId ?? computed.currentMemberId!,
+          pins,
+          at: Date.now(),
+        }
+        set(replaceThrows(state, gameId, [...game.throws, record]))
+      },
+
+      editThrow: (gameId, index, pins) => {
+        const state = get()
+        const game = state.games.find((item) => item.id === gameId)!
+        set(
+          replaceThrows(
+            state,
+            gameId,
+            game.throws.map((record, position) =>
+              position === index ? { ...record, pins } : record,
+            ),
+          ),
+        )
+      },
+
+      rewindTo: (gameId, count) => {
+        const state = get()
+        const game = state.games.find((item) => item.id === gameId)!
+        set(replaceThrows(state, gameId, game.throws.slice(0, count)))
       },
 
       deleteGame: (gameId) =>
@@ -166,7 +215,22 @@ export const useAppStore = create<AppState>()(
           practices: state.practices.filter((practice) => practice.id !== practiceId),
         })),
     }),
-    { name: 'molkky-note-v1' },
+    {
+      name: 'molkky-note-v1',
+      version: 2,
+      // セット（連戦）を導入する前に保存された試合は、単独のセットとして扱う
+      migrate: (persisted) => {
+        const state = persisted as { games?: Game[] }
+        return {
+          ...state,
+          games: (state.games ?? []).map((game) => ({
+            ...game,
+            seriesId: game.seriesId ?? newId(),
+            gameNumber: game.gameNumber ?? 1,
+          })),
+        } as AppState
+      },
+    },
   ),
 )
 

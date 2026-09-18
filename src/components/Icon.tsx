@@ -24,6 +24,9 @@ const paths = {
   arrowLeft: 'M19 12H6M11 7l-5 5 5 5',
   undo: 'M4 9h10a5 5 0 0 1 0 10h-5M4 9l4-4M4 9l4 4',
   close: 'M6 6l12 12M18 6 6 18',
+  // 投球の一覧
+  list: 'M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01',
+  check: 'M5 13l4 4L19 7',
 } as const
 
 export type IconName = keyof typeof paths

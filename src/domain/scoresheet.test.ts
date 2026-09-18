@@ -18,6 +18,8 @@ const game = (pinsByThrow: [string, number[]][]): Game => ({
     pins,
     at: index,
   })),
+  seriesId: 's1',
+  gameNumber: 1,
   tournamentId: null,
   matchId: null,
 })

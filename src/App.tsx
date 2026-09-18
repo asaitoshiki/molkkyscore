@@ -3,6 +3,7 @@ import { Layout } from './components/Layout'
 import { HomePage } from './pages/HomePage'
 import { GameSetupPage } from './pages/GameSetupPage'
 import { GamePage } from './pages/GamePage'
+import { TimelinePage } from './pages/TimelinePage'
 import { HistoryPage } from './pages/HistoryPage'
 import { MembersPage } from './pages/MembersPage'
 import { PracticePage } from './pages/PracticePage'
@@ -16,6 +17,7 @@ export const App = () => (
   <Routes>
     {/* 試合画面はスコア入力に集中させたいのでレイアウトの外に置く */}
     <Route path="/games/:gameId" element={<GamePage />} />
+    <Route path="/games/:gameId/timeline" element={<TimelinePage />} />
     <Route element={<Layout />}>
       <Route path="/" element={<HomePage />} />
       <Route path="/games/new" element={<GameSetupPage />} />

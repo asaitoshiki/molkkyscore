@@ -109,8 +109,8 @@ export const PracticePage = () => {
                 1 投取り消す
               </Button>
               <Button
-                variant="quiet"
-                className="py-1.5 text-[12px] text-accent"
+                variant="outline"
+                className="py-1.5 text-[12px]"
                 disabled={results.length === 0 || memberId === ''}
                 onClick={save}
               >
@@ -151,8 +151,8 @@ export const PracticePage = () => {
                       %
                     </Numeral>
                     <Button
-                      variant="quiet"
-                      className="px-2 py-0.5 text-[11px] text-alert"
+                      variant="danger"
+                      className="px-2 py-0.5 text-[11px]"
                       onClick={() => removePractice(practice.id)}
                     >
                       削除

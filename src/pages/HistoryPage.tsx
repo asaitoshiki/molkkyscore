@@ -59,8 +59,8 @@ export const HistoryPage = () => {
                 <div className="mt-2 flex items-center justify-between">
                   <span className="tabular text-[11px] text-faint">{game.throws.length} 投</span>
                   <Button
-                    variant="quiet"
-                    className="px-2 py-0.5 text-[11px] text-alert"
+                    variant="danger"
+                    className="px-2 py-0.5 text-[11px]"
                     onClick={() => deleteGame(game.id)}
                   >
                     削除

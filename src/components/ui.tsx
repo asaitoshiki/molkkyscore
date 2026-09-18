@@ -5,12 +5,15 @@ export const Panel = ({ className = '', ...props }: ComponentProps<'div'>) => (
   <div className={`rounded border border-rule bg-surface ${className}`} {...props} />
 )
 
-type ButtonProps = ComponentProps<'button'> & { variant?: 'primary' | 'outline' | 'quiet' }
+type ButtonProps = ComponentProps<'button'> & {
+  variant?: 'primary' | 'outline' | 'quiet' | 'danger'
+}
 
 const buttonStyles = {
   primary: 'bg-accent text-paper border-accent',
   outline: 'bg-surface text-ink border-rule',
   quiet: 'bg-transparent text-muted border-transparent',
+  danger: 'bg-transparent text-alert border-transparent',
 } as const
 
 export const Button = ({ variant = 'primary', className = '', ...props }: ButtonProps) => (
