@@ -1,14 +1,34 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '../components/ui'
+import { isNative, showInterstitial } from './admob'
 
 const COUNTDOWN = 5
 
 /**
  * ゲームの区切りで挟む全画面広告。
- * 規定の秒数が経つまで閉じられない点まで、実際の配信に合わせてある。
- * ネイティブ化のときに、この画面を AdMob のインタースティシャルへ差し替える。
+ * 端末の上では AdMob の広告を出し、Web では同じ間合いの代替画面を出す。
  */
 export const InterstitialAd = ({ onClose }: { onClose: () => void }) => {
+  const [native] = useState(isNative)
+  const close = useRef(onClose)
+
+  // 描画のたびに最新の呼び出し先を控えておく
+  useEffect(() => {
+    close.current = onClose
+  })
+
+  useEffect(() => {
+    if (!native) return
+    // 広告の読み込みに失敗しても、試合の進行は止めない
+    showInterstitial().catch(() => undefined).finally(() => close.current())
+  }, [native])
+
+  if (native) return null
+  return <WebFallback onClose={onClose} />
+}
+
+/** Web には配信できないため、間合いだけ同じ画面を出す。 */
+const WebFallback = ({ onClose }: { onClose: () => void }) => {
   const [remaining, setRemaining] = useState(COUNTDOWN)
 
   useEffect(() => {

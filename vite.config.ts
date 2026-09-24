@@ -4,7 +4,7 @@ import { defineConfig } from 'vitest/config'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // GitHub Pages などサブパス配信に備えて base を環境変数で切り替える
-const base = process.env.VITE_BASE ?? '/'
+const base = process.env.VITE_BASE ?? './'
 
 export default defineConfig({
   base,

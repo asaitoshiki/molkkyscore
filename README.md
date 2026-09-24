@@ -72,13 +72,38 @@ src/
   バナーは置かない（画面が狭くなるうえ、屋外での誤タップで試合の記録が壊れるため）
 - **買い切り** — `/remove-ads`。購入後は広告の配信そのものを止める
 
+Capacitor と AdMob の配線は済んでいる。端末の上では実際の広告を出し、Web では
+同じ間合いの代替画面を出す。**広告 ID は Google のテスト用のまま**なので、
+公開前に自分の ID へ差し替える。
+
 ストア公開前にやること。
 
-1. Capacitor でアプリ化し、`@capacitor-community/admob` を入れて `InterstitialAd` の
-   中身を実際の広告に差し替える
+1. AdMob で発行した ID に差し替える
+   - `android/app/src/main/AndroidManifest.xml` の `com.google.android.gms.ads.APPLICATION_ID`
+   - `src/ads/admob.ts` の `INTERSTITIAL_UNIT`
 2. App Store / Google Play に商品 `molkkyscore.adfree` を登録し、購入と復元を実装する
 3. `RemoveAdsPage` のプレビュー用トグルを取り除く
 4. `PrivacyPolicyPage` の連絡先と最終更新日を記載する
+
+## アプリ版をビルドする
+
+Android Studio と JDK 21 が必要。
+
+```bash
+npm run sync          # Web をビルドして android/ へ反映
+npm run open:android  # Android Studio で開く
+```
+
+あとは Android Studio から実機・エミュレータへ実行するか、署名して AAB を書き出す。
+アプリ ID は `io.github.asaitoshiki.molkkyscore`（`capacitor.config.ts`）。
+
+iOS は macOS と Xcode が必要になる。
+
+```bash
+npm install @capacitor/ios
+npx cap add ios
+npx cap open ios
+```
 
 ## 今後の展開
 
