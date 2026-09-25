@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 起動画面。密度ごとの画像を持たず、色と図案の重ね合わせで表す -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/splash_background" />
+    <item>
+        <bitmap android:src="@mipmap/ic_launcher_foreground" android:gravity="center" />
+    </item>
+</layer-list>

@@ -1,0 +1,46 @@
+# Android の APK を作る。GitHub のランナーには Android SDK が入っているため、
+# 手元に Android Studio がなくてもここでビルドできる。
+# Actions タブの "Android APK" から実行し、成果物の apk を受け取る。
+name: Android APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Android SDK の不足分を入れる
+        run: sdkmanager "platforms;android-36"
+
+      - run: npm ci
+
+      - name: Web をビルドして android へ反映
+        run: npm run sync
+
+      - name: APK を作る
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: molkkyscore-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
