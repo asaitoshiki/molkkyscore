@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { InterstitialAd } from '../ads/InterstitialAd'
 import { AppBar } from '../components/AppBar'
 import { Icon } from '../components/Icon'
 import { PinPad } from '../components/PinPad'
 import { ScoreTable } from '../components/ScoreTable'
+import type { ScoreEffect } from '../components/ScoreTable'
 import { Button, Numeral } from '../components/ui'
 import { INTERSTITIAL_INTERVAL } from '../domain/billing'
 import { computeGameState } from '../domain/game'
@@ -30,6 +31,14 @@ export const GamePage = () => {
 
   const [selectedPins, setSelectedPins] = useState<number[]>([])
   const [thrower, setThrower] = useState<string | null>(null)
+  const [effect, setEffect] = useState<ScoreEffect | null>(null)
+
+  // 合図は流し終えたら片付ける
+  useEffect(() => {
+    if (effect === null) return
+    const timer = setTimeout(() => setEffect(null), 1100)
+    return () => clearTimeout(timer)
+  }, [effect])
 
   const state = computeGameState(game)
   const entryOf = (entryId: string) => game.entries.find((entry) => entry.id === entryId)!
@@ -37,7 +46,21 @@ export const GamePage = () => {
     members.find((member) => member.id === memberId)?.name ?? '—'
 
   const submit = () => {
+    const entryId = state.currentEntryId!
+    const gained = pointsOf(selectedPins)
+    const over = state.entries.find((item) => item.entryId === entryId)!.score + gained >
+      game.rules.targetScore
+
     recordThrow(game.id, selectedPins, thrower ?? undefined)
+    setEffect({
+      entryId,
+      name: entryOf(entryId).name,
+      // 数字は札が示すので、合図の文字は短くして重ならないようにする
+      label: gained === 0 ? 'ミス' : over ? '超過' : `+${gained}`,
+      tone: gained === 0 || over ? 'alert' : 'accent',
+      // 投球ごとに異なる値にして、同じ得点が続いても合図を出し直す
+      token: game.throws.length + 1,
+    })
     setSelectedPins([])
     setThrower(null)
   }
@@ -150,8 +173,23 @@ export const GamePage = () => {
         <RecentThrows game={game} entryName={(entryId) => entryOf(entryId).name} />
       </section>
 
-      <div className="safe-bottom mt-auto border-t border-rule">
-        <ScoreTable seriesGames={seriesGames} currentGame={game} />
+      <div className="safe-bottom relative mt-auto border-t border-rule">
+        {effect && (
+          <span
+            key={effect.token}
+            className="effect-rise pointer-events-none absolute bottom-full left-1/2 mb-2 rounded-full border border-rule bg-surface px-3.5 py-1.5 text-[13px] whitespace-nowrap"
+          >
+            <span className="text-muted">{effect.name}</span>
+            <span
+              className={`ml-2 font-semibold ${
+                effect.tone === 'alert' ? 'text-alert' : 'text-accent'
+              }`}
+            >
+              {effect.label}
+            </span>
+          </span>
+        )}
+        <ScoreTable seriesGames={seriesGames} currentGame={game} effect={effect} />
       </div>
     </div>
   )
@@ -167,7 +205,10 @@ const RecentThrows = ({
 }) => (
   <ul className="mt-6 max-h-56 divide-y divide-rule overflow-y-auto overscroll-contain border-y border-rule">
     {[...game.throws].reverse().map((record, index) => (
-      <li key={game.throws.length - index} className="flex items-baseline gap-3 py-2 text-[12px]">
+      <li
+        key={game.throws.length - index}
+        className={`flex items-baseline gap-3 py-2 text-[12px] ${index === 0 ? 'effect-row-in' : ''}`}
+      >
         <span className="tabular w-5 text-faint">{game.throws.length - index}</span>
         <span className="flex-1 truncate text-muted">{entryName(record.entryId)}</span>
         <span className="tabular text-faint">

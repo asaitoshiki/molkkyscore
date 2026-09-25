@@ -72,6 +72,71 @@ button {
   outline-offset: 2px;
 }
 
+/*
+ * 得点が入った瞬間の合図。派手にせず、見逃さない程度にとどめる。
+ * 動きを減らす設定の人には下の規則で止まる。
+ */
+@keyframes score-rise {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 4px) scale(0.92);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -2px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -26px) scale(1);
+  }
+}
+
+@keyframes chip-pop {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.16);
+  }
+}
+
+@keyframes row-flash {
+  0% {
+    background-color: var(--color-accent-soft);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes row-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.effect-rise {
+  animation: score-rise 1s ease-out forwards;
+}
+
+.effect-pop {
+  animation: chip-pop 0.45s ease-out;
+}
+
+.effect-row {
+  animation: row-flash 0.9s ease-out;
+}
+
+.effect-row-in {
+  animation: row-in 0.3s ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     transition-duration: 0.01ms !important;

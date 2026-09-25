@@ -21,7 +21,7 @@ export const PinPad = ({
             key={pin}
             aria-pressed={selected.includes(pin)}
             onClick={() => onToggle(pin)}
-            className={`tabular h-14 w-14 rounded-full border font-serif text-xl transition-colors ${
+            className={`tabular h-14 w-14 rounded-full border font-serif text-xl transition active:scale-90 ${
               selected.includes(pin)
                 ? 'border-accent bg-accent text-paper'
                 : 'border-rule bg-surface text-ink'

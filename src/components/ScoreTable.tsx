@@ -2,6 +2,16 @@ import { computeGameState } from '../domain/game'
 import { seriesStandings } from '../domain/series'
 import type { Game } from '../domain/types'
 
+/** 直前の投球を示す合図。同じ内容が続いても出し直せるよう通し番号を持つ。 */
+export type ScoreEffect = {
+  entryId: string
+  /** 直前に投げた組の名前 */
+  name: string
+  label: string
+  tone: 'accent' | 'alert'
+  token: number
+}
+
 /**
  * 公式スコアシートと同じ「ゲームごとの得点＋合計」。
  * 入力中もつねに見えるよう画面の最下部に固定し、手番には印を付ける。
@@ -9,9 +19,11 @@ import type { Game } from '../domain/types'
 export const ScoreTable = ({
   seriesGames,
   currentGame,
+  effect,
 }: {
   seriesGames: Game[]
   currentGame: Game
+  effect: ScoreEffect | null
 }) => {
   const standings = seriesStandings(seriesGames)
   const state = computeGameState(currentGame)
@@ -34,8 +46,14 @@ export const ScoreTable = ({
         {standings.map((standing) => {
           const entryState = stateOf(standing.entry.id)
           const active = standing.entry.id === state.currentEntryId
+          const hit = effect !== null && effect.entryId === standing.entry.id
           return (
-            <tr key={standing.entry.id} className={active ? 'bg-accent-soft/60' : ''}>
+            <tr
+              key={standing.entry.id}
+              // 直前に投げた組の行を一瞬だけ色づけて、どこが動いたのかを示す
+              className={active ? 'bg-accent-soft/60' : hit ? 'effect-row' : ''}
+              {...(hit ? { 'data-effect': effect.token } : {})}
+            >
               <td className="py-2 pl-2">
                 <span className="flex items-center gap-1.5">
                   <span className="w-3 shrink-0 text-[10px] text-accent">{active ? '▶' : ''}</span>
@@ -51,13 +69,20 @@ export const ScoreTable = ({
                   </span>
                 </span>
               </td>
-              {standing.perGame.map((score, index) => (
-                <td key={seriesGames[index].id} className="py-2 text-center">
-                  <Chip tone={seriesGames[index].id === currentGame.id ? 'accent' : 'quiet'}>
-                    {score}
-                  </Chip>
-                </td>
-              ))}
+              {standing.perGame.map((score, index) => {
+                const isCurrent = seriesGames[index].id === currentGame.id
+                return (
+                  <td key={seriesGames[index].id} className="py-2 text-center">
+                    <Chip
+                      tone={isCurrent ? 'accent' : 'quiet'}
+                      pop={hit && isCurrent}
+                      token={effect?.token}
+                    >
+                      {score}
+                    </Chip>
+                  </td>
+                )
+              })}
               <td className="py-2 pr-4 text-center">
                 <Chip tone="ink">{standing.total}</Chip>
               </td>
@@ -75,8 +100,23 @@ const tones = {
   quiet: 'bg-surface text-muted border border-rule',
 } as const
 
-const Chip = ({ tone, children }: { tone: keyof typeof tones; children: number }) => (
-  <span className={`inline-flex min-w-11 justify-center rounded px-1.5 py-1 ${tones[tone]}`}>
+const Chip = ({
+  tone,
+  pop = false,
+  token,
+  children,
+}: {
+  tone: keyof typeof tones
+  pop?: boolean
+  token?: number
+  children: number
+}) => (
+  <span
+    key={pop ? token : undefined}
+    className={`inline-flex min-w-11 justify-center rounded px-1.5 py-1 ${tones[tone]} ${
+      pop ? 'effect-pop' : ''
+    }`}
+  >
     {children}
   </span>
 )
@@ -87,7 +127,9 @@ const MissDots = ({ used, total }: { used: number; total: number }) => (
     {Array.from({ length: total }, (_, index) => (
       <span
         key={index}
-        className={`h-1.5 w-1.5 rounded-full ${index < used ? 'bg-alert' : 'bg-rule'}`}
+        className={`h-1.5 w-1.5 rounded-full transition-colors ${
+          index < used ? 'bg-alert' : 'bg-rule'
+        }`}
       />
     ))}
   </span>
