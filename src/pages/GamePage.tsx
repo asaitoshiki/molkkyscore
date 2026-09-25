@@ -157,7 +157,7 @@ export const GamePage = () => {
   )
 }
 
-/** 直近の投球。入力の取り違えにその場で気づけるようにする。 */
+/** このゲームの投球。新しい順に並べ、多くなったらこの枠の中だけで送る。 */
 const RecentThrows = ({
   game,
   entryName,
@@ -165,20 +165,17 @@ const RecentThrows = ({
   game: Game
   entryName: (entryId: string) => string
 }) => (
-  <ul className="mt-6 divide-y divide-rule border-t border-rule">
-    {[...game.throws]
-      .reverse()
-      .slice(0, 3)
-      .map((record, index) => (
-        <li key={game.throws.length - index} className="flex items-baseline gap-3 py-2 text-[12px]">
-          <span className="tabular w-5 text-faint">{game.throws.length - index}</span>
-          <span className="flex-1 truncate text-muted">{entryName(record.entryId)}</span>
-          <span className="tabular text-faint">
-            {record.pins.length === 0 ? 'ミス' : record.pins.join('・')}
-          </span>
-          <Numeral className="w-8 text-right text-[13px]">+{pointsOf(record.pins)}</Numeral>
-        </li>
-      ))}
+  <ul className="mt-6 max-h-56 divide-y divide-rule overflow-y-auto overscroll-contain border-y border-rule">
+    {[...game.throws].reverse().map((record, index) => (
+      <li key={game.throws.length - index} className="flex items-baseline gap-3 py-2 text-[12px]">
+        <span className="tabular w-5 text-faint">{game.throws.length - index}</span>
+        <span className="flex-1 truncate text-muted">{entryName(record.entryId)}</span>
+        <span className="tabular text-faint">
+          {record.pins.length === 0 ? 'ミス' : record.pins.join('・')}
+        </span>
+        <Numeral className="w-8 text-right text-[13px]">+{pointsOf(record.pins)}</Numeral>
+      </li>
+    ))}
   </ul>
 )
 
