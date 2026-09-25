@@ -193,6 +193,8 @@ const ResultView = ({
 }) => {
   const adFree = useAppStore((state) => state.adFree)
   const gamesSinceInterstitial = useAppStore((state) => state.gamesSinceInterstitial)
+  const winnerEntryId = computeGameState(game).winnerEntryId
+  const winnerName = game.entries.find((entry) => entry.id === winnerEntryId)?.name ?? null
   const countFinishedGame = useAppStore((state) => state.countFinishedGame)
   const resetInterstitialCount = useAppStore((state) => state.resetInterstitialCount)
   const [showingAd, setShowingAd] = useState(false)
@@ -236,6 +238,17 @@ const ResultView = ({
           </button>
         }
       />
+
+      <section className="border-b border-rule px-5 py-8 text-center">
+        <p className="eyebrow text-muted">第 {game.gameNumber} ゲーム</p>
+        {winnerName === null ? (
+          <p className="mt-2 font-serif text-2xl">勝者なしで終了</p>
+        ) : (
+          <p className="mt-2 font-serif text-3xl leading-snug">
+            <span className="text-accent">{winnerName}</span> の勝利
+          </p>
+        )}
+      </section>
 
       <ol className="divide-y divide-rule border-b border-rule">
         {standings.map((standing, rank) => (
