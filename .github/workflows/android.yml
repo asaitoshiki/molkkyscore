@@ -25,10 +25,12 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - uses: android-actions/setup-android@v3
-
-      - name: Android SDK の不足分を入れる
-        run: sdkmanager "platforms;android-36"
+      # ランナーには Android SDK が入っているので、使用許諾と不足分だけ整える
+      - name: Android SDK を整える
+        run: |
+          SDKMANAGER=$(ls "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager | head -1)
+          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          "$SDKMANAGER" "platforms;android-36"
 
       - run: npm ci
 

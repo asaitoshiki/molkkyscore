@@ -62,7 +62,10 @@ const inRoundRect = (x, y, left, top, width, height, radius) => {
  * 100 四方の座標系で図案を描く。
  * 戻り値は 'mark'（図案）、'gap'（棒のまわりの縁）、null（何もない）。
  */
-const markAt = (x, y) => {
+const markAt = (rawX, rawY) => {
+  // 図案の重心は座標系の中心とずれているため、描く前に寄せる
+  const x = rawX - 4.5
+  const y = rawY - 6.5
   const onPin = [30, 48, 66].some((left) => inRoundRect(x, y, left, 38, 13, 40, 6))
   const distanceToStick = Math.abs(y - (x * -0.45 + 46))
   const withinStick = x > 12 && x < 74
@@ -78,7 +81,7 @@ const markAt = (x, y) => {
  */
 const render = (size, shape) => {
   const pixels = Buffer.alloc(size * size * 4)
-  const scale = shape === 'adaptive' ? 0.62 : 1
+  const scale = shape === 'adaptive' ? 0.66 : 1
   const offset = (size * (1 - scale)) / 2
   const radius = size / 2
 
