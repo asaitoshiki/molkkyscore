@@ -97,17 +97,24 @@ Capacitor と AdMob の配線は済んでいる。端末の上では実際の広
 3. `src/domain/billing.ts` の `AD_FREE_PRICE` を、ストアに登録した価格に合わせる
 4. `PrivacyPolicyPage` の連絡先と最終更新日を記載する
 
-## アプリ版をビルドする
+## Android アプリをビルドする
 
-Android Studio と JDK 21 が必要。
+手元に Android Studio がなくても、GitHub のランナーで APK を作れる。
+Actions タブの **Android APK** → Run workflow を実行すると、数分で
+成果物 `molkkyscore-debug-apk` が付く。zip を展開した `app-debug.apk` を
+端末に移し、提供元不明のアプリの許可を出してから開くとインストールできる。
+
+手元にビルド環境がある場合（Android Studio と JDK 21）。
 
 ```bash
 npm run sync          # Web をビルドして android/ へ反映
 npm run open:android  # Android Studio で開く
 ```
 
-あとは Android Studio から実機・エミュレータへ実行するか、署名して AAB を書き出す。
 アプリ ID は `io.github.asaitoshiki.molkkyscore`（`capacitor.config.ts`）。
+
+ストアに出すには署名した AAB が必要になる。鍵（keystore）は作成した本人が
+保管し、リポジトリには入れない。紛失すると同じアプリとして更新できなくなる。
 
 iOS は macOS と Xcode が必要になる。
 
