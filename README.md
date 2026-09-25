@@ -76,13 +76,25 @@ Capacitor と AdMob の配線は済んでいる。端末の上では実際の広
 同じ間合いの代替画面を出す。**広告 ID は Google のテスト用のまま**なので、
 公開前に自分の ID へ差し替える。
 
+課金は `cordova-plugin-purchase` で端末のストアに直接つないでいる。外部の
+サービスを挟まないため、追加のアカウントも API キーも要らない。買い切り 1 つ
+なので、レシートは端末のストアが持つものをそのまま信じる方針にしている。
+
+通信できないときに「未購入」と判定して広告を出すと、支払った人の体験を壊す。
+そのため起動時の照会は購入済みと分かったときだけ状態を進め、取り消しや返金の
+反映は「購入を復元する」に任せている。
+
+購入ボタンと復元ボタンは、端末のストアが使えないとき（Web）は無効になり、
+代わりに表示確認用のトグルが出る。アプリ版ではトグルは出ない。
+
 ストア公開前にやること。
 
 1. AdMob で発行した ID に差し替える
    - `android/app/src/main/AndroidManifest.xml` の `com.google.android.gms.ads.APPLICATION_ID`
    - `src/ads/admob.ts` の `INTERSTITIAL_UNIT`
-2. App Store / Google Play に商品 `molkkyscore.adfree` を登録し、購入と復元を実装する
-3. `RemoveAdsPage` のプレビュー用トグルを取り除く
+2. Google Play Console と App Store Connect に、非消費型の商品
+   `molkkyscore.adfree` を登録する（`src/domain/billing.ts` の ID と揃える）
+3. `src/domain/billing.ts` の `AD_FREE_PRICE` を、ストアに登録した価格に合わせる
 4. `PrivacyPolicyPage` の連絡先と最終更新日を記載する
 
 ## アプリ版をビルドする

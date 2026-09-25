@@ -18,6 +18,7 @@
     "@capacitor-community/admob": "^8.1.0",
     "@capacitor/android": "^8.5.2",
     "@capacitor/core": "^8.5.2",
+    "cordova-plugin-purchase": "^13.18.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.4",
