@@ -53,7 +53,9 @@ export const MembersPage = () => {
                     autoFocus
                     defaultValue={member.name}
                     onBlur={(event) => {
-                      renameMember(member.id, event.target.value)
+                      // 空のまま離れたときは変更せず元の名前を残す
+                      const next = event.target.value.trim()
+                      if (next !== '') renameMember(member.id, next)
                       setEditing(null)
                     }}
                     onKeyDown={(event) => event.key === 'Enter' && event.currentTarget.blur()}

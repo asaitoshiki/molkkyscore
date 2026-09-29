@@ -14,6 +14,7 @@ import type {
   ThrowRecord,
   Tournament,
   TournamentFormat,
+  TournamentMatch,
 } from '../domain/types'
 
 type MatchLink = { tournamentId: string; matchId: string }
@@ -66,20 +67,17 @@ const settle = (state: AppState, game: Game): Partial<AppState> => {
     finishedAt: computed.finished ? (game.finishedAt ?? Date.now()) : null,
   }
   const games = state.games.map((item) => (item.id === finished.id ? finished : item))
-  const tournaments = state.tournaments.map((tournament) =>
-    tournament.id === finished.tournamentId
-      ? {
-          ...tournament,
-          matches: propagateWinners(
-            tournament.matches.map((match) =>
-              match.id === finished.matchId
-                ? { ...match, winnerEntryId: computed.winnerEntryId }
-                : match,
-            ),
-          ),
-        }
-      : tournament,
-  )
+  const tournaments = state.tournaments.map((tournament) => {
+    if (tournament.id !== finished.tournamentId) return tournament
+    const matches = tournament.matches.map((match) =>
+      match.id === finished.matchId ? { ...match, winnerEntryId: computed.winnerEntryId } : match,
+    )
+    // 次のラウンドへ送る処理はトーナメントだけ。総当たりは対戦表が固定なので触らない
+    return {
+      ...tournament,
+      matches: tournament.format === 'knockout' ? propagateWinners(matches) : matches,
+    }
+  })
   return { games, tournaments }
 }
 
@@ -199,8 +197,26 @@ export const useAppStore = create<AppState>()(
         set(replaceThrows(state, gameId, game.throws.slice(0, count)))
       },
 
+      // 大会から作った試合を消すときは、対戦表に残るリンクと勝者も一緒に外す
       deleteGame: (gameId) =>
-        set((state) => ({ games: state.games.filter((game) => game.id !== gameId) })),
+        set((state) => {
+          const target = state.games.find((game) => game.id === gameId)
+          const clear = (matches: TournamentMatch[]) =>
+            matches.map((match) =>
+              match.gameId === gameId ? { ...match, gameId: null, winnerEntryId: null } : match,
+            )
+          return {
+            games: state.games.filter((game) => game.id !== gameId),
+            tournaments: state.tournaments.map((tournament) => {
+              if (tournament.id !== target?.tournamentId) return tournament
+              const matches = clear(tournament.matches)
+              return {
+                ...tournament,
+                matches: tournament.format === 'knockout' ? propagateWinners(matches) : matches,
+              }
+            }),
+          }
+        }),
 
       createTournament: (name, format, entries, rules) => {
         const tournament: Tournament = {

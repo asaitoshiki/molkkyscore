@@ -2,15 +2,22 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { AppBar } from '../components/AppBar'
 import { Icon } from '../components/Icon'
+import { MissingRecord } from '../components/MissingRecord'
 import { PinPad } from '../components/PinPad'
 import { Button, EmptyState, Numeral } from '../components/ui'
 import { pointsOf } from '../domain/rules'
 import { buildTimeline } from '../domain/timeline'
 import { useAppStore } from '../store/useAppStore'
 
-/** 投球を 1 件ずつ見直し、訂正するか、その時点まで戻すための画面。 */
 export const TimelinePage = () => {
-  const { gameId } = useParams()
+  const gameId = useParams().gameId!
+  const exists = useAppStore((state) => state.games.some((item) => item.id === gameId))
+  if (!exists) return <MissingRecord label="この試合" to="/history" />
+  return <TimelineView gameId={gameId} />
+}
+
+/** 投球を 1 件ずつ見直し、訂正するか、その時点まで戻すための画面。 */
+const TimelineView = ({ gameId }: { gameId: string }) => {
   const game = useAppStore((state) => state.games.find((item) => item.id === gameId))!
   const members = useAppStore((state) => state.members)
   const editThrow = useAppStore((state) => state.editThrow)

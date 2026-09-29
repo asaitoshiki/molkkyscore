@@ -1,12 +1,19 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { Icon } from '../components/Icon'
+import { MissingRecord } from '../components/MissingRecord'
 import { Button, Numeral, SectionTitle } from '../components/ui'
 import { championOf, computeStandings } from '../domain/tournament'
 import type { Tournament, TournamentMatch } from '../domain/types'
 import { useAppStore } from '../store/useAppStore'
 
 export const TournamentDetailPage = () => {
-  const { tournamentId } = useParams()
+  const tournamentId = useParams().tournamentId!
+  const exists = useAppStore((state) => state.tournaments.some((item) => item.id === tournamentId))
+  if (!exists) return <MissingRecord label="この大会" to="/tournaments" />
+  return <TournamentView tournamentId={tournamentId} />
+}
+
+const TournamentView = ({ tournamentId }: { tournamentId: string }) => {
   const navigate = useNavigate()
   const tournament = useAppStore((state) =>
     state.tournaments.find((item) => item.id === tournamentId),

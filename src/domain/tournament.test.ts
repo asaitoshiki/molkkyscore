@@ -56,4 +56,25 @@ describe('トーナメント', () => {
     const advanced = propagateWinners(matches)
     expect(advanced.find((match) => match.round === 2)!.entryIds).toEqual(['e2', 'e3'])
   })
+
+  it('1 回戦の片方だけ決まっても、次のラウンドを不戦勝にしない', () => {
+    const matches = createMatches('knockout', entriesOf(4))
+    matches[0].winnerEntryId = 'e1'
+    const advanced = propagateWinners(matches)
+    const final = advanced.find((match) => match.round === 2)!
+    expect(final.entryIds).toEqual(['e1', null])
+    expect(final.winnerEntryId).toBeNull()
+  })
+
+  it('勝者を取り消すと次のラウンドの枠も空に戻る', () => {
+    const matches = createMatches('knockout', entriesOf(4))
+    matches[0].winnerEntryId = 'e1'
+    matches[1].winnerEntryId = 'e3'
+    const advanced = propagateWinners(matches)
+    expect(advanced.find((match) => match.round === 2)!.entryIds).toEqual(['e1', 'e3'])
+
+    advanced[0].winnerEntryId = null
+    const undone = propagateWinners(advanced)
+    expect(undone.find((match) => match.round === 2)!.entryIds).toEqual([null, 'e3'])
+  })
 })

@@ -42,7 +42,7 @@ export const HistoryPage = () => {
                 </div>
                 <ul className="mt-2">
                   {summary.lines.map((line) => (
-                    <li key={line.name} className="flex items-baseline justify-between py-0.5">
+                    <li key={line.entryId} className="flex items-baseline justify-between py-0.5">
                       <span className={`text-[13px] ${line.eliminated ? 'text-alert' : 'text-muted'}`}>
                         {line.name}
                         {line.eliminated && '（失格）'}

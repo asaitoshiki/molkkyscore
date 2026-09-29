@@ -59,22 +59,28 @@ const emptyMatch = (
   winnerEntryId: null,
 })
 
-/** 確定した勝者と不戦勝を次のラウンドへ送る。決着まで繰り返し適用できる。 */
+/**
+ * 確定した勝者と不戦勝を次のラウンドへ送る。決着まで繰り返し適用できる。
+ * トーナメント（勝ち抜き）専用。総当たりの対戦表に掛けると組み合わせが壊れる。
+ */
 export const propagateWinners = (matches: TournamentMatch[]): TournamentMatch[] => {
   const next = matches.map((match) => ({ ...match, entryIds: [...match.entryIds] }))
   const byRound = new Map<number, TournamentMatch[]>()
   next.forEach((match) => byRound.set(match.round, [...(byRound.get(match.round) ?? []), match]))
 
-  for (const round of [...byRound.keys()].sort((a, b) => a - b)) {
+  const rounds = [...byRound.keys()].sort((a, b) => a - b)
+  const firstRound = rounds[0]
+
+  for (const round of rounds) {
     for (const match of byRound.get(round)!) {
       const filled = match.entryIds.filter((id): id is string => id !== null)
-      // 相手がいない枠は不戦勝として勝者を確定させる
-      match.winnerEntryId = match.winnerEntryId ?? (filled.length === 1 ? filled[0] : null)
+      // 不戦勝は 1 回戦だけ。2 回戦以降の空き枠は「まだ決まっていない」の意味になる
+      const bye = round === firstRound && filled.length === 1 ? filled[0] : null
+      match.winnerEntryId = match.winnerEntryId ?? bye
 
       const target = byRound.get(round + 1)?.[Math.floor(match.order / 2)]
-      if (target && match.winnerEntryId) {
-        target.entryIds[match.order % 2] = match.winnerEntryId
-      }
+      // 勝者を取り消したときに次のラウンドの枠も空になるよう、null もそのまま書き戻す
+      if (target) target.entryIds[match.order % 2] = match.winnerEntryId
     }
   }
   return next

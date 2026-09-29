@@ -89,7 +89,7 @@ const ratio = (part: number, whole: number): number => (whole === 0 ? 0 : part /
 export type GameSummary = {
   game: Game
   winnerName: string | null
-  lines: { name: string; score: number; eliminated: boolean }[]
+  lines: { entryId: string; name: string; score: number; eliminated: boolean }[]
 }
 
 export const summarizeGame = (game: Game): GameSummary => {
@@ -99,6 +99,7 @@ export const summarizeGame = (game: Game): GameSummary => {
     game,
     winnerName: state.winnerEntryId === null ? null : (nameOf.get(state.winnerEntryId) ?? null),
     lines: state.entries.map((entryState) => ({
+      entryId: entryState.entryId,
       name: nameOf.get(entryState.entryId)!,
       score: entryState.score,
       eliminated: entryState.eliminated,

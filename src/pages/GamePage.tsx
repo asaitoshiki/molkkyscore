@@ -5,6 +5,7 @@ import { InterstitialAd } from '../ads/InterstitialAd'
 import { WatchInvite } from '../components/WatchInvite'
 import { AppBar } from '../components/AppBar'
 import { Icon } from '../components/Icon'
+import { MissingRecord } from '../components/MissingRecord'
 import { PinPad } from '../components/PinPad'
 import { ScoreTable } from '../components/ScoreTable'
 import type { ScoreEffect } from '../components/ScoreTable'
@@ -19,8 +20,15 @@ import { renderResultCard } from '../share/resultCard'
 import { renderScoreSheet } from '../share/scoreSheetImage'
 import { useAppStore } from '../store/useAppStore'
 
+/** 記録が残っているかだけ先に見る。消えた試合の URL でも画面が落ちないようにする。 */
 export const GamePage = () => {
-  const { gameId } = useParams()
+  const gameId = useParams().gameId!
+  const exists = useAppStore((state) => state.games.some((item) => item.id === gameId))
+  if (!exists) return <MissingRecord label="この試合" to="/history" />
+  return <GameView gameId={gameId} />
+}
+
+const GameView = ({ gameId }: { gameId: string }) => {
   const navigate = useNavigate()
   const game = useAppStore((state) => state.games.find((item) => item.id === gameId))!
   // セレクタから配列を作って返すと毎回参照が変わるため、ここで絞り込む
