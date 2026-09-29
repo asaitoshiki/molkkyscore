@@ -61,8 +61,29 @@ src/
 はじめて使うときだけ Settings → Pages → Source を「GitHub Actions」に設定する。
 
 公開先は https://asaitoshiki.github.io/molkkyscore/ 。
-相対パスで出力しているので、Cloudflare Pages や Netlify にそのまま載せることもできる
-（ビルドコマンド `npm run build`、出力 `dist`）。
+
+### いずれ Cloudflare Pages へ移す
+
+観戦 URL のような「人に配るリンク」を作る段になったら移す。それまでは
+GitHub Pages のままでよい。移転すると URL が変わり、配ったリンクが切れるため、
+引っ越しは一度だけにする。
+
+移す理由は 3 つ。
+
+- **URL から `#` が消える** — GitHub Pages はサーバー側でパスを振り分けられないため
+  HashRouter を使っている。配る前提のリンクには `#` がないほうがよい
+- **非公開リポジトリでも無料** — GitHub Pages は有料プランが必要
+- **商用利用が問題にならない** — GitHub Pages は主に商用目的での利用を想定していない
+
+移すときにやること。
+
+1. Cloudflare Pages で GitHub 連携（ビルド `npm run build`、出力 `dist`）
+2. `src/main.tsx` の `HashRouter` を `BrowserRouter` に変える
+3. `.github/workflows/deploy.yml` を削除する（Android APK の方は残す）
+
+承知のうえで受け入れる点。ビルドは月 500 回までで同時 1 本。ビルドのログが
+GitHub と Cloudflare の 2 か所に分かれる。ブランチごとにプレビュー URL が
+自動で作られる。転送量は逆に無制限になる。
 
 ## 広告と課金
 
