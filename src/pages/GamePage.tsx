@@ -96,22 +96,12 @@ export const GamePage = () => {
           </button>
         }
         right={
-          <>
-            <button
-              onClick={() => navigate(`/games/${game.id}/timeline`)}
-              aria-label="投球の履歴を開く"
-            >
-              <Icon name="list" size={20} />
-            </button>
-            <button
-              className="disabled:opacity-35"
-              disabled={game.throws.length === 0}
-              aria-label="1 投取り消す"
-              onClick={() => rewindTo(game.id, game.throws.length - 1)}
-            >
-              <Icon name="undo" size={20} />
-            </button>
-          </>
+          <button
+            onClick={() => navigate(`/games/${game.id}/timeline`)}
+            aria-label="投球の履歴を開く"
+          >
+            <Icon name="list" size={20} />
+          </button>
         }
       />
 
@@ -162,10 +152,13 @@ export const GamePage = () => {
         <div className="mt-3 grid grid-cols-2 gap-2">
           <Button
             variant="outline"
-            disabled={selectedPins.length === 0}
-            onClick={() => setSelectedPins([])}
+            disabled={game.throws.length === 0}
+            onClick={() => {
+              rewindTo(game.id, game.throws.length - 1)
+              setSelectedPins([])
+            }}
           >
-            戻る
+            1 つ戻る
           </Button>
           <Button onClick={submit}>決定</Button>
         </div>
