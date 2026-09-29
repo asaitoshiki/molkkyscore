@@ -12,6 +12,8 @@ export type Entry = {
   id: string
   name: string
   memberIds: string[]
+  /** 持ち点。力の差を埋めるため、この点から始める */
+  handicap: number
 }
 
 /** 1 投の記録。pins は倒したスキットルの番号で、空配列がミス。 */

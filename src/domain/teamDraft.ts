@@ -22,6 +22,7 @@ export const buildTeamEntries = (teams: TeamDraft[]): Entry[] =>
     id: newId(),
     name: displayName(team, index),
     memberIds: team.memberIds,
+    handicap: 0,
   }))
 
 /** すべてのチームに 1 人以上いて、2 チーム以上そろっていること。 */

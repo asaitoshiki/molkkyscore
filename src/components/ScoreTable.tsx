@@ -65,7 +65,17 @@ export const ScoreTable = ({
                     >
                       {standing.entry.name}
                     </span>
-                    <MissDots used={entryState.consecutiveMisses} total={currentGame.rules.maxMisses} />
+                    <span className="flex items-center gap-1.5">
+                      <MissDots
+                        used={entryState.consecutiveMisses}
+                        total={currentGame.rules.maxMisses}
+                      />
+                      {standing.entry.handicap > 0 && (
+                        <span className="text-[10px] text-muted">
+                          ハンデ +{standing.entry.handicap}
+                        </span>
+                      )}
+                    </span>
                   </span>
                 </span>
               </td>

@@ -234,16 +234,27 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'molkky-note-v1',
-      version: 2,
-      // セット（連戦）を導入する前に保存された試合は、単独のセットとして扱う
+      version: 3,
+      // 保存済みの形に足りない項目を補う。セット（連戦）とハンデはあとから入れた
       migrate: (persisted) => {
-        const state = persisted as { games?: Game[] }
+        const state = persisted as {
+          games?: (Game & { seriesId?: string; gameNumber?: number })[]
+          tournaments?: Tournament[]
+        }
+        const withHandicap = (entries: (Entry & { handicap?: number })[]) =>
+          entries.map((entry) => ({ ...entry, handicap: entry.handicap ?? 0 }))
+
         return {
           ...state,
           games: (state.games ?? []).map((game) => ({
             ...game,
             seriesId: game.seriesId ?? newId(),
             gameNumber: game.gameNumber ?? 1,
+            entries: withHandicap(game.entries),
+          })),
+          tournaments: (state.tournaments ?? []).map((tournament) => ({
+            ...tournament,
+            entries: withHandicap(tournament.entries),
           })),
         } as AppState
       },

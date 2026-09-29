@@ -11,6 +11,10 @@ import { useAppStore } from '../store/useAppStore'
 
 const TEAM_COUNTS = [1, 2, 3, 4]
 
+/** 目標点に届いている持ち点は試合が成立しないので、その手前で止める */
+const clampHandicap = (raw: string) =>
+  Math.min(Math.max(Math.floor(Number(raw)) || 0, 0), DEFAULT_RULES.targetScore - 1)
+
 /** 参加するチームを 3 段階で決める。人数 → 名前 → 投げる順番の順に確定させる。 */
 export const GameSetupPage = () => {
   const navigate = useNavigate()
@@ -20,17 +24,20 @@ export const GameSetupPage = () => {
 
   const [step, setStep] = useState(1)
   const [names, setNames] = useState<string[]>([])
+  // 力の差を埋めるための持ち点。並びは names と対応する
+  const [handicaps, setHandicaps] = useState<number[]>([])
 
   const chooseCount = (count: number) => {
     setNames(Array.from({ length: count }, (_, index) => `チーム${index + 1}`))
+    setHandicaps(Array.from({ length: count }, () => 0))
     setStep(2)
   }
 
   const start = () => {
     // 同じ名前のメンバーがいれば使い回し、いなければ登録する
-    const entries: Entry[] = names.map((name) => {
+    const entries: Entry[] = names.map((name, index) => {
       const member = members.find((item) => item.name === name) ?? addMember(name)
-      return { id: newId(), name, memberIds: [member.id] }
+      return { id: newId(), name, memberIds: [member.id], handicap: handicaps[index] }
     })
     navigate(`/games/${createGame(entries, DEFAULT_RULES, null)}`, { replace: true })
   }
@@ -82,6 +89,37 @@ export const GameSetupPage = () => {
               </label>
             ))}
           </div>
+          <details className="mt-6 border-t border-rule pt-3">
+            <summary className="eyebrow cursor-pointer text-muted">ハンデをつける</summary>
+            <p className="mt-2 text-[12px] text-muted">
+              力の差があるときは、持ち点から始められます。
+            </p>
+            <div className="mt-3 space-y-2">
+              {names.map((name, index) => (
+                <label key={index} className="flex items-center justify-between gap-3 text-[14px]">
+                  <span className="min-w-0 truncate">{name}</span>
+                  <span className="flex shrink-0 items-center gap-1.5">
+                    <TextInput
+                      type="number"
+                      min={0}
+                      max={DEFAULT_RULES.targetScore - 1}
+                      className="tabular w-16 text-right"
+                      value={handicaps[index]}
+                      onChange={(event) =>
+                        setHandicaps(
+                          handicaps.map((value, position) =>
+                            position === index ? clampHandicap(event.target.value) : value,
+                          ),
+                        )
+                      }
+                    />
+                    <span className="text-[12px] whitespace-nowrap text-muted">点から</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </details>
+
           <Button className="mt-8 w-full py-3.5" disabled={!filled} onClick={() => setStep(3)}>
             次へ
           </Button>
@@ -94,7 +132,13 @@ export const GameSetupPage = () => {
           <p className="mt-1 mb-6 text-center text-[12px] text-muted">
             ＊右の取っ手を長押しすると上下に動かせます
           </p>
-          <OrderList items={names} onChange={setNames} />
+          <OrderList
+            items={names}
+            onChange={(reordered) => {
+              setHandicaps(reordered.map((name) => handicaps[names.indexOf(name)]))
+              setNames(reordered)
+            }}
+          />
           <Button className="mt-8 w-full py-3.5" onClick={start}>
             ゲーム開始
           </Button>

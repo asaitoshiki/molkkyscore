@@ -14,7 +14,7 @@ export type TimelineItem = {
 
 /** 記録を古い順に並べ、各投の時点での得点を添える。 */
 export const buildTimeline = (game: Game): TimelineItem[] => {
-  const totals = new Map(game.entries.map((entry) => [entry.id, 0]))
+  const totals = new Map(game.entries.map((entry) => [entry.id, entry.handicap]))
   const counts = new Map(game.entries.map((entry) => [entry.id, 0]))
 
   return game.throws.map((record, index) => {

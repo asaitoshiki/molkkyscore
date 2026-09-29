@@ -29,9 +29,12 @@ export const renderScoreSheet = async (
   const summaryHeight = standings.length === 0 ? 0 : 40 + standings.length * SUMMARY_ROW + 40
   const labelBaseline = TITLE_BOTTOM + summaryHeight + 30
   const header = labelBaseline + 110
+  // ハンデがある試合は、どこから始めたのかが分からないと数字が読めない
+  const hasHandicap = sheet.rows.some((row) => row.entry.handicap > 0)
+  const handicapRows = hasHandicap ? 1 : 0
 
   const width = Math.max(1080, PADDING * 2 + ROUND_COLUMN + sheet.rows.length * ENTRY_COLUMN)
-  const height = header + (sheet.rounds + 1) * ROW_HEIGHT + 140
+  const height = header + (sheet.rounds + handicapRows + 1) * ROW_HEIGHT + 140
   const { canvas, ctx } = createCanvas(width, height)
 
   eyebrow(ctx, 'SCORE SHEET', PADDING, PADDING + 26, ACCENT, SANS)
@@ -68,15 +71,30 @@ export const renderScoreSheet = async (
   hairline(ctx, PADDING, header - 12, width - PADDING * 2)
 
   // 参加者の列を細い縦罫で分ける
-  const tableBottom = header + (sheet.rounds + 1) * ROW_HEIGHT
+  const tableBottom = header + (sheet.rounds + handicapRows + 1) * ROW_HEIGHT
   ctx.fillStyle = RULE
   sheet.rows.slice(1).forEach((_, index) => {
     const x = PADDING + ROUND_COLUMN + (index + 1) * ENTRY_COLUMN
     ctx.fillRect(x, header - 60, 2, tableBottom - header + 60)
   })
 
+  if (hasHandicap) {
+    ctx.font = `400 22px ${SANS}`
+    ctx.fillStyle = MUTED
+    ctx.fillText('ハンデ', PADDING + 16, header + ROW_HEIGHT / 2 + 8)
+
+    ctx.textAlign = 'center'
+    sheet.rows.forEach((row, index) => {
+      ctx.font = `500 38px ${SERIF}`
+      ctx.fillStyle = ACCENT
+      ctx.fillText(String(row.entry.handicap), columnCenter(index) + 52, header + ROW_HEIGHT / 2 + 12)
+    })
+    ctx.textAlign = 'left'
+    hairline(ctx, PADDING, header + ROW_HEIGHT, width - PADDING * 2, RULE)
+  }
+
   for (let round = 0; round < sheet.rounds; round += 1) {
-    const top = header + round * ROW_HEIGHT
+    const top = header + (round + handicapRows) * ROW_HEIGHT
 
     ctx.font = `400 26px ${SERIF}`
     ctx.fillStyle = FAINT
@@ -104,7 +122,7 @@ export const renderScoreSheet = async (
     hairline(ctx, PADDING, top + ROW_HEIGHT, width - PADDING * 2, RULE)
   }
 
-  const totalTop = header + sheet.rounds * ROW_HEIGHT
+  const totalTop = header + (sheet.rounds + handicapRows) * ROW_HEIGHT
   ctx.font = `400 22px ${SANS}`
   ctx.fillStyle = MUTED
   ctx.fillText('このゲーム', PADDING + 16, totalTop + ROW_HEIGHT / 2 + 8)

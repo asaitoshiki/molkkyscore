@@ -9,8 +9,8 @@ const game = (pinsByThrow: [string, number[]][]): Game => ({
   finishedAt: null,
   rules: DEFAULT_RULES,
   entries: [
-    { id: 'a', name: 'A', memberIds: ['m1'] },
-    { id: 'b', name: 'B', memberIds: ['m2'] },
+    { id: 'a', name: 'A', memberIds: ['m1'], handicap: 0 },
+    { id: 'b', name: 'B', memberIds: ['m2'], handicap: 0 },
   ],
   throws: pinsByThrow.map(([entryId, pins], index) => ({
     entryId,
@@ -40,6 +40,12 @@ describe('buildScoreSheet', () => {
       game([['a', [12]], ['a', [12]], ['a', [12]], ['a', [12]], ['a', [12]]]),
     ).rows
     expect(rows[0].cells.map((cell) => cell.total)).toEqual([12, 24, 36, 48, 25])
+  })
+
+  it('ハンデを与えた参加者の合計はその点から積み上がる', () => {
+    const target = game([['a', [10]], ['a', [5]]])
+    target.entries[0].handicap = 20
+    expect(buildScoreSheet(target).rows[0].cells.map((cell) => cell.total)).toEqual([30, 35])
   })
 
   it('投球がなければラウンドは 0', () => {

@@ -9,8 +9,8 @@ const game = (throwsSpec: [string, number[]][]): Game => ({
   finishedAt: null,
   rules: DEFAULT_RULES,
   entries: [
-    { id: 'a', name: 'A', memberIds: ['m1'] },
-    { id: 'b', name: 'B', memberIds: ['m2'] },
+    { id: 'a', name: 'A', memberIds: ['m1'], handicap: 0 },
+    { id: 'b', name: 'B', memberIds: ['m2'], handicap: 0 },
   ],
   throws: throwsSpec.map(([entryId, pins], index) => ({
     entryId,

@@ -9,8 +9,8 @@ const gameWith = (throwsSpec: [string, number[]][]): Game => ({
   finishedAt: null,
   rules: DEFAULT_RULES,
   entries: [
-    { id: 'a', name: 'A', memberIds: ['m1'] },
-    { id: 'b', name: 'B', memberIds: ['m2'] },
+    { id: 'a', name: 'A', memberIds: ['m1'], handicap: 0 },
+    { id: 'b', name: 'B', memberIds: ['m2'], handicap: 0 },
   ],
   throws: throwsSpec.map<ThrowRecord>(([entryId, pins], index) => ({
     entryId,
@@ -60,6 +60,20 @@ describe('computeGameState', () => {
     expect(state.round).toBe(1)
   })
 
+  it('ハンデを与えた参加者はその点から始まる', () => {
+    const game = gameWith([])
+    game.entries[0].handicap = 10
+    expect(computeGameState(game).entries[0].score).toBe(10)
+  })
+
+  it('ハンデを含めてちょうど 50 点で勝ちになる', () => {
+    const game = gameWith([['a', [12]], ['b', [1]], ['a', [12]], ['b', [1]], ['a', [12]], ['b', [1]], ['a', [2]]])
+    game.entries[0].handicap = 12
+    const state = computeGameState(game)
+    expect(state.entries[0].score).toBe(50)
+    expect(state.winnerEntryId).toBe('a')
+  })
+
   it('投げると手番が次の参加者に移る', () => {
     const state = computeGameState(gameWith([['a', [7]]]))
     expect(state.currentEntryId).toBe('b')
@@ -90,7 +104,7 @@ describe('computeGameState', () => {
 
   it('失格した参加者は手番を飛ばされる', () => {
     const game = gameWith(alternating([[], [5], [], [5], [], [5]]))
-    game.entries.push({ id: 'c', name: 'C', memberIds: ['m3'] })
+    game.entries.push({ id: 'c', name: 'C', memberIds: ['m3'], handicap: 0 })
     const state = computeGameState(game)
     expect(state.entries[0].eliminated).toBe(true)
     expect(state.currentEntryId).toBe('c')

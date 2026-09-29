@@ -27,7 +27,7 @@ export const buildScoreSheet = (game: Game): ScoreSheet => {
   for (const record of game.throws) {
     const row = rows.get(record.entryId)!
     const points = pointsOf(record.pins)
-    const previous = row.cells.at(-1)?.total ?? 0
+    const previous = row.cells.at(-1)?.total ?? row.entry.handicap
     row.cells.push({ pins: record.pins, points, total: advanceScore(previous, points, game.rules) })
   }
 

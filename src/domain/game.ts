@@ -29,7 +29,7 @@ export const computeGameState = (game: Game): GameState => {
   const indexOf = new Map(game.entries.map((entry, index) => [entry.id, index]))
   const states: EntryState[] = game.entries.map((entry) => ({
     entryId: entry.id,
-    score: 0,
+    score: entry.handicap,
     consecutiveMisses: 0,
     eliminated: false,
     throwCount: 0,

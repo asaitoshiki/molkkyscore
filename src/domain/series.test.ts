@@ -4,8 +4,8 @@ import { DEFAULT_RULES } from './rules'
 import type { Game } from './types'
 
 const entries = [
-  { id: 'a', name: 'A', memberIds: ['m1'] },
-  { id: 'b', name: 'B', memberIds: ['m2'] },
+  { id: 'a', name: 'A', memberIds: ['m1'], handicap: 0 },
+  { id: 'b', name: 'B', memberIds: ['m2'], handicap: 0 },
 ]
 
 const game = (gameNumber: number, throwsSpec: [string, number[]][]): Game => ({

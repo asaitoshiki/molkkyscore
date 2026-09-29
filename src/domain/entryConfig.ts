@@ -10,6 +10,7 @@ export const buildEntries = (selected: string[], members: Member[]): Entry[] =>
     id: newId(),
     name: members.find((member) => member.id === memberId)!.name,
     memberIds: [memberId],
+    handicap: 0,
   }))
 
 /** 2 組そろえば試合として成立する。 */

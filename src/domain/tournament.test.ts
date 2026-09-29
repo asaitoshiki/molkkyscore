@@ -7,6 +7,7 @@ const entriesOf = (count: number): Entry[] =>
     id: `e${index + 1}`,
     name: `E${index + 1}`,
     memberIds: [`m${index + 1}`],
+    handicap: 0,
   }))
 
 describe('総当たり', () => {
