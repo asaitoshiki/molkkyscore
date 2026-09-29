@@ -1,0 +1,79 @@
+# Play ストアへ上げる AAB（Android App Bundle）を作る。
+# 署名鍵はリポジトリに置かず、GitHub の Secrets から受け取る。
+#   ANDROID_KEYSTORE_BASE64   … keystore を base64 にしたもの
+#   ANDROID_KEYSTORE_PASSWORD … keystore のパスワード
+#   ANDROID_KEY_ALIAS         … 鍵の別名
+#   ANDROID_KEY_PASSWORD      … 鍵のパスワード
+# Actions タブの "Android Release" から、版番号を入れて実行する。
+name: Android Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: '表示される版（例 1.0.0）'
+        required: true
+        default: '1.0.0'
+      version_code:
+        description: 'Play ストアに出すたびに増やす整数'
+        required: true
+        default: '1'
+
+permissions:
+  contents: read
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Android SDK を整える
+        run: |
+          SDKMANAGER=$(ls "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager | head -1)
+          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          "$SDKMANAGER" "platforms;android-36"
+
+      - run: npm ci
+
+      - name: Web をビルドして android へ反映
+        run: npm run sync
+
+      # 鍵はこのジョブの中だけに置き、成果物には含めない
+      - name: 署名鍵を取り出す
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$KEYSTORE_BASE64" || { echo "ANDROID_KEYSTORE_BASE64 が未設定です"; exit 1; }
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+
+      - name: AAB を作る
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/release.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_VERSION_NAME: ${{ inputs.version_name }}
+          ANDROID_VERSION_CODE: ${{ inputs.version_code }}
+        run: ./gradlew bundleRelease --no-daemon
+
+      - name: 鍵を消す
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.keystore"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: molkkyscore-${{ inputs.version_name }}-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error

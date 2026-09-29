@@ -25,3 +25,8 @@ dist-ssr
 
 # vite-plugin-pwa の開発用出力
 dev-dist
+
+# Android の署名鍵は絶対に入れない
+*.keystore
+*.jks
+android/key.properties
