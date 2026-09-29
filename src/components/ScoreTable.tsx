@@ -30,16 +30,16 @@ export const ScoreTable = ({
   const stateOf = (entryId: string) => state.entries.find((item) => item.entryId === entryId)!
 
   return (
-    <table className="tabular w-full text-[13px]">
-      <thead className="bg-accent-soft text-[10px] tracking-wide text-accent">
+    <table className="tabular w-full text-[14px]">
+      <thead className="bg-accent-soft text-[11px] tracking-wide text-accent">
         <tr>
-          <th className="py-1.5 pl-7 text-left font-normal">チーム</th>
+          <th className="py-2 pl-7 text-left font-normal">チーム</th>
           {seriesGames.map((game) => (
-            <th key={game.id} className="w-16 py-1.5 text-center font-normal">
+            <th key={game.id} className="w-[4.5rem] py-2 text-center font-normal">
               第{game.gameNumber}ゲーム
             </th>
           ))}
-          <th className="w-16 py-1.5 pr-4 text-center font-normal">合計</th>
+          <th className="w-[4.5rem] py-2 pr-4 text-center font-normal">合計</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-rule border-t border-rule">
@@ -54,12 +54,12 @@ export const ScoreTable = ({
               className={active ? 'bg-accent-soft/60' : hit ? 'effect-row' : ''}
               {...(hit ? { 'data-effect': effect.token } : {})}
             >
-              <td className="py-2 pl-2">
+              <td className="py-2.5 pl-2">
                 <span className="flex items-center gap-1.5">
                   <span className="w-3 shrink-0 text-[10px] text-accent">{active ? '▶' : ''}</span>
                   <span className="min-w-0">
                     <span
-                      className={`block max-w-[8.5rem] truncate ${
+                      className={`block max-w-[8.5rem] truncate text-[15px] ${
                         entryState.eliminated ? 'text-faint line-through' : ''
                       }`}
                     >
@@ -72,7 +72,7 @@ export const ScoreTable = ({
               {standing.perGame.map((score, index) => {
                 const isCurrent = seriesGames[index].id === currentGame.id
                 return (
-                  <td key={seriesGames[index].id} className="py-2 text-center">
+                  <td key={seriesGames[index].id} className="py-2.5 text-center">
                     <Chip
                       tone={isCurrent ? 'accent' : 'quiet'}
                       pop={hit && isCurrent}
@@ -83,7 +83,7 @@ export const ScoreTable = ({
                   </td>
                 )
               })}
-              <td className="py-2 pr-4 text-center">
+              <td className="py-2.5 pr-4 text-center">
                 <Chip tone="ink">{standing.total}</Chip>
               </td>
             </tr>
@@ -113,9 +113,9 @@ const Chip = ({
 }) => (
   <span
     key={pop ? token : undefined}
-    className={`inline-flex min-w-11 justify-center rounded px-1.5 py-1 ${tones[tone]} ${
-      pop ? 'effect-pop' : ''
-    }`}
+    className={`inline-flex min-w-14 justify-center rounded px-2 py-1.5 text-[17px] font-medium ${
+      tones[tone]
+    } ${pop ? 'effect-pop' : ''}`}
   >
     {children}
   </span>

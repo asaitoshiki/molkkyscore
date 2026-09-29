@@ -99,7 +99,7 @@ export const GamePage = () => {
           <>
             <button
               onClick={() => navigate(`/games/${game.id}/timeline`)}
-              aria-label="投球の記録を開く"
+              aria-label="投球の履歴を開く"
             >
               <Icon name="list" size={20} />
             </button>
@@ -115,7 +115,7 @@ export const GamePage = () => {
         }
       />
 
-      <section className="flex-1 px-5 pt-5 pb-4">
+      <section className="flex flex-1 flex-col justify-center px-5 pt-5 pb-5">
         <div className="flex items-baseline justify-between">
           <p className="text-[15px]">
             <span className="eyebrow mr-2 text-muted">NEXT</span>
@@ -170,7 +170,6 @@ export const GamePage = () => {
           <Button onClick={submit}>決定</Button>
         </div>
 
-        <RecentThrows game={game} entryName={(entryId) => entryOf(entryId).name} />
       </section>
 
       <div className="safe-bottom relative mt-auto border-t border-rule">
@@ -194,31 +193,6 @@ export const GamePage = () => {
     </div>
   )
 }
-
-/** このゲームの投球。新しい順に並べ、多くなったらこの枠の中だけで送る。 */
-const RecentThrows = ({
-  game,
-  entryName,
-}: {
-  game: Game
-  entryName: (entryId: string) => string
-}) => (
-  <ul className="mt-6 max-h-56 divide-y divide-rule overflow-y-auto overscroll-contain border-y border-rule">
-    {[...game.throws].reverse().map((record, index) => (
-      <li
-        key={game.throws.length - index}
-        className={`flex items-baseline gap-3 py-2 text-[12px] ${index === 0 ? 'effect-row-in' : ''}`}
-      >
-        <span className="tabular w-5 text-faint">{game.throws.length - index}</span>
-        <span className="flex-1 truncate text-muted">{entryName(record.entryId)}</span>
-        <span className="tabular text-faint">
-          {record.pins.length === 0 ? 'ミス' : record.pins.join('・')}
-        </span>
-        <Numeral className="w-8 text-right text-[13px]">+{pointsOf(record.pins)}</Numeral>
-      </li>
-    ))}
-  </ul>
-)
 
 /** ゲーム結果。順位と各ゲームの得点を並べ、その場で共有できるようにする。 */
 const ResultView = ({

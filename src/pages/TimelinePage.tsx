@@ -39,7 +39,7 @@ export const TimelinePage = () => {
   return (
     <div className="mx-auto min-h-full max-w-md bg-paper">
       <AppBar
-        title="投球の記録"
+        title="投球の履歴"
         left={
           <Link to={`/games/${game.id}`} aria-label="試合に戻る">
             <Icon name="chevronLeft" size={22} />

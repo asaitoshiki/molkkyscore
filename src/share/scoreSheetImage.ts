@@ -7,9 +7,10 @@ import { ACCENT, FAINT, INK, MUTED, RULE, SANS, SERIF } from './palette'
 const PADDING = 72
 const ROUND_COLUMN = 120
 const ENTRY_COLUMN = 240
-const TITLE_BLOCK = 300
 const ROW_HEIGHT = 96
 const SUMMARY_ROW = 72
+/** タイトルの下端から連戦の集計までの間隔 */
+const TITLE_BOTTOM = PADDING + 170
 
 /**
  * 投球記録を参加者 × ラウンドの表として画像にする。
@@ -23,8 +24,11 @@ export const renderScoreSheet = async (
 
   const sheet = buildScoreSheet(game)
   const standings = seriesGames.length > 1 ? seriesStandings(seriesGames) : []
-  const summaryHeight = standings.length === 0 ? 0 : (standings.length + 1) * SUMMARY_ROW + 80
-  const header = TITLE_BLOCK + summaryHeight
+
+  // 連戦の集計がない場合も、見出しがタイトルに重ならないよう上から積み上げて決める
+  const summaryHeight = standings.length === 0 ? 0 : 40 + standings.length * SUMMARY_ROW + 40
+  const labelBaseline = TITLE_BOTTOM + summaryHeight + 30
+  const header = labelBaseline + 110
 
   const width = Math.max(1080, PADDING * 2 + ROUND_COLUMN + sheet.rows.length * ENTRY_COLUMN)
   const height = header + (sheet.rounds + 1) * ROW_HEIGHT + 140
@@ -43,7 +47,7 @@ export const renderScoreSheet = async (
   ctx.fillText('スコアシート', PADDING, PADDING + 120)
 
   if (standings.length > 0) {
-    drawSummary(ctx, width, PADDING + 170, seriesGames, standings)
+    drawSummary(ctx, width, TITLE_BOTTOM, seriesGames, standings)
   }
 
   const columnCenter = (index: number) =>
@@ -51,7 +55,7 @@ export const renderScoreSheet = async (
 
   ctx.font = `400 24px ${SANS}`
   ctx.fillStyle = MUTED
-  ctx.fillText(`第 ${game.gameNumber} ゲームの投球`, PADDING, header - 110)
+  ctx.fillText(`第 ${game.gameNumber} ゲームの投球`, PADDING, labelBaseline)
 
   ctx.textAlign = 'center'
   ctx.font = `400 32px ${SANS}`
