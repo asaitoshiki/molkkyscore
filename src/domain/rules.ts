@@ -31,5 +31,9 @@ export const advanceScore = (current: number, points: number, rules: GameRules):
   return total > rules.targetScore ? rules.penaltyScore : total
 }
 
+/** 目標点に届く持ち点は試合が成立しないので、その手前で止める */
+export const clampHandicap = (raw: string): number =>
+  Math.min(Math.max(Math.floor(Number(raw)) || 0, 0), DEFAULT_RULES.targetScore - 1)
+
 /** 1 投で取りうる最大得点（残り点数の目安表示に使う） */
 export const MAX_POINTS_PER_THROW = 12

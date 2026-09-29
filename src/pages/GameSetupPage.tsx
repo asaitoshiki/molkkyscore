@@ -5,15 +5,11 @@ import { Icon } from '../components/Icon'
 import { OrderList } from '../components/OrderList'
 import { Button, TextInput } from '../components/ui'
 import { newId } from '../domain/id'
-import { DEFAULT_RULES } from '../domain/rules'
+import { DEFAULT_RULES, clampHandicap } from '../domain/rules'
 import type { Entry } from '../domain/types'
 import { useAppStore } from '../store/useAppStore'
 
 const TEAM_COUNTS = [1, 2, 3, 4]
-
-/** 目標点に届いている持ち点は試合が成立しないので、その手前で止める */
-const clampHandicap = (raw: string) =>
-  Math.min(Math.max(Math.floor(Number(raw)) || 0, 0), DEFAULT_RULES.targetScore - 1)
 
 /** 参加するチームを 3 段階で決める。人数 → 名前 → 投げる順番の順に確定させる。 */
 export const GameSetupPage = () => {

@@ -6,15 +6,19 @@ export type TeamDraft = {
   key: string
   name: string
   memberIds: string[]
+  /** 持ち点。力の差を埋めるため、この点から始める */
+  handicap: number
 }
 
 export const emptyTeams = (): TeamDraft[] => [
-  { key: newId(), name: '', memberIds: [] },
-  { key: newId(), name: '', memberIds: [] },
+  { key: newId(), name: '', memberIds: [], handicap: 0 },
+  { key: newId(), name: '', memberIds: [], handicap: 0 },
 ]
 
+export const newTeam = (): TeamDraft => ({ key: newId(), name: '', memberIds: [], handicap: 0 })
+
 /** 名前が空のチームには通し番号を振る。 */
-const displayName = (team: TeamDraft, index: number) =>
+export const displayName = (team: TeamDraft, index: number) =>
   team.name.trim() === '' ? `チーム${index + 1}` : team.name.trim()
 
 export const buildTeamEntries = (teams: TeamDraft[]): Entry[] =>
@@ -22,7 +26,7 @@ export const buildTeamEntries = (teams: TeamDraft[]): Entry[] =>
     id: newId(),
     name: displayName(team, index),
     memberIds: team.memberIds,
-    handicap: 0,
+    handicap: team.handicap,
   }))
 
 /** すべてのチームに 1 人以上いて、2 チーム以上そろっていること。 */
