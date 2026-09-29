@@ -6,6 +6,7 @@ import { GamePage } from './pages/GamePage'
 import { TimelinePage } from './pages/TimelinePage'
 import { RemoveAdsPage } from './pages/RemoveAdsPage'
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage'
+import { WatchPage } from './pages/WatchPage'
 import { HistoryPage } from './pages/HistoryPage'
 import { MembersPage } from './pages/MembersPage'
 import { PracticePage } from './pages/PracticePage'
@@ -21,6 +22,7 @@ export const App = () => (
     <Route path="/games/new" element={<GameSetupPage />} />
     <Route path="/remove-ads" element={<RemoveAdsPage />} />
     <Route path="/privacy" element={<PrivacyPolicyPage />} />
+    <Route path="/watch/:seriesId" element={<WatchPage />} />
     <Route path="/games/:gameId" element={<GamePage />} />
     <Route path="/games/:gameId/timeline" element={<TimelinePage />} />
     <Route element={<Layout />}>

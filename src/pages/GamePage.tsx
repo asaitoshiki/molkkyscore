@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { isNative } from '../ads/admob'
 import { InterstitialAd } from '../ads/InterstitialAd'
+import { WatchInvite } from '../components/WatchInvite'
 import { AppBar } from '../components/AppBar'
 import { Icon } from '../components/Icon'
 import { PinPad } from '../components/PinPad'
@@ -32,6 +34,7 @@ export const GamePage = () => {
   const [selectedPins, setSelectedPins] = useState<number[]>([])
   const [thrower, setThrower] = useState<string | null>(null)
   const [effect, setEffect] = useState<ScoreEffect | null>(null)
+  const [inviting, setInviting] = useState(false)
 
   // 合図は流し終えたら片付ける
   useEffect(() => {
@@ -96,14 +99,24 @@ export const GamePage = () => {
           </button>
         }
         right={
-          <button
-            onClick={() => navigate(`/games/${game.id}/timeline`)}
-            aria-label="投球の履歴を開く"
-          >
-            <Icon name="list" size={20} />
-          </button>
+          <>
+            {/* 観戦してもらえるのはアプリ版だけ。記録係の道具という位置づけ */}
+            {isNative() && (
+              <button onClick={() => setInviting(true)} aria-label="観戦してもらう">
+                <Icon name="qr" size={20} />
+              </button>
+            )}
+            <button
+              onClick={() => navigate(`/games/${game.id}/timeline`)}
+              aria-label="投球の履歴を開く"
+            >
+              <Icon name="list" size={20} />
+            </button>
+          </>
         }
       />
+
+      {inviting && <WatchInvite seriesId={game.seriesId} onClose={() => setInviting(false)} />}
 
       <section className="flex flex-1 flex-col px-5 pt-5 pb-5">
         <div className="flex items-baseline justify-between">
