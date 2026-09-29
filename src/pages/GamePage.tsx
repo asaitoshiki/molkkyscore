@@ -115,7 +115,7 @@ export const GamePage = () => {
         }
       />
 
-      <section className="flex flex-1 flex-col justify-center px-5 pt-5 pb-5">
+      <section className="flex flex-1 flex-col px-5 pt-5 pb-5">
         <div className="flex items-baseline justify-between">
           <p className="text-[15px]">
             <span className="eyebrow mr-2 text-muted">NEXT</span>
@@ -145,11 +145,11 @@ export const GamePage = () => {
           </div>
         )}
 
-        <div className="mt-5">
+        <div className="flex flex-1 items-center justify-center py-5">
           <PinPad selected={selectedPins} onToggle={togglePin} />
         </div>
 
-        <p className="mt-4 text-center text-[13px]">
+        <p className="text-center text-[13px]">
           <span className={overshoot ? 'text-alert' : 'text-ink'}>
             <Numeral className="text-xl">{points}</Numeral> 点
           </span>
