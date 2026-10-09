@@ -23,19 +23,44 @@ export type Promotion = {
   slots: PromoSlot[]
 }
 
+/** 楽天アフィリエイト ID。リンクに現れるため秘密ではない */
+const RAKUTEN_AFFILIATE_ID = '58586e3d.b0840aae.58586e3e.c0f2dbe4'
+
 /**
- * 掲載中のリンク。
+ * 楽天市場の検索結果へのアフィリエイトリンクを作る。
  *
- * 例:
- * {
- *   id: 'molkky-set',
- *   title: 'モルックセット',
- *   note: 'これから始める人向け。棒とスキットル一式',
- *   url: 'https://…',            // 楽天アフィリエイトのリンク
- *   slots: ['rules', 'practice'],
- * }
+ * 個別の商品ではなく検索結果に送る。商品が売り切れたり入れ替わったりしても
+ * リンクが死なないため、貼りっぱなしにできる。
  */
-export const PROMOTIONS: Promotion[] = []
+const rakutenSearch = (keyword: string): string => {
+  const target = `https://search.rakuten.co.jp/search/mall/${encodeURIComponent(keyword)}/`
+  const encoded = encodeURIComponent(target)
+  return `https://hb.afl.rakuten.co.jp/hgc/${RAKUTEN_AFFILIATE_ID}/?pc=${encoded}&m=${encoded}`
+}
+
+export const PROMOTIONS: Promotion[] = [
+  {
+    id: 'molkky-set',
+    title: 'モルックセット',
+    note: 'これから始めるなら。棒とスキットル 12 本の一式',
+    url: rakutenSearch('モルック'),
+    slots: ['rules', 'tournament', 'result'],
+  },
+  {
+    id: 'molkky-skittle',
+    title: '予備のスキットル',
+    note: '欠けたり割れたりしたときの買い替えに',
+    url: rakutenSearch('モルック スキットル'),
+    slots: ['practice'],
+  },
+  {
+    id: 'line-tape',
+    title: 'ラインテープ',
+    note: '投擲ラインを引くのに。芝でも土でも使えるもの',
+    url: rakutenSearch('ラインテープ 白'),
+    slots: ['tournament'],
+  },
+]
 
 export const promotionsFor = (slot: PromoSlot): Promotion[] =>
   PROMOTIONS.filter((promotion) => promotion.slots.includes(slot))
