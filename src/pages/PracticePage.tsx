@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Button, EmptyState, Numeral, SectionTitle } from '../components/ui'
+import { PromoBlock } from '../components/PromoBlock'
 import { PIN_NUMBERS } from '../domain/rules'
 import { useAppStore } from '../store/useAppStore'
 
@@ -163,6 +164,8 @@ export const PracticePage = () => {
           </ul>
         )}
       </section>
+
+      <PromoBlock slot="practice" />
     </div>
   )
 }

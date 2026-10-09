@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { Icon } from '../components/Icon'
+import { PromoBlock } from '../components/PromoBlock'
 import { Button, EmptyState } from '../components/ui'
 import { championOf } from '../domain/tournament'
 import { useAppStore } from '../store/useAppStore'
@@ -65,6 +66,8 @@ export const TournamentsPage = () => {
             })}
         </ul>
       )}
+
+      <PromoBlock slot="tournament" />
     </div>
   )
 }

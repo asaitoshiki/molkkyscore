@@ -7,6 +7,7 @@ import { AppBar } from '../components/AppBar'
 import { Icon } from '../components/Icon'
 import { MissingRecord } from '../components/MissingRecord'
 import { PinPad } from '../components/PinPad'
+import { PromoBlock } from '../components/PromoBlock'
 import { ScoreTable } from '../components/ScoreTable'
 import type { ScoreEffect } from '../components/ScoreTable'
 import { Button, Numeral } from '../components/ui'
@@ -299,6 +300,11 @@ const ResultView = ({
       </ol>
 
       {showingAd && <InterstitialAd onClose={onNext} />}
+
+      {/* 操作ボタンより上に置く。押し間違いで試合の進行を妨げないため */}
+      <div className="px-5">
+        <PromoBlock slot="result" />
+      </div>
 
       <div className="space-y-3 px-5 pt-6 pb-8">
         <Button
