@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    モルックのスキットル。上面が斜めに切られた木の棒で、切り口の面を明るく描き分ける。
+    胴に再生の三角を置き、押せば始まることを示す。
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="64dp"
+    android:viewportWidth="48"
+    android:viewportHeight="64">
+
+    <!-- 胴 -->
+    <path
+        android:fillColor="@color/widget_wood"
+        android:strokeColor="@color/widget_wood_edge"
+        android:strokeWidth="1"
+        android:pathData="M10,22 L38,12 L38,58 Q38,62 34,62 L14,62 Q10,62 10,58 Z" />
+
+    <!-- 斜めの切り口 -->
+    <path
+        android:fillColor="@color/widget_wood_cut"
+        android:strokeColor="@color/widget_wood_edge"
+        android:strokeWidth="1"
+        android:pathData="M10,22 L38,12 Q40,9 36,8 L12,16 Q7,18 10,22 Z" />
+
+    <!-- 再生の三角 -->
+    <path
+        android:fillColor="@color/widget_accent"
+        android:pathData="M20,30 L32,38 L20,46 Z" />
+</vector>

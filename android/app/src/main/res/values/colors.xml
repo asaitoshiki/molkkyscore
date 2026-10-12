@@ -2,4 +2,12 @@
 <resources>
     <!-- 起動画面の地。ランチャーアイコンと同じ深緑にする -->
     <color name="splash_background">#1D5240</color>
+
+    <!-- ウィジェット。アプリの紙・罫線・深緑に揃え、スキットルは白樺の木の色にする -->
+    <color name="widget_paper">#F3F4F1</color>
+    <color name="widget_rule">#DCDFD8</color>
+    <color name="widget_accent">#1D5240</color>
+    <color name="widget_wood">#DDC39A</color>
+    <color name="widget_wood_cut">#F0E2C6</color>
+    <color name="widget_wood_edge">#A88B62</color>
 </resources>

@@ -17,6 +17,7 @@
   "dependencies": {
     "@capacitor-community/admob": "^8.1.0",
     "@capacitor/android": "^8.5.2",
+    "@capacitor/app": "^8.1.2",
     "@capacitor/core": "^8.5.2",
     "cordova-plugin-purchase": "^13.18.0",
     "qrcode": "^1.5.4",

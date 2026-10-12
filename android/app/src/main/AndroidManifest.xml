@@ -24,6 +24,19 @@
 
         </activity>
 
+        <!-- ホーム画面の「今すぐ PLAY」ウィジェット -->
+        <receiver
+            android:name=".PlayWidgetProvider"
+            android:exported="false"
+            android:label="@string/play_widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/play_widget_info" />
+        </receiver>
+
         <!--
             AdMob のアプリ ID。いまは Google が公開しているテスト用の ID を入れてある。
             ストアに出す前に、AdMob で発行した自分のアプリ ID に差し替えること。
