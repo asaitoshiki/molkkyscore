@@ -65,19 +65,21 @@ export const HomePage = () => {
             {recent.map((game) => {
               const summary = summarizeGame(game)
               return (
-                <li key={game.id} className="flex items-center justify-between py-3.5">
-                  <span>
-                    <span className="block text-[15px]">{summary.winnerName ?? '勝者なし'}</span>
-                    <span className="tabular block text-[12px] text-muted">
-                      {summary.lines.map((line) => `${line.name} ${line.score}`).join('　')}
+                <li key={game.id}>
+                  <Link to={`/games/${game.id}`} className="flex items-center justify-between py-3.5">
+                    <span>
+                      <span className="block text-[15px]">{summary.winnerName ?? '勝者なし'}</span>
+                      <span className="tabular block text-[12px] text-muted">
+                        {summary.lines.map((line) => `${line.name} ${line.score}`).join('　')}
+                      </span>
                     </span>
-                  </span>
-                  <time className="tabular text-[12px] text-faint">
-                    {new Date(game.finishedAt!).toLocaleDateString('ja-JP', {
-                      month: 'numeric',
-                      day: 'numeric',
-                    })}
-                  </time>
+                    <time className="tabular text-[12px] text-faint">
+                      {new Date(game.finishedAt!).toLocaleDateString('ja-JP', {
+                        month: 'numeric',
+                        day: 'numeric',
+                      })}
+                    </time>
+                  </Link>
                 </li>
               )
             })}

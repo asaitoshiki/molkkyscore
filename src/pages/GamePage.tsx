@@ -98,6 +98,8 @@ const GameView = ({ gameId }: { gameId: string }) => {
         seriesGames={seriesGames}
         onNext={() => navigate(`/games/${addGameToSeries(game.seriesId)}`, { replace: true })}
         onFinish={() => navigate('/')}
+        onUndo={() => rewindTo(game.id, game.throws.length - 1)}
+        onTimeline={() => navigate(`/games/${game.id}/timeline`)}
       />
     )
   }
@@ -231,11 +233,15 @@ const ResultView = ({
   seriesGames,
   onNext,
   onFinish,
+  onUndo,
+  onTimeline,
 }: {
   game: Game
   seriesGames: Game[]
   onNext: () => void
   onFinish: () => void
+  onUndo: () => void
+  onTimeline: () => void
 }) => {
   const adFree = useAppStore((state) => state.adFree)
   const gamesSinceInterstitial = useAppStore((state) => state.gamesSinceInterstitial)
@@ -258,6 +264,9 @@ const ResultView = ({
     onNext()
   }
   const standings = [...seriesStandings(seriesGames)].sort((a, b) => b.total - a.total)
+  const latest = seriesGames.at(-1)!.id === game.id
+  const lastThrow = game.throws.at(-1)!
+  const lastEntryName = game.entries.find((entry) => entry.id === lastThrow.entryId)!.name
   const date = new Date(game.createdAt).toISOString().slice(0, 10)
 
   const share = async (
@@ -275,13 +284,18 @@ const ResultView = ({
       <AppBar
         title="ゲーム結果"
         right={
-          <button
-            aria-label="結果を共有する"
-            disabled={busy}
-            onClick={() => share(renderResultCard, 'result')}
-          >
-            <Icon name="share" size={20} />
-          </button>
+          <>
+            <button
+              aria-label="結果を共有する"
+              disabled={busy}
+              onClick={() => share(renderResultCard, 'result')}
+            >
+              <Icon name="share" size={20} />
+            </button>
+            <button onClick={onTimeline} aria-label="投球の履歴を開く">
+              <Icon name="list" size={20} />
+            </button>
+          </>
         }
       />
 
@@ -293,6 +307,23 @@ const ResultView = ({
           <p className="mt-2 font-serif text-3xl leading-snug">
             <span className="text-accent">{winnerName}</span> の勝利
           </p>
+        )}
+        {/* 誤タップで決着してしまったときの戻り道。続きのゲームを始めたあとは並びが崩れるので出さない */}
+        {latest && (
+          <div className="mt-5">
+            <p className="tabular text-[12px] text-muted">
+              最後の投球　{lastEntryName}
+              {'　'}
+              {lastThrow.pins.length === 0 ? 'ミス' : `+${pointsOf(lastThrow.pins)}`}
+            </p>
+            <Button
+              variant="outline"
+              className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 text-[14px]"
+              onClick={onUndo}
+            >
+              <Icon name="undo" size={16} />1 つ戻る
+            </Button>
+          </div>
         )}
       </section>
 

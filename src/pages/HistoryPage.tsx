@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { Button, EmptyState, Numeral } from '../components/ui'
 import { ShareActions } from '../components/ShareActions'
 import { summarizeGame } from '../domain/stats'
@@ -23,34 +24,37 @@ export const HistoryPage = () => {
             const summary = summarizeGame(game)
             return (
               <li key={game.id} className="py-4">
-                <div className="flex items-baseline justify-between">
-                  <p className="text-[15px]">
-                    {game.finishedAt === null ? (
-                      <span className="text-muted">進行中</span>
-                    ) : (
-                      summary.winnerName ?? '勝者なし'
-                    )}
-                  </p>
-                  <time className="tabular text-[12px] text-faint">
-                    {new Date(game.createdAt).toLocaleString('ja-JP', {
-                      month: 'numeric',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </time>
-                </div>
-                <ul className="mt-2">
-                  {summary.lines.map((line) => (
-                    <li key={line.entryId} className="flex items-baseline justify-between py-0.5">
-                      <span className={`text-[13px] ${line.eliminated ? 'text-alert' : 'text-muted'}`}>
-                        {line.name}
-                        {line.eliminated && '（失格）'}
-                      </span>
-                      <Numeral className="text-base">{line.score}</Numeral>
-                    </li>
-                  ))}
-                </ul>
+                {/* 開くと結果画面へ。誤って終えた試合もそこから 1 つ戻せる */}
+                <Link to={`/games/${game.id}`} className="block">
+                  <div className="flex items-baseline justify-between">
+                    <p className="text-[15px]">
+                      {game.finishedAt === null ? (
+                        <span className="text-muted">進行中</span>
+                      ) : (
+                        summary.winnerName ?? '勝者なし'
+                      )}
+                    </p>
+                    <time className="tabular text-[12px] text-faint">
+                      {new Date(game.createdAt).toLocaleString('ja-JP', {
+                        month: 'numeric',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </time>
+                  </div>
+                  <ul className="mt-2">
+                    {summary.lines.map((line) => (
+                      <li key={line.entryId} className="flex items-baseline justify-between py-0.5">
+                        <span className={`text-[13px] ${line.eliminated ? 'text-alert' : 'text-muted'}`}>
+                          {line.name}
+                          {line.eliminated && '（失格）'}
+                        </span>
+                        <Numeral className="text-base">{line.score}</Numeral>
+                      </li>
+                    ))}
+                  </ul>
+                </Link>
                 {game.finishedAt !== null && (
                   <div className="mt-3">
                     <ShareActions game={game} size="small" />
