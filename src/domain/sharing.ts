@@ -4,5 +4,5 @@
  */
 export const PUBLIC_WEB_URL = 'https://asaitoshiki.github.io/molkkyscore/'
 
-/** 観戦できる場所。セット単位で見せるので、鍵はセットの識別子。 */
-export const watchUrl = (seriesId: string) => `${PUBLIC_WEB_URL}#/watch/${seriesId}`
+/** 観戦できる場所。鍵は推測できないランダム値で、知っている人だけが見られる */
+export const watchUrl = (shareId: string) => `${PUBLIC_WEB_URL}#/watch/${shareId}`

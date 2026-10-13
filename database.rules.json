@@ -1,0 +1,13 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "watch": {
+      "$shareId": {
+        ".read": true,
+        ".write": "auth != null && (!data.exists() || data.child('ownerUid').val() === auth.uid)",
+        ".validate": "newData.hasChildren(['ownerUid', 'updatedAt', 'expiresAt', 'payload']) && newData.child('ownerUid').val() === auth.uid && newData.child('payload').isString() && newData.child('payload').val().length < 200000"
+      }
+    }
+  }
+}

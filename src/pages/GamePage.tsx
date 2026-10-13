@@ -19,6 +19,7 @@ import type { Game } from '../domain/types'
 import { shareImage } from '../share/canvas'
 import { renderResultCard } from '../share/resultCard'
 import { renderScoreSheet } from '../share/scoreSheetImage'
+import { publishWatch } from '../sync/watchChannel'
 import { useAppStore } from '../store/useAppStore'
 
 /** 記録が残っているかだけ先に見る。消えた試合の URL でも画面が落ちないようにする。 */
@@ -44,6 +45,14 @@ const GameView = ({ gameId }: { gameId: string }) => {
   const [thrower, setThrower] = useState<string | null>(null)
   const [effect, setEffect] = useState<ScoreEffect | null>(null)
   const [inviting, setInviting] = useState(false)
+
+  // 観戦に共有しているあいだは、記録が変わるたびに送る。
+  // 電波が途切れても試合は止めない（届かなかった分は次の送信で上書きされる）
+  const shareId = useAppStore((state) => state.shares[game.seriesId])
+  useEffect(() => {
+    if (shareId === undefined) return
+    publishWatch(shareId, seriesGames, members).catch(() => undefined)
+  }, [shareId, seriesGames, members])
 
   // 合図は流し終えたら片付ける
   useEffect(() => {
@@ -125,7 +134,14 @@ const GameView = ({ gameId }: { gameId: string }) => {
         }
       />
 
-      {inviting && <WatchInvite seriesId={game.seriesId} onClose={() => setInviting(false)} />}
+      {inviting && (
+        <WatchInvite
+          seriesId={game.seriesId}
+          seriesGames={seriesGames}
+          members={members}
+          onClose={() => setInviting(false)}
+        />
+      )}
 
       <section className="flex flex-1 flex-col px-5 pt-5 pb-5">
         <div className="flex items-baseline justify-between">
