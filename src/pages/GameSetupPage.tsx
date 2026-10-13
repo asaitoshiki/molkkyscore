@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { AppBar } from '../components/AppBar'
 import { Icon } from '../components/Icon'
 import { OrderList } from '../components/OrderList'
+import { moveItem } from '../domain/order'
 import { Button, TextInput } from '../components/ui'
 import { newId } from '../domain/id'
 import { DEFAULT_RULES, clampHandicap } from '../domain/rules'
@@ -126,13 +127,14 @@ export const GameSetupPage = () => {
         <section className="flex flex-1 flex-col px-5 py-8">
           <p className="text-center text-[15px]">投げる順番を決めてください</p>
           <p className="mt-1 mb-6 text-center text-[12px] text-muted">
-            ＊右の取っ手を長押しすると上下に動かせます
+            ＊右の取っ手をつまんで上下に動かせます
           </p>
           <OrderList
             items={names}
-            onChange={(reordered) => {
-              setHandicaps(reordered.map((name) => handicaps[names.indexOf(name)]))
-              setNames(reordered)
+            onMove={(from, to) => {
+              // 名前とハンデは同じ位置で対応しているので、そろえて動かす
+              setNames(moveItem(names, from, to))
+              setHandicaps(moveItem(handicaps, from, to))
             }}
           />
           <Button className="mt-8 w-full py-3.5" onClick={start}>
