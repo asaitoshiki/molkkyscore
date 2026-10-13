@@ -67,4 +67,26 @@ describe('大会と試合の連動', () => {
     // 決勝の枠も空に戻る
     expect(after.matches.find((m) => m.round === 2)!.entryIds).toEqual([null, null])
   })
+
+  it('チーム名を変えても投球は残り、続きのゲームと大会の対戦表の名前もそろう', () => {
+    const tournamentId = useAppStore
+      .getState()
+      .createTournament('名前変更', 'knockout', entriesOf(2), DEFAULT_RULES)
+    const match = useAppStore.getState().tournaments.find((t) => t.id === tournamentId)!.matches[0]
+    const gameId = useAppStore
+      .getState()
+      .createGame(entriesOf(2), DEFAULT_RULES, { tournamentId, matchId: match.id })
+    useAppStore.getState().recordThrow(gameId, [12], 'm1')
+    const seriesId = useAppStore.getState().games.find((g) => g.id === gameId)!.seriesId
+    const nextId = useAppStore.getState().addGameToSeries(seriesId)
+
+    useAppStore.getState().renameEntries({ e1: '  ひまわり  ' })
+
+    const state = useAppStore.getState()
+    const game = state.games.find((g) => g.id === gameId)!
+    expect(game.entries.map((e) => e.name)).toEqual(['ひまわり', 'E2'])
+    expect(game.throws).toHaveLength(1)
+    expect(state.games.find((g) => g.id === nextId)!.entries[0].name).toBe('ひまわり')
+    expect(state.tournaments.find((t) => t.id === tournamentId)!.entries[0].name).toBe('ひまわり')
+  })
 })

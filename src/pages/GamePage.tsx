@@ -100,6 +100,7 @@ const GameView = ({ gameId }: { gameId: string }) => {
         onFinish={() => navigate('/')}
         onUndo={() => rewindTo(game.id, game.throws.length - 1)}
         onTimeline={() => navigate(`/games/${game.id}/timeline`)}
+        onRename={() => navigate(`/games/${game.id}/teams`)}
       />
     )
   }
@@ -126,6 +127,9 @@ const GameView = ({ gameId }: { gameId: string }) => {
                 <Icon name="qr" size={20} />
               </button>
             )}
+            <button onClick={() => navigate(`/games/${game.id}/teams`)} aria-label="チーム名を変更する">
+              <Icon name="edit" size={20} />
+            </button>
             <button
               onClick={() => navigate(`/games/${game.id}/timeline`)}
               aria-label="投球の履歴を開く"
@@ -235,6 +239,7 @@ const ResultView = ({
   onFinish,
   onUndo,
   onTimeline,
+  onRename,
 }: {
   game: Game
   seriesGames: Game[]
@@ -242,6 +247,7 @@ const ResultView = ({
   onFinish: () => void
   onUndo: () => void
   onTimeline: () => void
+  onRename: () => void
 }) => {
   const adFree = useAppStore((state) => state.adFree)
   const gamesSinceInterstitial = useAppStore((state) => state.gamesSinceInterstitial)
@@ -291,6 +297,9 @@ const ResultView = ({
               onClick={() => share(renderResultCard, 'result')}
             >
               <Icon name="share" size={20} />
+            </button>
+            <button onClick={onRename} aria-label="チーム名を変更する">
+              <Icon name="edit" size={20} />
             </button>
             <button onClick={onTimeline} aria-label="投球の履歴を開く">
               <Icon name="list" size={20} />

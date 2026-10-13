@@ -32,6 +32,7 @@ const paths = {
   grip: 'M5 9.5h14M5 14.5h14',
   chevronLeft: 'M14 6l-6 6 6 6',
   // 観戦してもらうための QR
+  edit: 'M4 20h4L19 9l-4-4L4 16v4ZM13.5 6.5l4 4',
   qr: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2M18 14h2M20 16v2M14 18h2v2M18 20h2v-2',
 } as const
 

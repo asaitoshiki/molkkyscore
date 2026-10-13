@@ -50,6 +50,8 @@ type AppState = {
   /** 先頭から count 投だけ残して、それ以降を取り消す */
   rewindTo: (gameId: string, count: number) => void
   deleteGame: (gameId: string) => void
+  /** チーム名を変える。キーはチームの ID */
+  renameEntries: (names: Record<string, string>) => void
 
   createTournament: (
     name: string,
@@ -209,6 +211,21 @@ export const useAppStore = create<AppState>()(
         const game = state.games.find((item) => item.id === gameId)!
         set(replaceThrows(state, gameId, game.throws.slice(0, count)))
       },
+
+      // 同じチームが続きのゲームや大会の対戦表にもいるので、ID が同じものはまとめて変える。
+      // 投球は ID にひも付いているため、名前を変えても点数と手番はそのまま残る
+      renameEntries: (names) =>
+        set((state) => {
+          const rename = (entry: Entry) =>
+            entry.id in names ? { ...entry, name: names[entry.id].trim() } : entry
+          return {
+            games: state.games.map((game) => ({ ...game, entries: game.entries.map(rename) })),
+            tournaments: state.tournaments.map((tournament) => ({
+              ...tournament,
+              entries: tournament.entries.map(rename),
+            })),
+          }
+        }),
 
       // 大会から作った試合を消すときは、対戦表に残るリンクと勝者も一緒に外す
       deleteGame: (gameId) =>
