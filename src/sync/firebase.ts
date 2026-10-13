@@ -7,11 +7,13 @@ import type { FirebaseApp, FirebaseOptions } from 'firebase/app'
  * 誰が何を読み書きできるかは database.rules.json のルールで守る。
  */
 const FIREBASE_CONFIG: FirebaseOptions = {
-  apiKey: '',
-  authDomain: '',
-  databaseURL: '',
-  projectId: '',
-  appId: '',
+  apiKey: 'AIzaSyCCchq0sogL38VoQ_PbFCrwpB4DnxvOxHQ',
+  authDomain: 'molkkyscore-223e5.firebaseapp.com',
+  databaseURL: 'https://molkkyscore-223e5-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId: 'molkkyscore-223e5',
+  storageBucket: 'molkkyscore-223e5.firebasestorage.app',
+  messagingSenderId: '785626497777',
+  appId: '1:785626497777:web:6ee5bcf6f254bcb959df50',
 }
 
 /**
