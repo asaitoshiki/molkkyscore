@@ -82,7 +82,7 @@ export const renderResultCard = async (
 
   ctx.textAlign = 'right'
   ctx.fillStyle = FAINT
-  ctx.fillText('molkkyscore', WIDTH - PADDING, y + 24)
+  ctx.fillText('モルメモ', WIDTH - PADDING, y + 24)
   ctx.textAlign = 'left'
 
   return canvas

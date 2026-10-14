@@ -142,7 +142,7 @@ export const renderScoreSheet = async (
   ctx.font = `400 24px ${SANS}`
   ctx.fillStyle = FAINT
   ctx.textAlign = 'right'
-  ctx.fillText('molkkyscore', width - PADDING, height - PADDING + 10)
+  ctx.fillText('モルメモ', width - PADDING, height - PADDING + 10)
   ctx.textAlign = 'left'
 
   return canvas

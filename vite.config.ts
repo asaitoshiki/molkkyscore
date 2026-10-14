@@ -15,8 +15,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
-        name: 'モルックノート',
-        short_name: 'モルック',
+        name: 'モルメモ',
+        short_name: 'モルメモ',
         description: 'モルックのスコア記録・戦績管理・大会運営アプリ',
         lang: 'ja',
         theme_color: '#0f172a',

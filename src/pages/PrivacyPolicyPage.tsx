@@ -72,7 +72,7 @@ export const PrivacyPolicyPage = () => {
 
       <div className="space-y-7 px-5 py-8">
         <p className="text-[13px] text-muted">
-          モルックノート（molkkyscore）における、利用者の情報の取り扱いについて定めます。
+          モルメモにおける、利用者の情報の取り扱いについて定めます。
         </p>
 
         {SECTIONS.map((section) => (

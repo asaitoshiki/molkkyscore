@@ -17,7 +17,7 @@ export const HomePage = () => {
     <div className="space-y-8">
       <header>
         <p className="eyebrow text-accent">MÖLKKY</p>
-        <h1 className="mt-1 font-serif text-3xl leading-tight">モルックノート</h1>
+        <h1 className="mt-1 font-serif text-3xl leading-tight">モルメモ</h1>
         <p className="mt-2 text-[13px] text-muted">スコアと戦績を、その場で残す。</p>
       </header>
 
