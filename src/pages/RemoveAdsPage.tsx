@@ -8,7 +8,7 @@ import { isStoreAvailable, purchaseAdFree, restoreAdFree } from '../billing/purc
 import { useAppStore } from '../store/useAppStore'
 
 const BENEFITS = [
-  'ゲームの区切りに出る広告が表示されなくなります',
+  'ゲームの区切りに出る広告も、画面の下に出る広告も、すべて表示されなくなります',
   '一度の買い切りで、追加の支払いはありません',
   '機種を変えても、購入を復元すれば引き継げます',
 ]

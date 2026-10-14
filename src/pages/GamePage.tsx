@@ -357,10 +357,12 @@ const ResultView = ({
 
       {showingAd && <InterstitialAd onClose={onNext} />}
 
-      {/* 操作ボタンより上に置く。押し間違いで試合の進行を妨げないため */}
-      <div className="px-5">
-        <PromoBlock slot="result" />
-      </div>
+      {/* 操作ボタンより上に置く。押し間違いで試合の進行を妨げないため。広告除去を買った人には出さない */}
+      {!adFree && (
+        <div className="px-5">
+          <PromoBlock slot="result" />
+        </div>
+      )}
 
       <div className="space-y-3 px-5 pt-6 pb-8">
         <Button

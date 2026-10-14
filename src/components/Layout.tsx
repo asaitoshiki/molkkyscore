@@ -3,6 +3,7 @@ import { Icon } from './Icon'
 import type { IconName } from './Icon'
 import { PromoBar } from './PromoBar'
 import type { PromoSlot } from '../domain/promotions'
+import { useAppStore } from '../store/useAppStore'
 
 const tabs: { to: string; label: string; icon: IconName }[] = [
   { to: '/', label: '試合', icon: 'play' },
@@ -22,7 +23,9 @@ const PROMO_ROUTES: { prefix: string; slot: PromoSlot }[] = [
 /** 下タブ付きの共通レイアウト。試合画面だけはタブを隠して入力に集中させる。 */
 export const Layout = () => {
   const { pathname } = useLocation()
-  const slot = PROMO_ROUTES.find((route) => pathname.startsWith(route.prefix))?.slot
+  const adFree = useAppStore((state) => state.adFree)
+  // 広告除去を買った人には、楽天の帯も出さない。「広告なし」の約束を AdMob だけで終わらせない
+  const slot = adFree ? undefined : PROMO_ROUTES.find((route) => pathname.startsWith(route.prefix))?.slot
 
   return (
     <div className="mx-auto flex min-h-full max-w-md flex-col">
