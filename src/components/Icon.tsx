@@ -33,6 +33,8 @@ const paths = {
   chevronLeft: 'M14 6l-6 6 6 6',
   // 観戦してもらうための QR
   edit: 'M4 20h4L19 9l-4-4L4 16v4ZM13.5 6.5l4 4',
+  sound: 'M4 9v6h4l5 4V5L8 9H4ZM16 9.5a3.5 3.5 0 0 1 0 5M18.5 7a7 7 0 0 1 0 10',
+  mute: 'M4 9v6h4l5 4V5L8 9H4ZM17 9.5l5 5M22 9.5l-5 5',
   qr: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2M18 14h2M20 16v2M14 18h2v2M18 20h2v-2',
 } as const
 

@@ -26,12 +26,15 @@ type AppState = {
   practices: PracticeSession[]
   /** 広告除去を購入済みか */
   adFree: boolean
+  /** 効果音を鳴らすか */
+  soundOn: boolean
   /** 観戦に共有中のセット。キーはセットの識別子、値は観戦リンクの鍵 */
   shares: Record<string, string>
   /** 前回の全画面広告から何ゲーム終えたか */
   gamesSinceInterstitial: number
 
   setAdFree: (adFree: boolean) => void
+  setSoundOn: (soundOn: boolean) => void
   startShare: (seriesId: string, shareId: string) => void
   endShare: (seriesId: string) => void
   countFinishedGame: () => void
@@ -101,10 +104,13 @@ export const useAppStore = create<AppState>()(
       tournaments: [],
       practices: [],
       adFree: false,
+      soundOn: true,
       shares: {},
       gamesSinceInterstitial: 0,
 
       setAdFree: (adFree) => set({ adFree }),
+
+      setSoundOn: (soundOn) => set({ soundOn }),
 
       startShare: (seriesId, shareId) =>
         set((state) => ({ shares: { ...state.shares, [seriesId]: shareId } })),
@@ -280,13 +286,14 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'molkky-note-v1',
-      version: 4,
-      // 保存済みの形に足りない項目を補う。セット（連戦）・ハンデ・観戦の共有はあとから入れた
+      version: 5,
+      // 保存済みの形に足りない項目を補う。セット（連戦）・ハンデ・観戦の共有・効果音はあとから入れた
       migrate: (persisted) => {
         const state = persisted as {
           games?: (Game & { seriesId?: string; gameNumber?: number })[]
           tournaments?: Tournament[]
           shares?: Record<string, string>
+          soundOn?: boolean
         }
         const withHandicap = (entries: (Entry & { handicap?: number })[]) =>
           entries.map((entry) => ({ ...entry, handicap: entry.handicap ?? 0 }))
@@ -294,6 +301,7 @@ export const useAppStore = create<AppState>()(
         return {
           ...state,
           shares: state.shares ?? {},
+          soundOn: state.soundOn ?? true,
           games: (state.games ?? []).map((game) => ({
             ...game,
             seriesId: game.seriesId ?? newId(),

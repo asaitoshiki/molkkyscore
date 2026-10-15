@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { Icon } from './Icon'
 import { Numeral } from './ui'
 
@@ -38,9 +39,12 @@ const slotOf = (index: number, drag: Drag, to: number) => {
 export const OrderList = ({
   items,
   onMove,
+  renderItem,
 }: {
   items: string[]
   onMove: (from: number, to: number) => void
+  /** 番号と取っ手のあいだに置く中身。名前の入力欄などを置ける */
+  renderItem: (item: string, index: number) => ReactNode
 }) => {
   const rowRefs = useRef<HTMLLIElement[]>([])
   const [drag, setDrag] = useState<Drag | null>(null)
@@ -92,7 +96,9 @@ export const OrderList = ({
   const to = drag === null ? null : targetOf(drag)
 
   return (
-    <ul className="relative select-none divide-y divide-rule border-y border-rule">
+    <ul
+      className={`relative divide-y divide-rule border-y border-rule ${drag === null ? '' : 'select-none'}`}
+    >
       {items.map((item, index) => {
         const lifted = drag !== null && drag.from === index
         const slot = drag === null ? index : slotOf(index, drag, to!)
@@ -115,7 +121,7 @@ export const OrderList = ({
             }`}
           >
             <Numeral className="w-6 text-center text-[15px] text-muted">{slot + 1}</Numeral>
-            <span className="flex-1 truncate text-[15px]">{item}</span>
+            <div className="flex min-w-0 flex-1 items-center gap-2">{renderItem(item, index)}</div>
             <button
               aria-label={`${item} を並べ替える`}
               className={`touch-none px-2 py-1 ${lifted ? 'cursor-grabbing text-accent' : 'cursor-grab text-faint'}`}

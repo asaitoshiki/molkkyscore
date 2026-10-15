@@ -13,6 +13,8 @@ import type { ScoreEffect } from '../components/ScoreTable'
 import { Button, Numeral } from '../components/ui'
 import { INTERSTITIAL_INTERVAL } from '../domain/billing'
 import { computeGameState } from '../domain/game'
+import { outcomeOf } from '../domain/outcome'
+import type { ThrowOutcome } from '../domain/outcome'
 import { pointsOf } from '../domain/rules'
 import { gamesOfSeries, seriesStandings } from '../domain/series'
 import type { Game } from '../domain/types'
@@ -20,6 +22,7 @@ import { shareImage } from '../share/canvas'
 import { renderResultCard } from '../share/resultCard'
 import { renderScoreSheet } from '../share/scoreSheetImage'
 import { publishWatch } from '../sync/watchChannel'
+import { useSound } from '../sound/useSound'
 import { useAppStore } from '../store/useAppStore'
 
 /** 記録が残っているかだけ先に見る。消えた試合の URL でも画面が落ちないようにする。 */
@@ -28,6 +31,13 @@ export const GamePage = () => {
   const exists = useAppStore((state) => state.games.some((item) => item.id === gameId))
   if (!exists) return <MissingRecord label="この試合" to="/history" />
   return <GameView gameId={gameId} />
+}
+
+/** 点数のほかに伝えるべき結果。これ以外は「+点数」で示す */
+const EFFECT_LABEL: Partial<Record<ThrowOutcome, string>> = {
+  miss: 'ミス',
+  eliminated: '失格',
+  overshoot: '超過',
 }
 
 const GameView = ({ gameId }: { gameId: string }) => {
@@ -40,6 +50,9 @@ const GameView = ({ gameId }: { gameId: string }) => {
   const recordThrow = useAppStore((state) => state.recordThrow)
   const rewindTo = useAppStore((state) => state.rewindTo)
   const addGameToSeries = useAppStore((state) => state.addGameToSeries)
+  const soundOn = useAppStore((state) => state.soundOn)
+  const setSoundOn = useAppStore((state) => state.setSoundOn)
+  const sound = useSound()
 
   const [selectedPins, setSelectedPins] = useState<number[]>([])
   const [thrower, setThrower] = useState<string | null>(null)
@@ -69,16 +82,17 @@ const GameView = ({ gameId }: { gameId: string }) => {
   const submit = () => {
     const entryId = state.currentEntryId!
     const gained = pointsOf(selectedPins)
-    const over = state.entries.find((item) => item.entryId === entryId)!.score + gained >
-      game.rules.targetScore
+    // 記録する前に結果を見て、合図の文字と効果音を同じ判定から選ぶ
+    const outcome = outcomeOf(game, selectedPins)
 
     recordThrow(game.id, selectedPins, thrower ?? undefined)
+    sound(outcome)
     setEffect({
       entryId,
       name: entryOf(entryId).name,
       // 数字は札が示すので、合図の文字は短くして重ならないようにする
-      label: gained === 0 ? 'ミス' : over ? '超過' : `+${gained}`,
-      tone: gained === 0 || over ? 'alert' : 'accent',
+      label: EFFECT_LABEL[outcome] ?? `+${gained}`,
+      tone: outcome in EFFECT_LABEL ? 'alert' : 'accent',
       // 投球ごとに異なる値にして、同じ得点が続いても合図を出し直す
       token: game.throws.length + 1,
     })
@@ -86,10 +100,12 @@ const GameView = ({ gameId }: { gameId: string }) => {
     setThrower(null)
   }
 
-  const togglePin = (pin: number) =>
+  const togglePin = (pin: number) => {
+    sound('tap')
     setSelectedPins((current) =>
       current.includes(pin) ? current.filter((value) => value !== pin) : [...current, pin],
     )
+  }
 
   if (state.finished) {
     return (
@@ -98,7 +114,10 @@ const GameView = ({ gameId }: { gameId: string }) => {
         seriesGames={seriesGames}
         onNext={() => navigate(`/games/${addGameToSeries(game.seriesId)}`, { replace: true })}
         onFinish={() => navigate('/')}
-        onUndo={() => rewindTo(game.id, game.throws.length - 1)}
+        onUndo={() => {
+          sound('undo')
+          rewindTo(game.id, game.throws.length - 1)
+        }}
         onTimeline={() => navigate(`/games/${game.id}/timeline`)}
         onRename={() => navigate(`/games/${game.id}/teams`)}
       />
@@ -115,9 +134,17 @@ const GameView = ({ gameId }: { gameId: string }) => {
       <AppBar
         title={`第 ${game.gameNumber} ゲーム`}
         left={
-          <button onClick={() => navigate('/')} aria-label="中断してホームへ">
-            <Icon name="home" size={20} />
-          </button>
+          <>
+            <button onClick={() => navigate('/')} aria-label="中断してホームへ">
+              <Icon name="home" size={20} />
+            </button>
+            <button
+              onClick={() => setSoundOn(!soundOn)}
+              aria-label={soundOn ? '効果音を消す' : '効果音を鳴らす'}
+            >
+              <Icon name={soundOn ? 'sound' : 'mute'} size={20} />
+            </button>
+          </>
         }
         right={
           <>
@@ -198,6 +225,7 @@ const GameView = ({ gameId }: { gameId: string }) => {
             variant="outline"
             disabled={game.throws.length === 0}
             onClick={() => {
+              sound('undo')
               rewindTo(game.id, game.throws.length - 1)
               setSelectedPins([])
             }}

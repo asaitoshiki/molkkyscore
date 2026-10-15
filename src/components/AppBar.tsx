@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 
 /**
- * 画面上部の帯。左右に操作、中央に現在地を置く。
- * ウィザードと試合画面で同じ形を使い、どこにいるかを一定の位置で示す。
+ * 画面上部の見出し。紙の地に、左から操作・見出し・右の操作を並べる。
+ * 色の付いた帯にはせず、本文と地続きにして静かに見せる。
  */
 export const AppBar = ({
   title,
@@ -13,13 +13,11 @@ export const AppBar = ({
   left?: ReactNode
   right?: ReactNode
 }) => (
-  <header className="safe-top sticky top-0 z-10 bg-accent text-paper">
-    <div className="relative flex h-12 items-center px-3">
-      <div className="flex min-w-16 items-center gap-4">{left}</div>
-      <p className="eyebrow pointer-events-none absolute inset-x-0 text-center text-paper">
-        {title}
-      </p>
-      <div className="ml-auto flex min-w-16 items-center justify-end gap-4">{right}</div>
+  <header className="safe-top sticky top-0 z-10 border-b border-rule bg-paper/95 backdrop-blur">
+    <div className="flex h-12 items-center gap-3 px-4">
+      <div className="flex items-center gap-4 text-muted">{left}</div>
+      <p className="min-w-0 flex-1 truncate text-[15px] font-medium text-ink">{title}</p>
+      <div className="flex items-center gap-4 text-muted">{right}</div>
     </div>
   </header>
 )
