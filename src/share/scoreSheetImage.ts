@@ -108,7 +108,8 @@ export const renderScoreSheet = async (
       ctx.font = `400 34px ${SANS}`
       ctx.fillStyle = cell.points === 0 ? MUTED : INK
       ctx.fillText(
-        cell.points === 0 ? 'ミス' : `+${cell.points}`,
+        // 公式スコアシートと同じく、ミスは「−」、得点はそのまま数字で書く
+        cell.points === 0 ? '−' : String(cell.points),
         columnCenter(index) - 36,
         top + ROW_HEIGHT / 2 + 12,
       )
@@ -132,7 +133,7 @@ export const renderScoreSheet = async (
     ctx.font = `500 54px ${SERIF}`
     ctx.fillStyle = INK
     ctx.fillText(
-      String(row.cells.at(-1)?.total ?? 0),
+      String(row.final),
       columnCenter(index),
       totalTop + ROW_HEIGHT / 2 + 18,
     )

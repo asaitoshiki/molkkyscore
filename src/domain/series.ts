@@ -35,3 +35,7 @@ export const seriesStandings = (seriesGames: Game[]): SeriesStanding[] => {
     }
   })
 }
+
+/** 公式の順位の付け方。勝ったゲーム数が多い組を上にし、同じなら合計点で比べる */
+export const rankStandings = (standings: SeriesStanding[]): SeriesStanding[] =>
+  [...standings].sort((a, b) => b.wins - a.wins || b.total - a.total)

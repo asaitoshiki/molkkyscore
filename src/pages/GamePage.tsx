@@ -16,7 +16,7 @@ import { computeGameState } from '../domain/game'
 import { outcomeOf } from '../domain/outcome'
 import type { ThrowOutcome } from '../domain/outcome'
 import { pointsOf } from '../domain/rules'
-import { gamesOfSeries, seriesStandings } from '../domain/series'
+import { gamesOfSeries, rankStandings, seriesStandings } from '../domain/series'
 import type { Game } from '../domain/types'
 import { shareImage } from '../share/canvas'
 import { renderResultCard } from '../share/resultCard'
@@ -297,7 +297,7 @@ const ResultView = ({
     }
     onNext()
   }
-  const standings = [...seriesStandings(seriesGames)].sort((a, b) => b.total - a.total)
+  const standings = rankStandings(seriesStandings(seriesGames))
   const latest = seriesGames.at(-1)!.id === game.id
   const lastThrow = game.throws.at(-1)!
   const lastEntryName = game.entries.find((entry) => entry.id === lastThrow.entryId)!.name

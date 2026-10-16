@@ -58,6 +58,13 @@ export const computeGameState = (game: Game): GameState => {
   const survivors = states.filter((state) => !state.eliminated)
   const lastSurvivor = survivors.length === 1 && states.length > 1 ? survivors[0].entryId : null
   const winner = winnerEntryId ?? lastSurvivor
+
+  // 公式スコアシートの記入に合わせる。3 ミスで失格した組はその時点の点数に関係なく 0 点、
+  // 相手が失格していなくなって勝った組は 50 点として扱う
+  states.filter((state) => state.eliminated).forEach((state) => (state.score = 0))
+  if (winnerEntryId === null && lastSurvivor !== null) {
+    states.find((state) => state.entryId === lastSurvivor)!.score = game.rules.targetScore
+  }
   const playing = survivors.length > 0 && winner === null
   const current = states[turn]
   const roundBase = survivors.length > 0 ? survivors : states
