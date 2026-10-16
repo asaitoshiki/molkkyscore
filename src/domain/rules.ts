@@ -1,10 +1,14 @@
 import type { GameRules } from './types'
 
-/** 公式ルールの既定値 */
+/** 公式ルールの既定値。普段の試合はゲーム数を決めずに続けられるようにしておく */
 export const DEFAULT_RULES: GameRules = {
   targetScore: 50,
   penaltyScore: 25,
   maxMisses: 3,
+  gameCount: null,
+  decideBy: 'wins',
+  nextOrder: 'reverse',
+  timeLimitMinutes: null,
 }
 
 /** スキットルの番号（1〜12） */
@@ -31,9 +35,13 @@ export const advanceScore = (current: number, points: number, rules: GameRules):
   return total > rules.targetScore ? rules.penaltyScore : total
 }
 
+/** 入力された数を整数にして min〜max に収める。数でなければ min にする */
+export const clampNumber = (raw: string, min: number, max: number): number =>
+  Math.min(Math.max(Math.floor(Number(raw)) || min, min), max)
+
 /** 目標点に届く持ち点は試合が成立しないので、その手前で止める */
-export const clampHandicap = (raw: string): number =>
-  Math.min(Math.max(Math.floor(Number(raw)) || 0, 0), DEFAULT_RULES.targetScore - 1)
+export const clampHandicap = (raw: string, rules: GameRules): number =>
+  clampNumber(raw, 0, rules.targetScore - 1)
 
 /** 1 投で取りうる最大得点（残り点数の目安表示に使う） */
 export const MAX_POINTS_PER_THROW = 12

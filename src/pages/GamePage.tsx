@@ -12,12 +12,13 @@ import { ScoreTable } from '../components/ScoreTable'
 import type { ScoreEffect } from '../components/ScoreTable'
 import { Button, Numeral } from '../components/ui'
 import { INTERSTITIAL_INTERVAL } from '../domain/billing'
+import { formatLabel } from '../domain/formats'
 import { computeGameState } from '../domain/game'
 import { outcomeOf } from '../domain/outcome'
 import type { ThrowOutcome } from '../domain/outcome'
 import { pointsOf } from '../domain/rules'
-import { gamesOfSeries, rankStandings, seriesStandings } from '../domain/series'
-import type { Game } from '../domain/types'
+import { gamesOfSeries, seriesResult } from '../domain/series'
+import type { Entry, Game } from '../domain/types'
 import { shareImage } from '../share/canvas'
 import { renderResultCard } from '../share/resultCard'
 import { renderScoreSheet } from '../share/scoreSheetImage'
@@ -50,6 +51,8 @@ const GameView = ({ gameId }: { gameId: string }) => {
   const recordThrow = useAppStore((state) => state.recordThrow)
   const rewindTo = useAppStore((state) => state.rewindTo)
   const addGameToSeries = useAppStore((state) => state.addGameToSeries)
+  const setTimeUp = useAppStore((state) => state.setTimeUp)
+  const setShootoutWinner = useAppStore((state) => state.setShootoutWinner)
   const soundOn = useAppStore((state) => state.soundOn)
   const setSoundOn = useAppStore((state) => state.setSoundOn)
   const sound = useSound()
@@ -113,11 +116,19 @@ const GameView = ({ gameId }: { gameId: string }) => {
         game={game}
         seriesGames={seriesGames}
         onNext={() => navigate(`/games/${addGameToSeries(game.seriesId)}`, { replace: true })}
-        onFinish={() => navigate('/')}
+        // 大会の一戦は対戦表へ戻り、次の試合を選べるようにする
+        onFinish={() =>
+          navigate(game.tournamentId === null ? '/' : `/tournaments/${game.tournamentId}`)
+        }
         onUndo={() => {
           sound('undo')
           rewindTo(game.id, game.throws.length - 1)
         }}
+        onResume={() => {
+          sound('undo')
+          setTimeUp(game.id, null)
+        }}
+        onShootout={(entryId) => setShootoutWinner(game.id, entryId)}
         onTimeline={() => navigate(`/games/${game.id}/timeline`)}
         onRename={() => navigate(`/games/${game.id}/teams`)}
       />
@@ -132,7 +143,7 @@ const GameView = ({ gameId }: { gameId: string }) => {
   return (
     <div className="mx-auto flex min-h-full max-w-md flex-col bg-paper">
       <AppBar
-        title={`第 ${game.gameNumber} ゲーム`}
+        title={gameTitle(game)}
         left={
           <>
             <button onClick={() => navigate('/')} aria-label="中断してホームへ">
@@ -173,6 +184,14 @@ const GameView = ({ gameId }: { gameId: string }) => {
           seriesGames={seriesGames}
           members={members}
           onClose={() => setInviting(false)}
+        />
+      )}
+
+      {game.rules.timeLimitMinutes !== null && (
+        <MatchClock
+          startedAt={seriesGames[0].throws[0]?.at ?? null}
+          limitMinutes={game.rules.timeLimitMinutes}
+          onTimeUp={() => setTimeUp(game.id, Date.now())}
         />
       )}
 
@@ -259,6 +278,62 @@ const GameView = ({ gameId }: { gameId: string }) => {
   )
 }
 
+/** 「第 1 ゲーム」。ゲーム数を決めた試合では全体の何ゲーム目かも添える */
+const gameTitle = (game: Game) =>
+  `第 ${game.gameNumber} ゲーム${game.rules.gameCount === null ? '' : ` / ${game.rules.gameCount}`}`
+
+/** 1 秒ごとに今の時刻を返す。残り時間の表示に使う */
+const useNow = () => {
+  const [now, setNow] = useState(Date.now)
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [])
+  return now
+}
+
+const clock = (ms: number) => {
+  const seconds = Math.ceil(ms / 1000)
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
+}
+
+/**
+ * 試合の残り時間。第 1 ゲームの最初の投球から数える。
+ * 時間が来ても勝手には止めない。ラウンドの最後まで投げる大会もあるので、打ち切りは手で押す
+ */
+const MatchClock = ({
+  startedAt,
+  limitMinutes,
+  onTimeUp,
+}: {
+  startedAt: number | null
+  limitMinutes: number
+  onTimeUp: () => void
+}) => {
+  const now = useNow()
+  const limit = limitMinutes * 60_000
+  // 時刻は 1 秒ごとにしか進めないので、投げた直後は制限時間を超えて見えないよう抑える
+  const left = Math.min((startedAt ?? now) + limit - now, limit)
+  const over = left <= 0
+
+  return (
+    <div className="flex items-center justify-between border-b border-rule px-5 py-2">
+      <p className={`tabular text-[13px] ${over ? 'font-semibold text-alert' : 'text-muted'}`}>
+        {over ? '時間切れ' : `残り ${clock(left)}`}
+        {startedAt === null && <span className="ml-2 text-[11px]">第 1 投から計ります</span>}
+      </p>
+      <button
+        className={`rounded-full border px-3 py-1 text-[12px] ${
+          over ? 'border-alert bg-alert text-paper' : 'border-rule text-muted'
+        }`}
+        onClick={onTimeUp}
+      >
+        タイムアップ
+      </button>
+    </div>
+  )
+}
+
 /** ゲーム結果。順位と各ゲームの得点を並べ、その場で共有できるようにする。 */
 const ResultView = ({
   game,
@@ -266,6 +341,8 @@ const ResultView = ({
   onNext,
   onFinish,
   onUndo,
+  onResume,
+  onShootout,
   onTimeline,
   onRename,
 }: {
@@ -274,6 +351,8 @@ const ResultView = ({
   onNext: () => void
   onFinish: () => void
   onUndo: () => void
+  onResume: () => void
+  onShootout: (entryId: string) => void
   onTimeline: () => void
   onRename: () => void
 }) => {
@@ -297,10 +376,9 @@ const ResultView = ({
     }
     onNext()
   }
-  const standings = rankStandings(seriesStandings(seriesGames))
+  const result = seriesResult(seriesGames)
   const latest = seriesGames.at(-1)!.id === game.id
-  const lastThrow = game.throws.at(-1)!
-  const lastEntryName = game.entries.find((entry) => entry.id === lastThrow.entryId)!.name
+  const timedOut = game.timeUpAt !== null
   const date = new Date(game.createdAt).toISOString().slice(0, 10)
 
   const share = async (
@@ -337,40 +415,44 @@ const ResultView = ({
       />
 
       <section className="border-b border-rule px-5 py-8 text-center">
-        <p className="eyebrow text-muted">第 {game.gameNumber} ゲーム</p>
+        <p className="eyebrow text-muted">
+          {gameTitle(game)}
+          {timedOut && '・時間切れ'}
+        </p>
         {winnerName === null ? (
-          <p className="mt-2 font-serif text-2xl">勝者なしで終了</p>
+          <p className="mt-2 font-serif text-2xl">{timedOut ? '引き分け' : '勝者なしで終了'}</p>
         ) : (
           <p className="mt-2 font-serif text-3xl leading-snug">
             <span className="text-accent">{winnerName}</span> の勝利
           </p>
         )}
         {/* 誤タップで決着してしまったときの戻り道。続きのゲームを始めたあとは並びが崩れるので出さない */}
-        {latest && (
-          <div className="mt-5">
-            <p className="tabular text-[12px] text-muted">
-              最後の投球　{lastEntryName}
-              {'　'}
-              {lastThrow.pins.length === 0 ? 'ミス' : `+${pointsOf(lastThrow.pins)}`}
-            </p>
-            <Button
-              variant="outline"
-              className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 text-[14px]"
-              onClick={onUndo}
-            >
-              <Icon name="undo" size={16} />1 つ戻る
-            </Button>
-          </div>
-        )}
+        {latest &&
+          (timedOut ? (
+            <UndoAction note="時間切れで打ち切りました" label="打ち切りを取り消す" onClick={onResume} />
+          ) : (
+            <UndoAction note={lastThrowNote(game)} label="1 つ戻る" onClick={onUndo} />
+          ))}
       </section>
 
+      {result.finished && (
+        <MatchVerdict
+          game={game}
+          leaders={result.leaders}
+          winnerEntryId={result.winnerEntryId}
+          onShootout={onShootout}
+        />
+      )}
+
       <ol className="divide-y divide-rule border-b border-rule">
-        {standings.map((standing, rank) => (
+        {result.standings.map((standing, rank) => (
           <li key={standing.entry.id} className="flex items-center gap-3 px-5 py-3.5">
             <Numeral className="w-5 text-center text-lg text-muted">{rank + 1}</Numeral>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[15px]">{standing.entry.name}</span>
               <span className="tabular block text-[11px] text-muted">
+                {standing.wins}勝{standing.draws > 0 && `${standing.draws}分`}
+                {'　'}
                 {standing.perGame
                   .map((score, index) => `第${seriesGames[index].gameNumber}ゲーム：${score}`)
                   .join('　')}
@@ -401,13 +483,100 @@ const ResultView = ({
         >
           {busy ? '作成中…' : 'スコアシートを画像で保存'}
         </Button>
-        <div className="grid grid-cols-2 gap-2">
-          <Button variant="outline" onClick={onFinish}>
-            ゲーム終了
+        {/* 決めたゲーム数を終えた試合は、続きのゲームを作らせない */}
+        {result.finished ? (
+          <Button className="w-full" onClick={onFinish}>
+            試合を終える
           </Button>
-          <Button onClick={goNext}>次のゲームへ</Button>
-        </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" onClick={onFinish}>
+              ゲーム終了
+            </Button>
+            <Button onClick={goNext}>次のゲームへ</Button>
+          </div>
+        )}
       </div>
     </div>
+  )
+}
+
+const lastThrowNote = (game: Game) => {
+  const lastThrow = game.throws.at(-1)!
+  const name = game.entries.find((entry) => entry.id === lastThrow.entryId)!.name
+  const points = lastThrow.pins.length === 0 ? 'ミス' : `+${pointsOf(lastThrow.pins)}`
+  return `最後の投球　${name}　${points}`
+}
+
+const UndoAction = ({
+  note,
+  label,
+  onClick,
+}: {
+  note: string
+  label: string
+  onClick: () => void
+}) => (
+  <div className="mt-5">
+    <p className="tabular text-[12px] text-muted">{note}</p>
+    <Button
+      variant="outline"
+      className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 text-[14px]"
+      onClick={onClick}
+    >
+      <Icon name="undo" size={16} />
+      {label}
+    </Button>
+  </div>
+)
+
+/**
+ * 試合全体の勝敗。首位が並んだときは、その場でモルックアウトをして勝った組を選んでもらう。
+ * 大会では対戦表に勝者を書き込むので、選ぶまでは決着しない
+ */
+const MatchVerdict = ({
+  game,
+  leaders,
+  winnerEntryId,
+  onShootout,
+}: {
+  game: Game
+  leaders: Entry[]
+  winnerEntryId: string | null
+  onShootout: (entryId: string) => void
+}) => {
+  const winner = game.entries.find((entry) => entry.id === winnerEntryId)
+
+  return (
+    <section className="border-b border-rule bg-accent-soft/50 px-5 py-5 text-center">
+      <p className="eyebrow text-accent">試合結果・{formatLabel(game.rules)}</p>
+      {leaders.length === 1 ? (
+        <p className="mt-1.5 font-serif text-2xl">
+          <span className="text-accent">{winner!.name}</span> の勝ち
+        </p>
+      ) : (
+        <>
+          <p className="mt-1.5 text-[14px]">首位が並びました</p>
+          <p className="mt-1 text-[12px] text-muted">
+            モルックアウトで決めて、勝った組を選んでください
+          </p>
+          <div className="mt-3 flex flex-wrap justify-center gap-2">
+            {leaders.map((entry) => (
+              <button
+                key={entry.id}
+                className={`rounded-full border px-4 py-1.5 text-[14px] ${
+                  entry.id === winnerEntryId
+                    ? 'border-accent bg-accent text-paper'
+                    : 'border-rule bg-surface'
+                }`}
+                onClick={() => onShootout(entry.id)}
+              >
+                {entry.name}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </section>
   )
 }

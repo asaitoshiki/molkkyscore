@@ -57,7 +57,6 @@ export const computeGameState = (game: Game): GameState => {
   // 失格者が出て 1 人だけ残った場合もその参加者の勝ち
   const survivors = states.filter((state) => !state.eliminated)
   const lastSurvivor = survivors.length === 1 && states.length > 1 ? survivors[0].entryId : null
-  const winner = winnerEntryId ?? lastSurvivor
 
   // 公式スコアシートの記入に合わせる。3 ミスで失格した組はその時点の点数に関係なく 0 点、
   // 相手が失格していなくなって勝った組は 50 点として扱う
@@ -65,7 +64,14 @@ export const computeGameState = (game: Game): GameState => {
   if (winnerEntryId === null && lastSurvivor !== null) {
     states.find((state) => state.entryId === lastSurvivor)!.score = game.rules.targetScore
   }
-  const playing = survivors.length > 0 && winner === null
+
+  // 時間切れで打ち切ったゲームは、その時点でいちばん点の高い組の勝ち。並んだら引き分け
+  const top = Math.max(...states.map((state) => state.score))
+  const leaders = states.filter((state) => state.score === top)
+  const timeWinner = game.timeUpAt !== null && leaders.length === 1 ? leaders[0].entryId : null
+
+  const winner = winnerEntryId ?? lastSurvivor ?? timeWinner
+  const playing = survivors.length > 0 && winner === null && game.timeUpAt === null
   const current = states[turn]
   const roundBase = survivors.length > 0 ? survivors : states
 

@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button, SectionTitle, TextInput } from '../components/ui'
+import { RulesEditor } from '../components/RulesEditor'
+import { TOURNAMENT_PRESETS } from '../domain/formats'
 import { TeamBuilder } from '../components/TeamBuilder'
 import { buildTeamEntries, emptyTeams, isTeamSetReady } from '../domain/teamDraft'
 import { DEFAULT_RULES } from '../domain/rules'
-import type { TournamentFormat } from '../domain/types'
+import type { GameRules, TournamentFormat } from '../domain/types'
 import { useAppStore } from '../store/useAppStore'
 
 const FORMATS: { value: TournamentFormat; label: string; note: string }[] = [
@@ -19,6 +21,8 @@ export const TournamentSetupPage = () => {
   const [name, setName] = useState('')
   const [format, setFormat] = useState<TournamentFormat>('roundRobin')
   const [teams, setTeams] = useState(emptyTeams)
+  // 大会の一戦は対戦表に勝者を書き込むので、ゲーム数を決めた形から始める
+  const [rules, setRules] = useState<GameRules>({ ...DEFAULT_RULES, gameCount: 1 })
 
   const ready = isTeamSetReady(teams) && name.trim() !== ''
 
@@ -64,14 +68,19 @@ export const TournamentSetupPage = () => {
         </div>
       </section>
 
-      <TeamBuilder teams={teams} onChange={setTeams} />
+      <section>
+        <SectionTitle>試合ルール</SectionTitle>
+        <RulesEditor rules={rules} presets={TOURNAMENT_PRESETS} onChange={setRules} />
+      </section>
+
+      <TeamBuilder teams={teams} rules={rules} onChange={setTeams} />
 
       <Button
         className="w-full py-4"
         disabled={!ready}
         onClick={() =>
           navigate(
-            `/tournaments/${createTournament(name, format, buildTeamEntries(teams), DEFAULT_RULES)}`,
+            `/tournaments/${createTournament(name, format, buildTeamEntries(teams), rules)}`,
           )
         }
       >

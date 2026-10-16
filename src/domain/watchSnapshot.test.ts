@@ -31,6 +31,8 @@ const game: Game = {
   ],
   seriesId: 's1',
   gameNumber: 1,
+  timeUpAt: null,
+  shootoutWinnerId: null,
   tournamentId: null,
   matchId: null,
 }

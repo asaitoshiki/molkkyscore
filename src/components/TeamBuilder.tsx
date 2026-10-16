@@ -4,6 +4,7 @@ import { Button, SectionTitle, TextInput } from './ui'
 import { clampHandicap } from '../domain/rules'
 import { displayName, newTeam } from '../domain/teamDraft'
 import type { TeamDraft } from '../domain/teamDraft'
+import type { GameRules } from '../domain/types'
 import { useAppStore } from '../store/useAppStore'
 
 /**
@@ -12,9 +13,11 @@ import { useAppStore } from '../store/useAppStore'
  */
 export const TeamBuilder = ({
   teams,
+  rules,
   onChange,
 }: {
   teams: TeamDraft[]
+  rules: GameRules
   onChange: (teams: TeamDraft[]) => void
 }) => {
   const members = useAppStore((state) => state.members)
@@ -103,7 +106,7 @@ export const TeamBuilder = ({
                   className="tabular w-16 text-right"
                   value={team.handicap}
                   onChange={(event) =>
-                    update(team.key, { handicap: clampHandicap(event.target.value) })
+                    update(team.key, { handicap: clampHandicap(event.target.value, rules) })
                   }
                 />
                 <span className="text-[12px] whitespace-nowrap text-muted">点から</span>

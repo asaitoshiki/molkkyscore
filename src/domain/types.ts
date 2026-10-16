@@ -24,11 +24,26 @@ export type ThrowRecord = {
   at: number
 }
 
-/** 試合ルール。公式ルールを既定値としつつ変更できるようにしている。 */
+/** 試合の勝敗の決め方。wins は勝ったゲーム数を先に比べ、total は合計点だけで比べる */
+export type DecideBy = 'wins' | 'total'
+
+/** 2 ゲーム目以降の投げる順番。reverse は前のゲームの逆順、loserFirst は点の低い組から */
+export type NextOrder = 'reverse' | 'same' | 'loserFirst'
+
+/**
+ * 試合ルール。公式ルールを既定値としつつ、大会ごとの決まりに合わせて変えられる。
+ * 1 ゲームの決まりと、何ゲームで勝敗を決めるかの両方を持ち、続きのゲームにも引き継ぐ。
+ */
 export type GameRules = {
   targetScore: number
   penaltyScore: number
   maxMisses: number
+  /** 試合のゲーム数。null は決めずに続けたいだけ続ける */
+  gameCount: number | null
+  decideBy: DecideBy
+  nextOrder: NextOrder
+  /** 試合の制限時間（分）。null は時間を決めない */
+  timeLimitMinutes: number | null
 }
 
 export type Game = {
@@ -42,6 +57,10 @@ export type Game = {
   seriesId: string
   /** セット内の何ゲーム目か。1 始まり */
   gameNumber: number
+  /** 時間切れで打ち切った時刻。打ち切ったゲームはその時点の点数で勝敗を決める */
+  timeUpAt: number | null
+  /** 試合の最後に首位が並び、モルックアウトで勝った組 */
+  shootoutWinnerId: string | null
   /** 大会の一戦として作られた場合のみ紐付く */
   tournamentId: string | null
   matchId: string | null

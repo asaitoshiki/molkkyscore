@@ -2,8 +2,9 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { computeGameState } from '../domain/game'
 import { newId } from '../domain/id'
-import { DEFAULT_RULES } from '../domain/rules'
-import { gamesOfSeries } from '../domain/series'
+import { withGameDefaults, withHandicap, withRules } from '../domain/legacy'
+import type { LegacyGame } from '../domain/legacy'
+import { gamesOfSeries, nextEntries, seriesResult } from '../domain/series'
 import { createMatches, propagateWinners } from '../domain/tournament'
 import type {
   Entry,
@@ -14,7 +15,6 @@ import type {
   ThrowRecord,
   Tournament,
   TournamentFormat,
-  TournamentMatch,
 } from '../domain/types'
 
 type MatchLink = { tournamentId: string; matchId: string }
@@ -50,8 +50,12 @@ type AppState = {
   recordThrow: (gameId: string, pins: number[], memberId?: string) => void
   /** 記録した投球を差し替える。誤入力の訂正に使う */
   editThrow: (gameId: string, index: number, pins: number[]) => void
-  /** 先頭から count 投だけ残して、それ以降を取り消す */
+  /** 先頭から count 投だけ残して、それ以降を取り消す。打ち切りやモルックアウトの結果も外す */
   rewindTo: (gameId: string, count: number) => void
+  /** 時間切れでゲームを打ち切る。null を渡すと打ち切りを取り消す */
+  setTimeUp: (gameId: string, at: number | null) => void
+  /** 首位が並んだときにモルックアウトで勝った組を記録する。null で選び直し */
+  setShootoutWinner: (gameId: string, entryId: string | null) => void
   deleteGame: (gameId: string) => void
   /** チーム名を変える。キーはチームの ID */
   renameEntries: (names: Record<string, string>) => void
@@ -76,10 +80,16 @@ const settle = (state: AppState, game: Game): Partial<AppState> => {
     finishedAt: computed.finished ? (game.finishedAt ?? Date.now()) : null,
   }
   const games = state.games.map((item) => (item.id === finished.id ? finished : item))
-  const tournaments = state.tournaments.map((tournament) => {
-    if (tournament.id !== finished.tournamentId) return tournament
+  return { games, tournaments: linkWinners(state.tournaments, games, finished) }
+}
+
+/** 大会の一戦なら、試合（セット）全体の勝者を対戦表に書き込む */
+const linkWinners = (tournaments: Tournament[], games: Game[], game: Game): Tournament[] => {
+  const result = seriesResult(gamesOfSeries(games, game.seriesId))
+  return tournaments.map((tournament) => {
+    if (tournament.id !== game.tournamentId) return tournament
     const matches = tournament.matches.map((match) =>
-      match.id === finished.matchId ? { ...match, winnerEntryId: computed.winnerEntryId } : match,
+      match.id === game.matchId ? { ...match, winnerEntryId: result.winnerEntryId } : match,
     )
     // 次のラウンドへ送る処理はトーナメントだけ。総当たりは対戦表が固定なので触らない
     return {
@@ -87,7 +97,6 @@ const settle = (state: AppState, game: Game): Partial<AppState> => {
       matches: tournament.format === 'knockout' ? propagateWinners(matches) : matches,
     }
   })
-  return { games, tournaments }
 }
 
 /** 投球記録を入れ替えた試合を作り、決着判定まで通す。 */
@@ -151,6 +160,8 @@ export const useAppStore = create<AppState>()(
           throws: [],
           seriesId: newId(),
           gameNumber: 1,
+          timeUpAt: null,
+          shootoutWinnerId: null,
           tournamentId: link?.tournamentId ?? null,
           matchId: link?.matchId ?? null,
         }
@@ -177,9 +188,11 @@ export const useAppStore = create<AppState>()(
           id: newId(),
           createdAt: Date.now(),
           finishedAt: null,
+          entries: nextEntries(previous),
           throws: [],
           gameNumber: previous.gameNumber + 1,
-          matchId: null,
+          timeUpAt: null,
+          shootoutWinnerId: null,
         }
         set((state) => ({ games: [...state.games, game] }))
         return game.id
@@ -215,7 +228,27 @@ export const useAppStore = create<AppState>()(
       rewindTo: (gameId, count) => {
         const state = get()
         const game = state.games.find((item) => item.id === gameId)!
-        set(replaceThrows(state, gameId, game.throws.slice(0, count)))
+        set(
+          settle(state, {
+            ...game,
+            throws: game.throws.slice(0, count),
+            finishedAt: null,
+            timeUpAt: null,
+            shootoutWinnerId: null,
+          }),
+        )
+      },
+
+      setTimeUp: (gameId, at) => {
+        const state = get()
+        const game = state.games.find((item) => item.id === gameId)!
+        set(settle(state, { ...game, timeUpAt: at, finishedAt: null, shootoutWinnerId: null }))
+      },
+
+      setShootoutWinner: (gameId, entryId) => {
+        const state = get()
+        const game = state.games.find((item) => item.id === gameId)!
+        set(settle(state, { ...game, shootoutWinnerId: entryId }))
       },
 
       // 同じチームが続きのゲームや大会の対戦表にもいるので、ID が同じものはまとめて変える。
@@ -233,25 +266,32 @@ export const useAppStore = create<AppState>()(
           }
         }),
 
-      // 大会から作った試合を消すときは、対戦表に残るリンクと勝者も一緒に外す
+      // 大会から作った試合を消すときは、対戦表に残るリンクと勝者も一緒に外す。
+      // 対戦表がひも付くのは最初のゲームなので、続きのゲームだけを消したときは残りで勝者を出し直す
       deleteGame: (gameId) =>
         set((state) => {
-          const target = state.games.find((game) => game.id === gameId)
-          const clear = (matches: TournamentMatch[]) =>
-            matches.map((match) =>
+          const target = state.games.find((game) => game.id === gameId)!
+          const games = state.games.filter((game) => game.id !== gameId)
+          const earlier = gamesOfSeries(games, target.seriesId).filter(
+            (game) => game.gameNumber < target.gameNumber,
+          )
+          if (target.matchId !== null && earlier.length > 0) {
+            return { games, tournaments: linkWinners(state.tournaments, games, earlier.at(-1)!) }
+          }
+          const detached = games.map((game) =>
+            game.seriesId === target.seriesId ? { ...game, tournamentId: null, matchId: null } : game,
+          )
+          const tournaments = state.tournaments.map((tournament) => {
+            if (tournament.id !== target.tournamentId) return tournament
+            const matches = tournament.matches.map((match) =>
               match.gameId === gameId ? { ...match, gameId: null, winnerEntryId: null } : match,
             )
-          return {
-            games: state.games.filter((game) => game.id !== gameId),
-            tournaments: state.tournaments.map((tournament) => {
-              if (tournament.id !== target?.tournamentId) return tournament
-              const matches = clear(tournament.matches)
-              return {
-                ...tournament,
-                matches: tournament.format === 'knockout' ? propagateWinners(matches) : matches,
-              }
-            }),
-          }
+            return {
+              ...tournament,
+              matches: tournament.format === 'knockout' ? propagateWinners(matches) : matches,
+            }
+          })
+          return { games: detached, tournaments }
         }),
 
       createTournament: (name, format, entries, rules) => {
@@ -286,37 +326,31 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'molkky-note-v1',
-      version: 5,
-      // 保存済みの形に足りない項目を補う。セット（連戦）・ハンデ・観戦の共有・効果音はあとから入れた
+      version: 6,
+      // 保存済みの形に足りない項目を補う。セット（連戦）・ハンデ・観戦の共有・効果音・
+      // 試合ルール（ゲーム数・時間切れなど）はあとから入れた
       migrate: (persisted) => {
         const state = persisted as {
-          games?: (Game & { seriesId?: string; gameNumber?: number })[]
-          tournaments?: Tournament[]
+          games?: LegacyGame[]
+          tournaments?: (Omit<Tournament, 'entries' | 'rules'> & {
+            entries: LegacyGame['entries']
+            rules: Partial<GameRules>
+          })[]
           shares?: Record<string, string>
           soundOn?: boolean
         }
-        const withHandicap = (entries: (Entry & { handicap?: number })[]) =>
-          entries.map((entry) => ({ ...entry, handicap: entry.handicap ?? 0 }))
-
         return {
           ...state,
           shares: state.shares ?? {},
           soundOn: state.soundOn ?? true,
-          games: (state.games ?? []).map((game) => ({
-            ...game,
-            seriesId: game.seriesId ?? newId(),
-            gameNumber: game.gameNumber ?? 1,
-            entries: withHandicap(game.entries),
-          })),
+          games: (state.games ?? []).map(withGameDefaults),
           tournaments: (state.tournaments ?? []).map((tournament) => ({
             ...tournament,
             entries: withHandicap(tournament.entries),
+            rules: withRules(tournament.rules, 1),
           })),
         } as AppState
       },
     },
   ),
 )
-
-/** 既定ルールは設定画面を作るまで固定で配る。 */
-export const defaultRules = DEFAULT_RULES

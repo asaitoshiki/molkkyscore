@@ -20,6 +20,8 @@ const gameOf = (throws: [string, number][], entryIds = ['a', 'b'], gameNumber = 
   })),
   seriesId: 's',
   gameNumber,
+  timeUpAt: null,
+  shootoutWinnerId: null,
   tournamentId: null,
   matchId: null,
 })
@@ -72,7 +74,7 @@ describe('公式スコアシートの記入例と同じ結果になる', () => {
       ['b', 'a'],
       2,
     )
-    const ranked = rankStandings(seriesStandings([first, second]))
+    const ranked = rankStandings(seriesStandings([first, second]), 'wins')
     expect(ranked.map((standing) => [standing.entry.id, standing.wins, standing.total])).toEqual([
       ['a', 1, 98],
       ['b', 1, 63],

@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { AppBar } from '../components/AppBar'
 import { Icon } from '../components/Icon'
 import { OrderList } from '../components/OrderList'
+import { RulesEditor } from '../components/RulesEditor'
+import { CASUAL_PRESETS } from '../domain/formats'
 import { Button, TextInput } from '../components/ui'
 import { newId } from '../domain/id'
 import { moveItem } from '../domain/order'
@@ -34,6 +36,7 @@ export const GameSetupPage = () => {
   const [names, setNames] = useState(['チーム1', 'チーム2'])
   // 力の差を埋めるための持ち点。並びは names と対応する
   const [handicaps, setHandicaps] = useState([0, 0])
+  const [rules, setRules] = useState(DEFAULT_RULES)
 
   const add = () => {
     setNames([...names, nextTeamName(names)])
@@ -54,7 +57,7 @@ export const GameSetupPage = () => {
       const member = members.find((item) => item.name === name) ?? addMember(name)
       return { id: newId(), name, memberIds: [member.id], handicap: handicaps[index] }
     })
-    navigate(`/games/${createGame(entries, DEFAULT_RULES, null)}`, { replace: true })
+    navigate(`/games/${createGame(entries, rules, null)}`, { replace: true })
   }
 
   const filled = names.every((name) => name.trim() !== '')
@@ -119,6 +122,11 @@ export const GameSetupPage = () => {
           チームを追加
         </button>
 
+        <section className="mt-6 border-t border-rule pt-3">
+          <h2 className="eyebrow mb-3 text-muted">試合ルール</h2>
+          <RulesEditor rules={rules} presets={CASUAL_PRESETS} onChange={setRules} />
+        </section>
+
         <details className="mt-6 border-t border-rule pt-3">
           <summary className="eyebrow cursor-pointer text-muted">ハンデをつける</summary>
           <p className="mt-2 text-[12px] text-muted">力の差があるときは、持ち点から始められます。</p>
@@ -130,13 +138,13 @@ export const GameSetupPage = () => {
                   <TextInput
                     type="number"
                     min={0}
-                    max={DEFAULT_RULES.targetScore - 1}
+                    max={rules.targetScore - 1}
                     className="tabular w-16 text-right"
                     value={handicaps[index]}
                     onChange={(event) =>
                       setHandicaps(
                         handicaps.map((value, position) =>
-                          position === index ? clampHandicap(event.target.value) : value,
+                          position === index ? clampHandicap(event.target.value, rules) : value,
                         ),
                       )
                     }

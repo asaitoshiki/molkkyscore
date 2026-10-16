@@ -1,6 +1,6 @@
 import { newId } from './id'
 import type { Entry, Game, Tournament, TournamentFormat, TournamentMatch } from './types'
-import { computeGameState } from './game'
+import { gamesOfSeries, seriesResult } from './series'
 
 /** 大会形式に応じた対戦表を作る。 */
 export const createMatches = (format: TournamentFormat, entries: Entry[]): TournamentMatch[] =>
@@ -107,18 +107,20 @@ export const computeStandings = (tournament: Tournament, games: Game[]): Standin
 
   for (const match of tournament.matches) {
     const game = match.gameId === null ? undefined : gameById.get(match.gameId)
-    if (!game || game.finishedAt === null) continue
+    if (!game) continue
+    // 1 試合が複数ゲームのこともあるので、試合（セット）全体の合計と勝者で数える
+    const result = seriesResult(gamesOfSeries(games, game.seriesId))
+    if (!result.finished) continue
 
-    const state = computeGameState(game)
-    for (const entryState of state.entries) {
-      const standing = standings.get(entryState.entryId)
+    for (const line of result.standings) {
+      const standing = standings.get(line.entry.id)
       if (!standing) continue
-      const opponents = state.entries.filter((other) => other.entryId !== entryState.entryId)
+      const opponents = result.standings.filter((other) => other.entry.id !== line.entry.id)
       standing.played += 1
-      standing.wins += entryState.entryId === state.winnerEntryId ? 1 : 0
-      standing.losses += entryState.entryId === state.winnerEntryId ? 0 : 1
-      standing.pointsFor += entryState.score
-      standing.pointsAgainst += Math.max(...opponents.map((other) => other.score))
+      standing.wins += line.entry.id === result.winnerEntryId ? 1 : 0
+      standing.losses += line.entry.id === result.winnerEntryId ? 0 : 1
+      standing.pointsFor += line.total
+      standing.pointsAgainst += Math.max(...opponents.map((other) => other.total))
     }
   }
 

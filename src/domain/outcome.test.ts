@@ -17,6 +17,8 @@ const gameWith = (throws: [string, number[]][]): Game => ({
   ),
   seriesId: 's',
   gameNumber: 1,
+  timeUpAt: null,
+  shootoutWinnerId: null,
   tournamentId: null,
   matchId: null,
 })

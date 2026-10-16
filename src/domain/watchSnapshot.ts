@@ -1,3 +1,5 @@
+import { withGameDefaults } from './legacy'
+import type { LegacyGame } from './legacy'
 import type { Game, Member } from './types'
 
 /**
@@ -63,8 +65,13 @@ export type WatchState =
 export const toWatchState = (record: WatchRecord | null, now: number): WatchState => {
   if (record === null) return { kind: 'missing' }
   if (record.expiresAt < now) return { kind: 'ended' }
-  const payload = JSON.parse(record.payload) as Payload
-  return { kind: 'live', games: payload.games, memberNames: payload.memberNames }
+  // 古い版のアプリから届いた記録でも同じ計算ができるよう、欠けた項目を補う
+  const payload = JSON.parse(record.payload) as Omit<Payload, 'games'> & { games: LegacyGame[] }
+  return {
+    kind: 'live',
+    games: payload.games.map(withGameDefaults),
+    memberNames: payload.memberNames,
+  }
 }
 
 /**
