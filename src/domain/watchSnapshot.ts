@@ -20,10 +20,27 @@ export type WatchRecord = {
   payload: string
 }
 
-type Payload = {
+/** 試合（セット）の記録を送るときの中身。観戦と大会の提出で同じ形を使う */
+export type SeriesPayload = {
   games: Game[]
   /** メンバー ID は端末ごとの値なので、受け取った側でも引けるよう名前を添える */
   memberNames: Record<string, string>
+}
+
+/** Realtime Database が空の配列や null を消さないよう、JSON 文字列 1 つにまとめる */
+export const encodeSeries = (games: Game[], members: Member[]): string => {
+  const involved = new Set(games.flatMap((game) => game.entries.flatMap((entry) => entry.memberIds)))
+  const memberNames = Object.fromEntries(
+    members.filter((member) => involved.has(member.id)).map((member) => [member.id, member.name]),
+  )
+  const payload: SeriesPayload = { games, memberNames }
+  return JSON.stringify(payload)
+}
+
+/** 古い版のアプリから届いた記録でも同じ計算ができるよう、欠けた項目を補って戻す */
+export const decodeSeries = (raw: string): SeriesPayload => {
+  const payload = JSON.parse(raw) as Omit<SeriesPayload, 'games'> & { games: LegacyGame[] }
+  return { games: payload.games.map(withGameDefaults), memberNames: payload.memberNames }
 }
 
 /** 最後に記録を送ってから、観戦できる時間 */
@@ -34,14 +51,12 @@ export const buildWatchRecord = (
   games: Game[],
   members: Member[],
   now: number,
-): WatchRecord => {
-  const involved = new Set(games.flatMap((game) => game.entries.flatMap((entry) => entry.memberIds)))
-  const memberNames = Object.fromEntries(
-    members.filter((member) => involved.has(member.id)).map((member) => [member.id, member.name]),
-  )
-  const payload: Payload = { games, memberNames }
-  return { ownerUid, updatedAt: now, expiresAt: now + SHARE_TTL_MS, payload: JSON.stringify(payload) }
-}
+): WatchRecord => ({
+  ownerUid,
+  updatedAt: now,
+  expiresAt: now + SHARE_TTL_MS,
+  payload: encodeSeries(games, members),
+})
 
 /** セットで最後に何かが起きた時刻。観戦の期限はここから数える */
 export const lastActivityOf = (games: Game[]): number =>
@@ -65,13 +80,7 @@ export type WatchState =
 export const toWatchState = (record: WatchRecord | null, now: number): WatchState => {
   if (record === null) return { kind: 'missing' }
   if (record.expiresAt < now) return { kind: 'ended' }
-  // 古い版のアプリから届いた記録でも同じ計算ができるよう、欠けた項目を補う
-  const payload = JSON.parse(record.payload) as Omit<Payload, 'games'> & { games: LegacyGame[] }
-  return {
-    kind: 'live',
-    games: payload.games.map(withGameDefaults),
-    memberNames: payload.memberNames,
-  }
+  return { kind: 'live', ...decodeSeries(record.payload) }
 }
 
 /**

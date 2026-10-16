@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { isNative } from '../ads/admob'
 import { InterstitialAd } from '../ads/InterstitialAd'
+import { EventSubmit } from '../components/EventSubmit'
 import { WatchInvite } from '../components/WatchInvite'
 import { AppBar } from '../components/AppBar'
 import { Icon } from '../components/Icon'
@@ -22,9 +23,11 @@ import type { Entry, Game } from '../domain/types'
 import { shareImage } from '../share/canvas'
 import { renderResultCard } from '../share/resultCard'
 import { renderScoreSheet } from '../share/scoreSheetImage'
+import { publishLive } from '../sync/eventChannel'
 import { publishWatch } from '../sync/watchChannel'
 import { useSound } from '../sound/useSound'
 import { useAppStore } from '../store/useAppStore'
+import type { EventSeriesLink } from '../store/useAppStore'
 
 /** 記録が残っているかだけ先に見る。消えた試合の URL でも画面が落ちないようにする。 */
 export const GamePage = () => {
@@ -69,6 +72,13 @@ const GameView = ({ gameId }: { gameId: string }) => {
     if (shareId === undefined) return
     publishWatch(shareId, seriesGames, members).catch(() => undefined)
   }, [shareId, seriesGames, members])
+
+  // 本部とつないだ大会の試合なら、本部の画面にもコートの様子を流す
+  const eventLink = useAppStore((state) => state.eventSeries[game.seriesId])
+  useEffect(() => {
+    if (eventLink === undefined) return
+    publishLive(eventLink.eventId, eventLink.court, seriesGames, members).catch(() => undefined)
+  }, [eventLink, seriesGames, members])
 
   // 合図は流し終えたら片付ける
   useEffect(() => {
@@ -115,11 +125,10 @@ const GameView = ({ gameId }: { gameId: string }) => {
       <ResultView
         game={game}
         seriesGames={seriesGames}
+        eventLink={eventLink}
         onNext={() => navigate(`/games/${addGameToSeries(game.seriesId)}`, { replace: true })}
-        // 大会の一戦は対戦表へ戻り、次の試合を選べるようにする
-        onFinish={() =>
-          navigate(game.tournamentId === null ? '/' : `/tournaments/${game.tournamentId}`)
-        }
+        // 大会の一戦は対戦表やコートの画面へ戻り、次の試合を始められるようにする
+        onFinish={() => navigate(finishPath(game, eventLink))}
         onUndo={() => {
           sound('undo')
           rewindTo(game.id, game.throws.length - 1)
@@ -143,7 +152,7 @@ const GameView = ({ gameId }: { gameId: string }) => {
   return (
     <div className="mx-auto flex min-h-full max-w-md flex-col bg-paper">
       <AppBar
-        title={gameTitle(game)}
+        title={`${eventLink === undefined ? '' : `コート ${eventLink.court}・`}${gameTitle(game)}`}
         left={
           <>
             <button onClick={() => navigate('/')} aria-label="中断してホームへ">
@@ -278,6 +287,13 @@ const GameView = ({ gameId }: { gameId: string }) => {
   )
 }
 
+/** 試合を終えたあとに戻る画面 */
+const finishPath = (game: Game, eventLink: EventSeriesLink | undefined) => {
+  if (eventLink !== undefined) return `/e/${eventLink.eventId}`
+  if (game.tournamentId !== null) return `/tournaments/${game.tournamentId}`
+  return '/'
+}
+
 /** 「第 1 ゲーム」。ゲーム数を決めた試合では全体の何ゲーム目かも添える */
 const gameTitle = (game: Game) =>
   `第 ${game.gameNumber} ゲーム${game.rules.gameCount === null ? '' : ` / ${game.rules.gameCount}`}`
@@ -338,6 +354,7 @@ const MatchClock = ({
 const ResultView = ({
   game,
   seriesGames,
+  eventLink,
   onNext,
   onFinish,
   onUndo,
@@ -348,6 +365,7 @@ const ResultView = ({
 }: {
   game: Game
   seriesGames: Game[]
+  eventLink: EventSeriesLink | undefined
   onNext: () => void
   onFinish: () => void
   onUndo: () => void
@@ -442,6 +460,10 @@ const ResultView = ({
           winnerEntryId={result.winnerEntryId}
           onShootout={onShootout}
         />
+      )}
+
+      {result.finished && eventLink !== undefined && (
+        <EventSubmit link={eventLink} seriesGames={seriesGames} />
       )}
 
       <ol className="divide-y divide-rule border-b border-rule">

@@ -8,6 +8,9 @@ import { TeamNamesPage } from './pages/TeamNamesPage'
 import { RemoveAdsPage } from './pages/RemoveAdsPage'
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage'
 import { WatchPage } from './pages/WatchPage'
+import { EventCourtPage } from './pages/EventCourtPage'
+import { EventHostSetupPage } from './pages/EventHostSetupPage'
+import { EventHqPage } from './pages/EventHqPage'
 import { HistoryPage } from './pages/HistoryPage'
 import { MembersPage } from './pages/MembersPage'
 import { PracticePage } from './pages/PracticePage'
@@ -30,6 +33,8 @@ export const App = () => {
       <Route path="/remove-ads" element={<RemoveAdsPage />} />
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
       <Route path="/watch/:shareId" element={<WatchPage />} />
+      <Route path="/e/:eventId" element={<EventCourtPage />} />
+      <Route path="/e/:eventId/hq" element={<EventHqPage />} />
       <Route path="/games/:gameId" element={<GamePage />} />
       <Route path="/games/:gameId/timeline" element={<TimelinePage />} />
       <Route path="/games/:gameId/teams" element={<TeamNamesPage />} />
@@ -42,6 +47,7 @@ export const App = () => {
         <Route path="/rules" element={<RulesPage />} />
         <Route path="/tournaments" element={<TournamentsPage />} />
         <Route path="/tournaments/new" element={<TournamentSetupPage />} />
+        <Route path="/hq/new" element={<EventHostSetupPage />} />
         <Route path="/tournaments/:tournamentId" element={<TournamentDetailPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -19,6 +19,12 @@ import type {
 
 type MatchLink = { tournamentId: string; matchId: string }
 
+/** 本部として開いた大会。開いた端末にだけ覚えておく */
+export type HostedEvent = { eventId: string; name: string; createdAt: number }
+
+/** 本部と結んだ大会の試合。どの大会のどのコートで記録しているか */
+export type EventSeriesLink = { eventId: string; court: number }
+
 type AppState = {
   members: Member[]
   games: Game[]
@@ -32,6 +38,11 @@ type AppState = {
   shares: Record<string, string>
   /** 前回の全画面広告から何ゲーム終えたか */
   gamesSinceInterstitial: number
+  hostedEvents: HostedEvent[]
+  /** 大会ごとに、この端末が受け持つコート番号 */
+  courts: Record<string, number>
+  /** 大会の試合として記録しているセット。キーはセットの識別子 */
+  eventSeries: Record<string, EventSeriesLink>
 
   setAdFree: (adFree: boolean) => void
   setSoundOn: (soundOn: boolean) => void
@@ -39,6 +50,9 @@ type AppState = {
   endShare: (seriesId: string) => void
   countFinishedGame: () => void
   resetInterstitialCount: () => void
+  addHostedEvent: (event: HostedEvent) => void
+  setCourt: (eventId: string, court: number) => void
+  linkEventSeries: (seriesId: string, link: EventSeriesLink) => void
 
   addMember: (name: string) => Member
   renameMember: (memberId: string, name: string) => void
@@ -116,6 +130,9 @@ export const useAppStore = create<AppState>()(
       soundOn: true,
       shares: {},
       gamesSinceInterstitial: 0,
+      hostedEvents: [],
+      courts: {},
+      eventSeries: {},
 
       setAdFree: (adFree) => set({ adFree }),
 
@@ -133,6 +150,14 @@ export const useAppStore = create<AppState>()(
         set((state) => ({ gamesSinceInterstitial: state.gamesSinceInterstitial + 1 })),
 
       resetInterstitialCount: () => set({ gamesSinceInterstitial: 0 }),
+
+      addHostedEvent: (event) => set((state) => ({ hostedEvents: [...state.hostedEvents, event] })),
+
+      setCourt: (eventId, court) =>
+        set((state) => ({ courts: { ...state.courts, [eventId]: court } })),
+
+      linkEventSeries: (seriesId, link) =>
+        set((state) => ({ eventSeries: { ...state.eventSeries, [seriesId]: link } })),
 
       addMember: (name) => {
         const member: Member = { id: newId(), name: name.trim(), createdAt: Date.now() }
@@ -326,9 +351,9 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'molkky-note-v1',
-      version: 6,
+      version: 7,
       // 保存済みの形に足りない項目を補う。セット（連戦）・ハンデ・観戦の共有・効果音・
-      // 試合ルール（ゲーム数・時間切れなど）はあとから入れた
+      // 試合ルール（ゲーム数・時間切れなど）・本部とつなぐ大会はあとから入れた
       migrate: (persisted) => {
         const state = persisted as {
           games?: LegacyGame[]
@@ -338,11 +363,17 @@ export const useAppStore = create<AppState>()(
           })[]
           shares?: Record<string, string>
           soundOn?: boolean
+          hostedEvents?: HostedEvent[]
+          courts?: Record<string, number>
+          eventSeries?: Record<string, EventSeriesLink>
         }
         return {
           ...state,
           shares: state.shares ?? {},
           soundOn: state.soundOn ?? true,
+          hostedEvents: state.hostedEvents ?? [],
+          courts: state.courts ?? {},
+          eventSeries: state.eventSeries ?? {},
           games: (state.games ?? []).map(withGameDefaults),
           tournaments: (state.tournaments ?? []).map((tournament) => ({
             ...tournament,

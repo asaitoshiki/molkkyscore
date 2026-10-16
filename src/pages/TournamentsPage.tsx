@@ -10,6 +10,7 @@ export const TournamentsPage = () => {
   const navigate = useNavigate()
   const tournaments = useAppStore((state) => state.tournaments)
   const games = useAppStore((state) => state.games)
+  const hostedEvents = useAppStore((state) => state.hostedEvents)
 
   return (
     <div className="space-y-6">
@@ -26,6 +27,38 @@ export const TournamentsPage = () => {
         <Icon name="plus" size={18} />
         大会をつくる
       </Button>
+
+      {/* 複数コートで同時に進める大会。各コートの選手が記録し、本部に届く */}
+      <section className="rounded border border-rule bg-surface px-4 py-4">
+        <p className="text-[15px]">本部で運営する</p>
+        <p className="mt-1 text-[12px] text-muted">
+          コートごとに選手が記録し、スコアシートが本部に届きます。承認・差し戻し・CSV 保存もできます。
+        </p>
+        <Button className="mt-3 w-full py-2.5 text-[14px]" onClick={() => navigate('/hq/new')}>
+          本部で大会を開く
+        </Button>
+        {hostedEvents.length > 0 && (
+          <ul className="mt-3 divide-y divide-rule border-t border-rule">
+            {[...hostedEvents]
+              .sort((a, b) => b.createdAt - a.createdAt)
+              .map((event) => (
+                <li key={event.eventId}>
+                  <Link
+                    to={`/e/${event.eventId}/hq`}
+                    className="flex items-center justify-between gap-3 py-3 text-[14px]"
+                  >
+                    <span className="min-w-0 truncate">{event.name}</span>
+                    <span className="tabular shrink-0 text-[12px] text-muted">
+                      {new Date(event.createdAt).toLocaleDateString('ja-JP')}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+          </ul>
+        )}
+      </section>
+
+      <h2 className="eyebrow text-muted">この端末だけで記録する</h2>
 
       {tournaments.length === 0 ? (
         <EmptyState>総当たり戦やトーナメントの組み合わせを自動で作れます</EmptyState>
