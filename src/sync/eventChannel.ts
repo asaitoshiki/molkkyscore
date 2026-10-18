@@ -1,6 +1,7 @@
 import { buildEventMeta } from '../domain/event'
 import type { CourtLive, EventMeta, Submission, SubmissionStatus } from '../domain/event'
-import type { Game, GameRules, Member } from '../domain/types'
+import type { EventPlan } from '../domain/eventPlan'
+import type { Game, Member } from '../domain/types'
 import { encodeSeries, newShareId } from '../domain/watchSnapshot'
 import { eventClient } from './firebase'
 
@@ -33,16 +34,18 @@ const write = async (path: string, value: unknown) => {
 }
 
 /** 本部が大会を開く。大会 ID は QR で配る鍵を兼ねるので、推測されない長さにする */
-export const createEvent = async (
-  name: string,
-  rules: GameRules,
-  teams: string[],
-  courtCount: number,
-): Promise<string> => {
+export const createEvent = async (name: string, plan: EventPlan): Promise<string> => {
   const eventId = newShareId()
   const uid = await signedInUid()
-  await write(pathOf(eventId, 'meta'), buildEventMeta(uid, name, rules, teams, courtCount, Date.now()))
+  await write(pathOf(eventId, 'meta'), buildEventMeta(uid, name, plan, Date.now()))
   return eventId
+}
+
+/** 本部が大会プランを書き換える（組み合わせの公開、7m 投の結果、次のステージなど） */
+export const updatePlan = async (eventId: string, plan: EventPlan) => {
+  const [{ ref, update }, db] = await Promise.all([import('firebase/database'), database()])
+  await signedInUid()
+  await update(ref(db, pathOf(eventId, 'meta')), { plan: JSON.stringify(plan) })
 }
 
 export const subscribeMeta = (eventId: string, onChange: (meta: EventMeta | null) => void) =>
@@ -72,33 +75,37 @@ export const subscribeSubmission = (
 export const currentUid = () => signedInUid()
 
 /** コートの今の試合を本部へ流す。毎投ごとに丸ごと上書きする */
-export const publishLive = async (eventId: string, court: number, games: Game[], members: Member[]) => {
+export const publishLive = async (
+  eventId: string,
+  matchKey: string,
+  games: Game[],
+  members: Member[],
+) => {
   const uid = await signedInUid()
-  const live: CourtLive = { court, updatedAt: Date.now(), payload: encodeSeries(games, members) }
+  const live: CourtLive = { matchKey, updatedAt: Date.now(), payload: encodeSeries(games, members) }
   await write(pathOf(eventId, 'live', uid), live)
 }
 
 /**
- * 試合の記録を本部へ提出する。差し戻されたものは同じ場所に出し直す。
+ * 試合の記録を本部へ提出する。置き場所は予定の試合ごとに決まっていて、差し戻されたら出し直す。
+ * 電池が切れたときなどは別の端末からでも出し直せる。
  * 電波がなくても Firebase が覚えておき、つながった時点で送る（画面を開いている間）
  */
 export const submitSeries = async (
   eventId: string,
-  submissionId: string,
-  court: number,
+  matchKey: string,
   games: Game[],
   members: Member[],
 ) => {
   const uid = await signedInUid()
   const submission: Submission = {
     courtUid: uid,
-    court,
     submittedAt: Date.now(),
     payload: encodeSeries(games, members),
     status: 'submitted',
     note: '',
   }
-  await write(pathOf(eventId, 'submissions', submissionId), submission)
+  await write(pathOf(eventId, 'submissions', matchKey), submission)
 }
 
 /** 本部が提出を承認する、または理由を添えて差し戻す */

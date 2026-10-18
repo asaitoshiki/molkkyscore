@@ -14,18 +14,18 @@
         ".read": true,
         "meta": {
           ".write": "auth != null && (!data.exists() || data.child('ownerUid').val() === auth.uid)",
-          ".validate": "newData.hasChildren(['ownerUid', 'name', 'rules', 'teams', 'courtCount', 'createdAt', 'expiresAt']) && newData.child('ownerUid').val() === auth.uid && newData.child('name').isString() && newData.child('name').val().length <= 100 && newData.child('rules').isString() && newData.child('rules').val().length < 2000 && newData.child('teams').isString() && newData.child('teams').val().length < 20000 && newData.child('courtCount').isNumber() && newData.child('courtCount').val() >= 1 && newData.child('courtCount').val() <= 100"
+          ".validate": "newData.hasChildren(['ownerUid', 'name', 'plan', 'createdAt', 'expiresAt']) && newData.child('ownerUid').val() === auth.uid && newData.child('name').isString() && newData.child('name').val().length <= 100 && newData.child('plan').isString() && newData.child('plan').val().length < 500000"
         },
         "live": {
           "$uid": {
             ".write": "auth != null && auth.uid === $uid && root.child('events').child($eventId).child('meta').child('expiresAt').val() > now",
-            ".validate": "newData.hasChildren(['court', 'updatedAt', 'payload']) && newData.child('court').isNumber() && newData.child('payload').isString() && newData.child('payload').val().length < 200000"
+            ".validate": "newData.hasChildren(['matchKey', 'updatedAt', 'payload']) && newData.child('matchKey').isString() && newData.child('matchKey').val().length < 50 && newData.child('payload').isString() && newData.child('payload').val().length < 200000"
           }
         },
         "submissions": {
-          "$submissionId": {
-            ".write": "auth != null && root.child('events').child($eventId).child('meta').child('expiresAt').val() > now && (root.child('events').child($eventId).child('meta').child('ownerUid').val() === auth.uid || (newData.child('courtUid').val() === auth.uid && newData.child('status').val() === 'submitted' && (!data.exists() || (data.child('courtUid').val() === auth.uid && data.child('status').val() !== 'approved'))))",
-            ".validate": "newData.hasChildren(['courtUid', 'court', 'submittedAt', 'payload', 'status', 'note']) && newData.child('court').isNumber() && newData.child('payload').isString() && newData.child('payload').val().length < 200000 && newData.child('status').val().matches(/^(submitted|approved|returned)$/) && newData.child('note').isString() && newData.child('note').val().length <= 500"
+          "$matchKey": {
+            ".write": "auth != null && root.child('events').child($eventId).child('meta').child('expiresAt').val() > now && (root.child('events').child($eventId).child('meta').child('ownerUid').val() === auth.uid || (newData.child('courtUid').val() === auth.uid && newData.child('status').val() === 'submitted' && (!data.exists() || data.child('status').val() !== 'approved')))",
+            ".validate": "$matchKey.matches(/^s[0-9]+-g[0-9]+-[0-9]+$/) && newData.hasChildren(['courtUid', 'submittedAt', 'payload', 'status', 'note']) && newData.child('payload').isString() && newData.child('payload').val().length < 200000 && newData.child('status').val().matches(/^(submitted|approved|returned)$/) && newData.child('note').isString() && newData.child('note').val().length <= 500"
           }
         }
       }

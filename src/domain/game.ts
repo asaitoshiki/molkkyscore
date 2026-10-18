@@ -65,13 +65,18 @@ export const computeGameState = (game: Game): GameState => {
     states.find((state) => state.entryId === lastSurvivor)!.score = game.rules.targetScore
   }
 
-  // 時間切れで打ち切ったゲームは、その時点でいちばん点の高い組の勝ち。並んだら引き分け
+  // 時間切れで打ち切ったゲームと、決めたターン数を全員が投げ終えたゲームは、
+  // その時点でいちばん点の高い組の勝ち。並んだら引き分け
+  const turnsUp =
+    game.rules.maxTurns !== null &&
+    survivors.every((state) => state.throwCount >= game.rules.maxTurns!)
+  const cutOff = game.timeUpAt !== null || turnsUp
   const top = Math.max(...states.map((state) => state.score))
   const leaders = states.filter((state) => state.score === top)
-  const timeWinner = game.timeUpAt !== null && leaders.length === 1 ? leaders[0].entryId : null
+  const cutOffWinner = cutOff && leaders.length === 1 ? leaders[0].entryId : null
 
-  const winner = winnerEntryId ?? lastSurvivor ?? timeWinner
-  const playing = survivors.length > 0 && winner === null && game.timeUpAt === null
+  const winner = winnerEntryId ?? lastSurvivor ?? cutOffWinner
+  const playing = survivors.length > 0 && winner === null && !cutOff
   const current = states[turn]
   const roundBase = survivors.length > 0 ? survivors : states
 

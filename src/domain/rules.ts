@@ -9,6 +9,8 @@ export const DEFAULT_RULES: GameRules = {
   decideBy: 'wins',
   nextOrder: 'reverse',
   timeLimitMinutes: null,
+  maxTurns: null,
+  finalAmongWinners: false,
 }
 
 /** スキットルの番号（1〜12） */

@@ -87,6 +87,14 @@ export const RulesEditor = ({
             />
             <Unit>分（試合全体）</Unit>
           </Field>
+          <Field label="ターン制限">
+            <NumberInput
+              value={rules.maxTurns ?? ''}
+              placeholder="なし"
+              onChange={(raw) => update({ maxTurns: raw === '' ? null : clampNumber(raw, 1, 99) })}
+            />
+            <Unit>ターンで打ち切り、点の多い方の勝ち</Unit>
+          </Field>
           <Field label="次のゲーム">
             <select
               className="rounded border border-rule bg-surface px-2 py-2 text-[14px]"
@@ -101,6 +109,16 @@ export const RulesEditor = ({
             </select>
             <Unit>に投げる</Unit>
           </Field>
+          {/* 3 人以上の試合で、最終ゲームをゲームを取った人どうしの 1 対 1 にする大会向け */}
+          <label className="flex items-start gap-2 pt-1 text-[13px]">
+            <input
+              type="checkbox"
+              className="mt-0.5 accent-accent"
+              checked={rules.finalAmongWinners}
+              onChange={(event) => update({ finalAmongWinners: event.target.checked })}
+            />
+            <span>最終ゲームは、それまでにゲームを取った組だけで行う</span>
+          </label>
         </div>
       </details>
     </div>

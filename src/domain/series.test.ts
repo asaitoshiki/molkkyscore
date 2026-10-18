@@ -130,9 +130,37 @@ describe('seriesResult', () => {
 describe('nextEntries', () => {
   it('続きのゲームの投げる順番をルールどおりに決める', () => {
     const played = game(1, [['a', [7]], ['b', [5]]])
-    expect(nextEntries(played).map((entry) => entry.id)).toEqual(['b', 'a'])
-    expect(nextEntries(withRules(played, { nextOrder: 'same' })).map((entry) => entry.id)).toEqual(['a', 'b'])
-    expect(nextEntries(withRules(played, { nextOrder: 'loserFirst' })).map((entry) => entry.id)).toEqual(['b', 'a'])
+    expect(nextEntries([played]).map((entry) => entry.id)).toEqual(['b', 'a'])
+    expect(nextEntries([withRules(played, { nextOrder: 'same' })]).map((entry) => entry.id)).toEqual(['a', 'b'])
+    expect(nextEntries([withRules(played, { nextOrder: 'loserFirst' })]).map((entry) => entry.id)).toEqual(['b', 'a'])
+  })
+})
+
+describe('ターン制限と最終ゲーム', () => {
+  it('決めたターン数を全員が投げ終えたら、点の多い組の勝ち', () => {
+    const rules = { maxTurns: 2 }
+    const played = withRules(game(1, [['a', [7]], ['b', [5]], ['a', [3]], ['b', [9]]]), rules)
+    const result = seriesResult([withRules(played, { gameCount: 1 })])
+    expect(result.finished).toBe(true)
+    expect(result.winnerEntryId).toBe('b')
+  })
+
+  it('最終ゲームはゲームを取った組だけで行い、出ない組の点は空ける', () => {
+    const three = [...entries, { id: 'c', name: 'C', memberIds: ['m3'], handicap: 0 }]
+    const rules = { gameCount: 3, maxTurns: 1, finalAmongWinners: true, nextOrder: 'same' as const }
+    const first = { ...withRules(game(1, [['a', [9]], ['b', [5]], ['c', [1]]]), rules), entries: three }
+    const second = {
+      ...withRules(game(2, [['a', [1]], ['b', [8]], ['c', [2]]]), rules),
+      id: 'g2',
+      entries: three,
+    }
+    // 1 ゲーム目は a、2 ゲーム目は b が取ったので、3 ゲーム目は a と b だけ
+    expect(nextEntries([first, second]).map((entry) => entry.id)).toEqual(['a', 'b'])
+
+    const third = { ...withRules(game(3, [['a', [12]], ['b', [3]]]), rules), id: 'g3' }
+    const result = seriesResult([first, second, third])
+    expect(result.winnerEntryId).toBe('a')
+    expect(result.standings.find((line) => line.entry.id === 'c')!.perGame).toEqual([1, 2, null])
   })
 })
 

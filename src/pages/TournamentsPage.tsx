@@ -32,7 +32,7 @@ export const TournamentsPage = () => {
       <section className="rounded border border-rule bg-surface px-4 py-4">
         <p className="text-[15px]">本部で運営する</p>
         <p className="mt-1 text-[12px] text-muted">
-          コートごとに選手が記録し、スコアシートが本部に届きます。承認・差し戻し・CSV 保存もできます。
+          予選リーグから決勝まで、ブロック分け・順位・勝ち上がりをまとめて管理します。各コートの選手が記録したスコアシートが本部に届きます。
         </p>
         <Button className="mt-3 w-full py-2.5 text-[14px]" onClick={() => navigate('/hq/new')}>
           本部で大会を開く

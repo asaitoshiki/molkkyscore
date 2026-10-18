@@ -188,7 +188,7 @@ const drawSummary = (
     standing.perGame.forEach((score, index) => {
       ctx.font = `400 30px ${SANS}`
       ctx.fillStyle = MUTED
-      ctx.fillText(String(score), gameX(index), y)
+      ctx.fillText(score === null ? '−' : String(score), gameX(index), y)
     })
 
     ctx.font = `500 44px ${SERIF}`

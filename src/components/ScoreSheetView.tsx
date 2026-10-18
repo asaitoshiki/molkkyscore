@@ -33,7 +33,7 @@ export const ScoreSheetView = ({ games }: { games: Game[] }) => {
                 <td className="py-2">{entry.name}</td>
                 {standing.perGame.map((score, index) => (
                   <td key={games[index].id} className="py-2 text-right">
-                    {score}
+                    {score ?? '−'}
                   </td>
                 ))}
                 <td className="py-2 text-right font-semibold">{standing.total}</td>

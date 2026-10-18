@@ -22,8 +22,13 @@ type MatchLink = { tournamentId: string; matchId: string }
 /** 本部として開いた大会。開いた端末にだけ覚えておく */
 export type HostedEvent = { eventId: string; name: string; createdAt: number }
 
-/** 本部と結んだ大会の試合。どの大会のどのコートで記録しているか */
-export type EventSeriesLink = { eventId: string; court: number }
+/** 本部と結んだ大会の試合。どの大会のどの予定の試合を記録しているか */
+export type EventSeriesLink = {
+  eventId: string
+  matchKey: string
+  /** 画面に出す名前。A3 の 4 試合目、準決勝 第 2 試合 など */
+  label: string
+}
 
 type AppState = {
   members: Member[]
@@ -39,8 +44,8 @@ type AppState = {
   /** 前回の全画面広告から何ゲーム終えたか */
   gamesSinceInterstitial: number
   hostedEvents: HostedEvent[]
-  /** 大会ごとに、この端末が受け持つコート番号 */
-  courts: Record<string, number>
+  /** 大会ごとに、この端末が受け持つグループ（ブロックや試合）。キーは大会 ID */
+  eventGroups: Record<string, string>
   /** 大会の試合として記録しているセット。キーはセットの識別子 */
   eventSeries: Record<string, EventSeriesLink>
 
@@ -50,8 +55,8 @@ type AppState = {
   endShare: (seriesId: string) => void
   countFinishedGame: () => void
   resetInterstitialCount: () => void
-  addHostedEvent: (event: HostedEvent) => void
-  setCourt: (eventId: string, court: number) => void
+  addHostedEvent: (event: Omit<HostedEvent, 'createdAt'>) => void
+  setEventGroup: (eventId: string, groupId: string | null) => void
   linkEventSeries: (seriesId: string, link: EventSeriesLink) => void
 
   addMember: (name: string) => Member
@@ -131,7 +136,7 @@ export const useAppStore = create<AppState>()(
       shares: {},
       gamesSinceInterstitial: 0,
       hostedEvents: [],
-      courts: {},
+      eventGroups: {},
       eventSeries: {},
 
       setAdFree: (adFree) => set({ adFree }),
@@ -151,10 +156,20 @@ export const useAppStore = create<AppState>()(
 
       resetInterstitialCount: () => set({ gamesSinceInterstitial: 0 }),
 
-      addHostedEvent: (event) => set((state) => ({ hostedEvents: [...state.hostedEvents, event] })),
+      addHostedEvent: (event) =>
+        set((state) => ({
+          hostedEvents: [...state.hostedEvents, { ...event, createdAt: Date.now() }],
+        })),
 
-      setCourt: (eventId, court) =>
-        set((state) => ({ courts: { ...state.courts, [eventId]: court } })),
+      // null はグループを選び直すとき
+      setEventGroup: (eventId, groupId) =>
+        set((state) => ({
+          eventGroups: Object.fromEntries(
+            Object.entries({ ...state.eventGroups, [eventId]: groupId }).filter(
+              (entry): entry is [string, string] => entry[1] !== null,
+            ),
+          ),
+        })),
 
       linkEventSeries: (seriesId, link) =>
         set((state) => ({ eventSeries: { ...state.eventSeries, [seriesId]: link } })),
@@ -213,7 +228,7 @@ export const useAppStore = create<AppState>()(
           id: newId(),
           createdAt: Date.now(),
           finishedAt: null,
-          entries: nextEntries(previous),
+          entries: nextEntries(gamesOfSeries(get().games, seriesId)),
           throws: [],
           gameNumber: previous.gameNumber + 1,
           timeUpAt: null,
@@ -351,7 +366,7 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'molkky-note-v1',
-      version: 7,
+      version: 8,
       // 保存済みの形に足りない項目を補う。セット（連戦）・ハンデ・観戦の共有・効果音・
       // 試合ルール（ゲーム数・時間切れなど）・本部とつなぐ大会はあとから入れた
       migrate: (persisted) => {
@@ -364,7 +379,7 @@ export const useAppStore = create<AppState>()(
           shares?: Record<string, string>
           soundOn?: boolean
           hostedEvents?: HostedEvent[]
-          courts?: Record<string, number>
+          eventGroups?: Record<string, string>
           eventSeries?: Record<string, EventSeriesLink>
         }
         return {
@@ -372,8 +387,11 @@ export const useAppStore = create<AppState>()(
           shares: state.shares ?? {},
           soundOn: state.soundOn ?? true,
           hostedEvents: state.hostedEvents ?? [],
-          courts: state.courts ?? {},
-          eventSeries: state.eventSeries ?? {},
+          eventGroups: state.eventGroups ?? {},
+          // コート番号で記録していた頃の試合は、今の大会の形に結び付けられないので外す
+          eventSeries: Object.fromEntries(
+            Object.entries(state.eventSeries ?? {}).filter(([, link]) => link.matchKey !== undefined),
+          ),
           games: (state.games ?? []).map(withGameDefaults),
           tournaments: (state.tournaments ?? []).map((tournament) => ({
             ...tournament,

@@ -1,5 +1,6 @@
+import { matchesOf } from './eventPlan'
+import type { EventPlan, MatchResult } from './eventPlan'
 import { seriesResult } from './series'
-import type { GameRules } from './types'
 import { decodeSeries } from './watchSnapshot'
 import type { SeriesPayload } from './watchSnapshot'
 
@@ -16,30 +17,27 @@ import type { SeriesPayload } from './watchSnapshot'
  *   events/{大会ID}/submissions/{試合} 提出されたスコアシートと本部の判定
  */
 
-/** 本部が作る大会の設定。配列や null を消さないよう、ルールとチーム名は JSON 文字列で持つ */
+/** 本部が作る大会の設定。配列や null を消さないよう、大会プランは JSON 文字列で持つ */
 export type EventMeta = {
   ownerUid: string
   name: string
-  rules: string
-  teams: string
-  courtCount: number
+  plan: string
   createdAt: number
   expiresAt: number
 }
 
 /** コートの今の試合 */
 export type CourtLive = {
-  court: number
+  matchKey: string
   updatedAt: number
   payload: string
 }
 
 export type SubmissionStatus = 'submitted' | 'approved' | 'returned'
 
-/** 提出されたスコアシート。差し戻されたら同じ場所に出し直す */
+/** 提出されたスコアシート。置き場所は試合ごとに決まり、差し戻されたら同じ場所に出し直す */
 export type Submission = {
   courtUid: string
-  court: number
   submittedAt: number
   payload: string
   status: SubmissionStatus
@@ -59,18 +57,14 @@ export const SUBMISSION_LABEL: Record<SubmissionStatus, string> = {
 /** 大会の設定を、画面で使える形に戻したもの */
 export type EventInfo = {
   name: string
-  rules: GameRules
-  teams: string[]
-  courtCount: number
+  plan: EventPlan
   ownerUid: string
   expiresAt: number
 }
 
 export const toEventInfo = (meta: EventMeta): EventInfo => ({
   name: meta.name,
-  rules: JSON.parse(meta.rules) as GameRules,
-  teams: JSON.parse(meta.teams) as string[],
-  courtCount: meta.courtCount,
+  plan: JSON.parse(meta.plan) as EventPlan,
   ownerUid: meta.ownerUid,
   expiresAt: meta.expiresAt,
 })
@@ -78,23 +72,38 @@ export const toEventInfo = (meta: EventMeta): EventInfo => ({
 export const buildEventMeta = (
   ownerUid: string,
   name: string,
-  rules: GameRules,
-  teams: string[],
-  courtCount: number,
+  plan: EventPlan,
   now: number,
 ): EventMeta => ({
   ownerUid,
   name: name.trim(),
-  rules: JSON.stringify(rules),
-  teams: JSON.stringify(teams),
-  courtCount,
+  plan: JSON.stringify(plan),
   createdAt: now,
   expiresAt: now + EVENT_TTL_MS,
 })
 
+/** 提出されたスコアシートから、順位の計算に要る数字を取り出す */
+const toMatchResult = (submission: Submission): MatchResult => {
+  const result = seriesResult(decodeSeries(submission.payload).games)
+  return {
+    sets: Object.fromEntries(result.standings.map((line) => [line.entry.id, line.wins])),
+    points: Object.fromEntries(result.standings.map((line) => [line.entry.id, line.total])),
+    winnerId: result.winnerEntryId,
+    approved: submission.status === 'approved',
+  }
+}
+
+/** 試合ごとの結果。差し戻した試合は数えない（直して出し直すまで結果が無いのと同じ） */
+export const resultsOf = (submissions: Record<string, Submission>): Record<string, MatchResult> =>
+  Object.fromEntries(
+    Object.entries(submissions)
+      .filter(([, submission]) => submission.status !== 'returned')
+      .map(([key, submission]) => [key, toMatchResult(submission)]),
+  )
+
 /** 本部の一覧に出す 1 試合のまとめ */
 export type MatchSummary = {
-  teams: { name: string; perGame: number[]; total: number; wins: number }[]
+  teams: { name: string; perGame: (number | null)[]; total: number; wins: number }[]
   winnerName: string | null
   finished: boolean
   /** 今投げているゲーム（試合中の表示用） */
@@ -123,38 +132,44 @@ export const summarize = (series: SeriesPayload): MatchSummary => {
 const csvCell = (value: string | number) => `"${String(value).replaceAll('"', '""')}"`
 
 /**
- * 提出された試合を表計算ソフトで開ける形にする。1 行が 1 チーム。
- * 本部が順位表や記録の保管に使う
+ * 提出された試合を表計算ソフトで開ける形にする。1 行が 1 人（1 チーム）。
+ * 本部が記録の保管や表彰の確認に使う
  */
-export const submissionsCsv = (submissions: Submission[], gameCount: number): string => {
+export const submissionsCsv = (plan: EventPlan, submissions: Record<string, Submission>): string => {
+  const gameCount = Math.max(...plan.stages.map((stage) => stage.rules.gameCount ?? 1))
   const games = Array.from({ length: gameCount }, (_, index) => index)
-  const rows = [...submissions]
-    .sort((a, b) => a.submittedAt - b.submittedAt)
-    .flatMap((submission) => {
-      const summary = summarize(decodeSeries(submission.payload))
-      const time = new Date(submission.submittedAt).toLocaleString('ja-JP')
-      return summary.teams.map((team) => [
-        time,
-        submission.court,
-        team.name,
-        // 先取で早く決まった試合は、やらなかったゲームを空欄にして列をそろえる
-        ...games.map((index) => team.perGame[index] ?? ''),
-        team.total,
-        team.wins,
-        team.name === summary.winnerName ? '勝ち' : '',
-        SUBMISSION_LABEL[submission.status],
-      ])
-    })
+  const rows = plan.stages.flatMap((stage) =>
+    matchesOf(stage)
+      .filter((match) => submissions[match.key] !== undefined)
+      .flatMap((match) => {
+        const submission = submissions[match.key]
+        const group = stage.groups.find((item) => item.id === match.groupId)!
+        const summary = summarize(decodeSeries(submission.payload))
+        return summary.teams.map((team) => [
+          stage.name,
+          group.label,
+          match.key,
+          team.name,
+          // 先取で早く決まった試合や、出なかったゲームは空欄にして列をそろえる
+          ...games.map((index) => team.perGame[index] ?? ''),
+          team.total,
+          team.wins,
+          team.name === summary.winnerName ? '勝ち' : '',
+          SUBMISSION_LABEL[submission.status],
+        ])
+      }),
+  )
   const header = [
-    '提出時刻',
-    'コート',
-    'チーム',
+    'ステージ',
+    'グループ',
+    '試合',
+    '名前',
     ...games.map((index) => `第${index + 1}ゲーム`),
     '合計',
-    '勝ち数',
+    '勝ったゲーム',
     '勝敗',
     '状態',
   ]
   // Excel で文字化けしないよう、先頭に BOM を付ける
-  return '﻿' + [header, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n')
+  return '\ufeff' + [header, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n')
 }

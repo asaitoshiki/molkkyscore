@@ -5,7 +5,8 @@ import type { DecideBy, Entry, Game, NextOrder } from './types'
 /** セット全体での 1 組の成績。ゲームごとの得点と、その合計。 */
 export type SeriesStanding = {
   entry: Entry
-  perGame: number[]
+  /** 出なかったゲーム（最終ゲームを勝った組だけで行うときなど）は null */
+  perGame: (number | null)[]
   total: number
   wins: number
   /** 時間切れで点が並んで終わったゲームの数 */
@@ -18,8 +19,8 @@ export const gamesOfSeries = (games: Game[], seriesId: string): Game[] =>
     .filter((game) => game.seriesId === seriesId)
     .sort((a, b) => a.gameNumber - b.gameNumber)
 
-const scoreOf = (state: GameState, entryId: string) =>
-  state.entries.find((item) => item.entryId === entryId)!.score
+const scoreOf = (state: GameState, entryId: string): number | null =>
+  state.entries.find((item) => item.entryId === entryId)?.score ?? null
 
 /** 勝者なしで終わったゲームでは、いちばん点の高い組どうしが引き分け */
 const drew = (state: GameState, entryId: string) =>
@@ -40,7 +41,7 @@ export const seriesStandings = (seriesGames: Game[]): SeriesStanding[] => {
     return {
       entry,
       perGame,
-      total: perGame.reduce((sum, score) => sum + score, 0),
+      total: perGame.reduce((sum: number, score) => sum + (score ?? 0), 0),
       wins: states.filter((state) => state.winnerEntryId === entry.id).length,
       draws: states.filter((state) => drew(state, entry.id)).length,
     }
@@ -106,8 +107,22 @@ const NEXT_ORDER: Record<NextOrder, (previous: Game) => Entry[]> = {
   same: (previous) => previous.entries,
   loserFirst: (previous) => {
     const state = computeGameState(previous)
-    return [...previous.entries].sort((a, b) => scoreOf(state, a.id) - scoreOf(state, b.id))
+    return [...previous.entries].sort((a, b) => scoreOf(state, a.id)! - scoreOf(state, b.id)!)
   },
 }
 
-export const nextEntries = (previous: Game): Entry[] => NEXT_ORDER[previous.rules.nextOrder](previous)
+/**
+ * 続きのゲームに出る組と投げる順番。
+ * 最終ゲームを勝った組だけで行う決まりなら、それまでにゲームを取った組に絞る
+ */
+export const nextEntries = (seriesGames: Game[]): Entry[] => {
+  const previous = seriesGames.at(-1)!
+  const ordered = NEXT_ORDER[previous.rules.nextOrder](previous)
+  const isFinal = previous.gameNumber + 1 === previous.rules.gameCount
+  if (!previous.rules.finalAmongWinners || !isFinal) return ordered
+
+  const winners = new Set(seriesGames.map((game) => computeGameState(game).winnerEntryId))
+  const finalists = ordered.filter((entry) => winners.has(entry.id))
+  // ゲームを取った組が 1 組以下なら絞りようがないので、全員で行う
+  return finalists.length >= 2 ? finalists : ordered
+}

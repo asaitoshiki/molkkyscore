@@ -21,7 +21,8 @@ export const useEventInfo = (eventId: string): EventState => {
   useEffect(
     () =>
       subscribeMeta(eventId, (meta) => {
-        if (meta === null) return setState({ kind: 'missing' })
+        // 大会プランを持たない古い形の大会は、今の画面では開けない
+        if (meta === null || meta.plan === undefined) return setState({ kind: 'missing' })
         if (meta.expiresAt < Date.now()) return setState({ kind: 'ended' })
         setState({ kind: 'ready', info: toEventInfo(meta) })
       }),

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { buildEventMeta, submissionsCsv, summarize, toEventInfo } from './event'
+import { buildEventMeta, resultsOf, submissionsCsv, summarize, toEventInfo } from './event'
+import type { EventPlan } from './eventPlan'
 import type { Submission } from './event'
 import { DEFAULT_RULES } from './rules'
 import type { Game, GameRules } from './types'
@@ -31,13 +32,42 @@ const aWins = (gameNumber: number, order: string[]): Game => ({
   matchId: null,
 })
 
+const plan: EventPlan = {
+  players: [
+    { id: 'a', name: 'A' },
+    { id: 'b', name: 'B' },
+  ],
+  stages: [
+    {
+      id: 's1',
+      name: '決勝',
+      format: 'knockout',
+      rules,
+      groupSize: 2,
+      advancePerGroup: 1,
+      wildcards: 0,
+      pointsBreakTies: false,
+      tiebreaks: {},
+      groups: [{ id: 'g1', label: '第 1 試合', playerIds: ['a', 'b'] }],
+      started: true,
+    },
+  ],
+}
+
+const submission = (status: Submission['status']): Submission => ({
+  courtUid: 'u',
+  submittedAt: 0,
+  payload: encodeSeries([aWins(1, ['a', 'b']), aWins(2, ['b', 'a'])], []),
+  status,
+  note: '',
+})
+
 describe('本部とコートの大会', () => {
-  it('大会の設定はルールとチーム名を文字列にして送り、受け取った側で戻せる', () => {
-    const meta = buildEventMeta('owner', '  春の大会 ', rules, ['ひまわり', 'たんぽぽ'], 8, 100)
+  it('大会プランは文字列にして送り、受け取った側で戻せる', () => {
+    const meta = buildEventMeta('owner', '  春の大会 ', plan, 100)
     const info = toEventInfo(meta)
     expect(info.name).toBe('春の大会')
-    expect(info.rules).toEqual(rules)
-    expect(info.teams).toEqual(['ひまわり', 'たんぽぽ'])
+    expect(info.plan).toEqual(plan)
     expect(meta.expiresAt).toBeGreaterThan(meta.createdAt)
   })
 
@@ -52,18 +82,25 @@ describe('本部とコートの大会', () => {
     expect(summary.finished).toBe(true)
   })
 
-  it('CSV は 1 行 1 チームで、ゲーム数の列をそろえる', () => {
-    const submission: Submission = {
-      courtUid: 'u',
-      court: 3,
-      submittedAt: 0,
-      payload: encodeSeries([aWins(1, ['a', 'b']), aWins(2, ['b', 'a'])], []),
-      status: 'approved',
-      note: '',
-    }
-    const lines = submissionsCsv([submission], 2).replace('﻿', '').split('\r\n')
-    expect(lines[0]).toBe('"提出時刻","コート","チーム","第1ゲーム","第2ゲーム","合計","勝ち数","勝敗","状態"')
-    expect(lines[1]).toContain('"3","A","50","50","100","2","勝ち","承認済み"')
-    expect(lines[2]).toContain('"3","B","4","5","9","0","","承認済み"')
+  it('提出から勝ったゲーム数と合計点を取り出し、差し戻した試合は数えない', () => {
+    const results = resultsOf({ 's1-g1-1': submission('approved'), other: submission('returned') })
+    expect(Object.keys(results)).toEqual(['s1-g1-1'])
+    expect(results['s1-g1-1']).toEqual({
+      sets: { a: 2, b: 0 },
+      points: { a: 100, b: 9 },
+      winnerId: 'a',
+      approved: true,
+    })
+  })
+
+  it('CSV は 1 行 1 人で、ステージとグループを添える', () => {
+    const lines = submissionsCsv(plan, { 's1-g1-1': submission('approved') })
+      .replace('\ufeff', '')
+      .split('\r\n')
+    expect(lines[0]).toBe(
+      '"ステージ","グループ","試合","名前","第1ゲーム","第2ゲーム","合計","勝ったゲーム","勝敗","状態"',
+    )
+    expect(lines[1]).toBe('"決勝","第 1 試合","s1-g1-1","A","50","50","100","2","勝ち","承認済み"')
+    expect(lines[2]).toBe('"決勝","第 1 試合","s1-g1-1","B","4","5","9","0","","承認済み"')
   })
 })

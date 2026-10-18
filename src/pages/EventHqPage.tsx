@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import QRCode from 'qrcode'
@@ -6,19 +6,22 @@ import { AppBar } from '../components/AppBar'
 import { EventGate } from '../components/EventGate'
 import { Icon } from '../components/Icon'
 import { ScoreSheetView } from '../components/ScoreSheetView'
+import { StagePanel } from '../components/StagePanel'
 import { SubmissionBadge } from '../components/SubmissionBadge'
 import { Button, EmptyState, TextInput } from '../components/ui'
-import { submissionsCsv, summarize } from '../domain/event'
+import { resultsOf, submissionsCsv, summarize } from '../domain/event'
 import type { CourtLive, EventInfo, MatchSummary, Submission, SubmissionStatus } from '../domain/event'
-import { formatLabel } from '../domain/formats'
+import { activeStage, findMatch, matchLabel } from '../domain/eventPlan'
+import type { EventPlan } from '../domain/eventPlan'
 import { eventCourtUrl } from '../domain/sharing'
 import { decodeSeries } from '../domain/watchSnapshot'
-import { reviewSubmission } from '../sync/eventChannel'
+import { reviewSubmission, updatePlan } from '../sync/eventChannel'
 import { useCourtLive, useEventUid, useSubmissions } from '../sync/useEvent'
 
 /**
- * 本部の画面。全コートの様子と、提出されたスコアシートを一か所で見る。
- * 承認や差し戻しができるのは大会を開いた端末だけで、ほかの端末で開くと見るだけになる。
+ * 本部の画面。ステージの進み具合（順位・同点・勝ち抜け）、提出されたスコアシート、
+ * 試合中のコートの様子を一か所で見る。
+ * 書き換えができるのは大会を開いた端末だけで、ほかの端末で開くと見るだけになる。
  * 机に置いたタブレットやパソコンでも見やすいよう、幅を広めに取る
  */
 export const EventHqPage = () => {
@@ -26,23 +29,23 @@ export const EventHqPage = () => {
   return <EventGate eventId={eventId}>{(info) => <HqView eventId={eventId} info={info} />}</EventGate>
 }
 
-type Tab = 'courts' | 'submissions'
+type Tab = 'progress' | 'submissions' | 'live'
 
 /** 確認待ちを先に、そのあと差し戻し・承認済みの順に並べる */
 const STATUS_ORDER: Record<SubmissionStatus, number> = { submitted: 0, returned: 1, approved: 2 }
 
 const HqView = ({ eventId, info }: { eventId: string; info: EventInfo }) => {
-  const live = useCourtLive(eventId)
   const submissions = useSubmissions(eventId)
   const uid = useEventUid()
   const owner = uid === info.ownerUid
-  const [tab, setTab] = useState<Tab>('courts')
+  const [tab, setTab] = useState<Tab>('progress')
   const [showingQr, setShowingQr] = useState(false)
+  const save = owner ? (plan: EventPlan) => void updatePlan(eventId, plan) : null
 
   const waiting = Object.values(submissions).filter((item) => item.status === 'submitted').length
 
   const downloadCsv = () => {
-    const csv = submissionsCsv(Object.values(submissions), info.rules.gameCount!)
+    const csv = submissionsCsv(info.plan, submissions)
     const link = document.createElement('a')
     link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
     link.download = `${info.name}.csv`
@@ -51,7 +54,7 @@ const HqView = ({ eventId, info }: { eventId: string; info: EventInfo }) => {
   }
 
   return (
-    <div className="mx-auto min-h-full max-w-3xl bg-paper">
+    <div className="mx-auto min-h-full max-w-4xl bg-paper">
       <AppBar
         title={`本部・${info.name}`}
         left={
@@ -70,33 +73,40 @@ const HqView = ({ eventId, info }: { eventId: string; info: EventInfo }) => {
 
       <section className="px-5 pt-5">
         <p className="text-[12px] text-muted">
-          {formatLabel(info.rules)}・{info.rules.targetScore} 点・コート {info.courtCount} 面
+          参加 {info.plan.players.length} 人・{info.plan.stages.map((stage) => stage.name).join(' → ')}
         </p>
         {!owner && (
           <p className="mt-2 rounded border border-rule px-3 py-2 text-[12px] text-muted">
-            この端末では見るだけです。承認と差し戻しは、大会を開いた端末でできます。
+            この端末では見るだけです。組み合わせ・同点の決定・承認は、大会を開いた端末でできます。
           </p>
         )}
         <div className="mt-4 flex border-b border-rule text-[14px]">
-          <TabButton active={tab === 'courts'} onClick={() => setTab('courts')}>
-            コート
+          <TabButton active={tab === 'progress'} onClick={() => setTab('progress')}>
+            進行
           </TabButton>
           <TabButton active={tab === 'submissions'} onClick={() => setTab('submissions')}>
-            提出 {waiting > 0 && <span className="ml-1 rounded-full bg-alert px-1.5 text-[11px] text-paper">{waiting}</span>}
+            提出
+            {waiting > 0 && (
+              <span className="ml-1 rounded-full bg-alert px-1.5 text-[11px] text-paper">{waiting}</span>
+            )}
+          </TabButton>
+          <TabButton active={tab === 'live'} onClick={() => setTab('live')}>
+            試合中
           </TabButton>
         </div>
       </section>
 
-      {tab === 'courts' ? (
-        <Courts info={info} live={live} submissions={submissions} />
-      ) : (
+      {tab === 'progress' && <Progress plan={info.plan} submissions={submissions} save={save} />}
+      {tab === 'submissions' && (
         <Submissions
           eventId={eventId}
+          plan={info.plan}
           submissions={submissions}
           owner={owner}
           onDownload={downloadCsv}
         />
       )}
+      {tab === 'live' && <Live eventId={eventId} plan={info.plan} />}
     </div>
   )
 }
@@ -118,68 +128,37 @@ const TabButton = ({
   </button>
 )
 
-/** コートごとの今の試合。同じコートに複数の端末がつないだときは、最後に投げた方を出す */
-const Courts = ({
-  info,
-  live,
+/** ステージを選んで、その進み具合を見る。はじめは今コートで進んでいるステージを開く */
+const Progress = ({
+  plan,
   submissions,
+  save,
 }: {
-  info: EventInfo
-  live: Record<string, CourtLive>
+  plan: EventPlan
   submissions: Record<string, Submission>
+  save: ((plan: EventPlan) => void) | null
 }) => {
-  const latest = useMemo(() => {
-    const byCourt = new Map<number, CourtLive>()
-    Object.values(live).forEach((item) => {
-      const current = byCourt.get(item.court)
-      if (current === undefined || current.updatedAt < item.updatedAt) byCourt.set(item.court, item)
-    })
-    return byCourt
-  }, [live])
-  const now = useMinuteClock()
+  const [stageId, setStageId] = useState((activeStage(plan) ?? plan.stages[0]).id)
+  const stage = plan.stages.find((item) => item.id === stageId)!
+  const results = resultsOf(submissions)
 
   return (
-    <ul className="grid gap-3 px-5 py-5 sm:grid-cols-2 lg:grid-cols-3">
-      {Array.from({ length: info.courtCount }, (_, index) => index + 1).map((court) => {
-        const item = latest.get(court)
-        return (
-          <li key={court} className="rounded border border-rule bg-surface px-4 py-3">
-            <div className="flex items-center justify-between">
-              <p className="font-serif text-lg">コート {court}</p>
-              {item !== undefined && (
-                <span className="tabular text-[11px] text-faint">{agoLabel(now - item.updatedAt)}</span>
-              )}
-            </div>
-            {item === undefined ? (
-              <p className="mt-2 text-[12px] text-faint">まだ記録が届いていません</p>
-            ) : (
-              <CourtMatch item={item} submissions={submissions} />
-            )}
-          </li>
-        )
-      })}
-    </ul>
-  )
-}
-
-const CourtMatch = ({
-  item,
-  submissions,
-}: {
-  item: CourtLive
-  submissions: Record<string, Submission>
-}) => {
-  const series = decodeSeries(item.payload)
-  const summary = summarize(series)
-  const submission = submissions[series.games[0].seriesId]
-
-  return (
-    <div className="mt-2">
-      <div className="flex items-center justify-between text-[11px] text-muted">
-        <span>{summary.finished ? '試合終了' : `第 ${summary.gameNumber} ゲーム`}</span>
-        {summary.finished && <SubmissionBadge status={submission?.status ?? 'none'} />}
+    <div className="space-y-4 px-5 py-5">
+      <div className="flex flex-wrap gap-1.5">
+        {plan.stages.map((item) => (
+          <button
+            key={item.id}
+            className={`rounded-full border px-3 py-1.5 text-[13px] ${
+              item.id === stageId ? 'border-accent bg-accent text-paper' : 'border-rule text-muted'
+            }`}
+            onClick={() => setStageId(item.id)}
+          >
+            {item.name}
+            {item.started && ' ●'}
+          </button>
+        ))}
       </div>
-      <MatchLines summary={summary} />
+      <StagePanel plan={plan} stage={stage} results={results} submissions={submissions} save={save} />
     </div>
   )
 }
@@ -191,7 +170,9 @@ const MatchLines = ({ summary }: { summary: MatchSummary }) => (
       {summary.teams.map((team) => (
         <tr key={team.name} className={team.name === summary.winnerName ? 'text-accent' : ''}>
           <td className="max-w-0 truncate py-0.5">{team.name}</td>
-          <td className="w-20 py-0.5 text-right text-[12px] text-muted">{team.perGame.join(' / ')}</td>
+          <td className="w-24 py-0.5 text-right text-[12px] text-muted">
+            {team.perGame.map((score) => score ?? '−').join(' / ')}
+          </td>
           <td className="w-10 py-0.5 text-right font-semibold">{team.total}</td>
         </tr>
       ))}
@@ -201,11 +182,13 @@ const MatchLines = ({ summary }: { summary: MatchSummary }) => (
 
 const Submissions = ({
   eventId,
+  plan,
   submissions,
   owner,
   onDownload,
 }: {
   eventId: string
+  plan: EventPlan
   submissions: Record<string, Submission>
   owner: boolean
   onDownload: () => void
@@ -214,6 +197,13 @@ const Submissions = ({
   const list = Object.entries(submissions).sort(
     ([, a], [, b]) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status] || b.submittedAt - a.submittedAt,
   )
+  const waiting = list.filter(([, submission]) => submission.status === 'submitted')
+
+  // 両チームが確かめてから送っているので、目で見て問題なければまとめて承認できるようにする
+  const approveAll = () => {
+    if (!window.confirm(`確認待ちの ${waiting.length} 試合をすべて承認しますか？`)) return
+    waiting.forEach(([id]) => void reviewSubmission(eventId, id, 'approved', ''))
+  }
 
   if (list.length === 0) {
     return <EmptyState>試合が終わると、各コートからスコアシートが届きます</EmptyState>
@@ -221,7 +211,12 @@ const Submissions = ({
 
   return (
     <div className="px-5 py-4">
-      <div className="mb-3 flex justify-end">
+      <div className="mb-3 flex justify-end gap-2">
+        {owner && waiting.length > 0 && (
+          <Button variant="outline" className="px-3 py-1.5 text-[12px]" onClick={approveAll}>
+            確認待ちをすべて承認
+          </Button>
+        )}
         <Button variant="outline" className="px-3 py-1.5 text-[12px]" onClick={onDownload}>
           CSV で保存
         </Button>
@@ -231,7 +226,8 @@ const Submissions = ({
           <SubmissionRow
             key={id}
             eventId={eventId}
-            submissionId={id}
+            plan={plan}
+            matchKey={id}
             submission={submission}
             owner={owner}
             open={openId === id}
@@ -245,14 +241,16 @@ const Submissions = ({
 
 const SubmissionRow = ({
   eventId,
-  submissionId,
+  plan,
+  matchKey,
   submission,
   owner,
   open,
   onToggle,
 }: {
   eventId: string
-  submissionId: string
+  plan: EventPlan
+  matchKey: string
   submission: Submission
   owner: boolean
   open: boolean
@@ -260,6 +258,7 @@ const SubmissionRow = ({
 }) => {
   const series = decodeSeries(submission.payload)
   const summary = summarize(series)
+  const { stage, match } = findMatch(plan, matchKey)
   const [note, setNote] = useState(submission.note)
   const time = new Date(submission.submittedAt).toLocaleTimeString('ja-JP', {
     hour: '2-digit',
@@ -269,8 +268,8 @@ const SubmissionRow = ({
   return (
     <li className="py-3">
       <button className="flex w-full items-start gap-3 text-left" onClick={onToggle}>
-        <span className="tabular w-14 shrink-0 text-[12px] text-muted">
-          コート {submission.court}
+        <span className="tabular w-24 shrink-0 text-[12px] text-muted">
+          {matchLabel(stage, match)}
           <span className="block text-faint">{time}</span>
         </span>
         <span className="min-w-0 flex-1">
@@ -295,11 +294,11 @@ const SubmissionRow = ({
                   variant="outline"
                   className="text-alert"
                   disabled={note.trim() === ''}
-                  onClick={() => reviewSubmission(eventId, submissionId, 'returned', note.trim())}
+                  onClick={() => reviewSubmission(eventId, matchKey, 'returned', note.trim())}
                 >
                   差し戻す
                 </Button>
-                <Button onClick={() => reviewSubmission(eventId, submissionId, 'approved', '')}>
+                <Button onClick={() => reviewSubmission(eventId, matchKey, 'approved', '')}>
                   承認する
                 </Button>
               </div>
@@ -307,6 +306,50 @@ const SubmissionRow = ({
           )}
         </div>
       )}
+    </li>
+  )
+}
+
+/** 試合中のコート。最後に投げた順に並べる */
+const Live = ({ eventId, plan }: { eventId: string; plan: EventPlan }) => {
+  const live = useCourtLive(eventId)
+  const now = useMinuteClock()
+  const list = Object.entries(live)
+    .map(([uid, item]) => ({ uid, item, summary: summarize(decodeSeries(item.payload)) }))
+    .filter(({ summary }) => !summary.finished)
+    .sort((a, b) => b.item.updatedAt - a.item.updatedAt)
+
+  if (list.length === 0) return <EmptyState>いま試合中のコートはありません</EmptyState>
+
+  return (
+    <ul className="grid gap-3 px-5 py-5 sm:grid-cols-2 lg:grid-cols-3">
+      {list.map(({ uid, item, summary }) => (
+        <LiveCard key={uid} plan={plan} item={item} summary={summary} now={now} />
+      ))}
+    </ul>
+  )
+}
+
+const LiveCard = ({
+  plan,
+  item,
+  summary,
+  now,
+}: {
+  plan: EventPlan
+  item: CourtLive
+  summary: MatchSummary
+  now: number
+}) => {
+  const { stage, match } = findMatch(plan, item.matchKey)
+  return (
+    <li className="rounded border border-rule bg-surface px-4 py-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[14px]">{matchLabel(stage, match)}</p>
+        <span className="tabular text-[11px] text-faint">{agoLabel(now - item.updatedAt)}</span>
+      </div>
+      <p className="mt-1 text-[11px] text-muted">第 {summary.gameNumber} ゲーム</p>
+      <MatchLines summary={summary} />
     </li>
   )
 }

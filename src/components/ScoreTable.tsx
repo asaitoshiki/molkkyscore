@@ -27,7 +27,7 @@ export const ScoreTable = ({
 }) => {
   const standings = seriesStandings(seriesGames)
   const state = computeGameState(currentGame)
-  const stateOf = (entryId: string) => state.entries.find((item) => item.entryId === entryId)!
+  const stateOf = (entryId: string) => state.entries.find((item) => item.entryId === entryId)
 
   return (
     <table className="tabular w-full text-[14px]">
@@ -44,7 +44,9 @@ export const ScoreTable = ({
       </thead>
       <tbody className="divide-y divide-rule border-t border-rule">
         {standings.map((standing) => {
+          // 最終ゲームを勝った組だけで行うときは、出ない組の行を薄く残す
           const entryState = stateOf(standing.entry.id)
+          const benched = entryState === undefined
           const active = standing.entry.id === state.currentEntryId
           const hit = effect !== null && effect.entryId === standing.entry.id
           return (
@@ -60,16 +62,20 @@ export const ScoreTable = ({
                   <span className="min-w-0">
                     <span
                       className={`block max-w-[8.5rem] truncate text-[15px] ${
-                        entryState.eliminated ? 'text-faint line-through' : ''
+                        benched ? 'text-faint' : entryState.eliminated ? 'text-faint line-through' : ''
                       }`}
                     >
                       {standing.entry.name}
                     </span>
                     <span className="flex items-center gap-1.5">
-                      <MissDots
-                        used={entryState.consecutiveMisses}
-                        total={currentGame.rules.maxMisses}
-                      />
+                      {benched ? (
+                        <span className="text-[10px] text-faint">このゲームは出場なし</span>
+                      ) : (
+                        <MissDots
+                          used={entryState.consecutiveMisses}
+                          total={currentGame.rules.maxMisses}
+                        />
+                      )}
                       {standing.entry.handicap > 0 && (
                         <span className="text-[10px] text-muted">
                           ハンデ +{standing.entry.handicap}
@@ -88,7 +94,7 @@ export const ScoreTable = ({
                       pop={hit && isCurrent}
                       token={effect?.token}
                     >
-                      {score}
+                      {score ?? '−'}
                     </Chip>
                   </td>
                 )
@@ -119,7 +125,7 @@ const Chip = ({
   tone: keyof typeof tones
   pop?: boolean
   token?: number
-  children: number
+  children: number | string
 }) => (
   <span
     key={pop ? token : undefined}

@@ -44,6 +44,10 @@ export type GameRules = {
   nextOrder: NextOrder
   /** 試合の制限時間（分）。null は時間を決めない */
   timeLimitMinutes: number | null
+  /** 1 ゲームのターン数の上限。全員が投げ終えたらその時点の点数で決める。null は上限なし */
+  maxTurns: number | null
+  /** 最終ゲームは、それまでにゲームを取った組だけで行う（3 人対戦の 3 セット目など） */
+  finalAmongWinners: boolean
 }
 
 export type Game = {

@@ -20,8 +20,7 @@ type Sending = 'idle' | 'sending' | 'waiting'
  */
 export const EventSubmit = ({ link, seriesGames }: { link: EventSeriesLink; seriesGames: Game[] }) => {
   const members = useAppStore((state) => state.members)
-  const seriesId = seriesGames[0].seriesId
-  const submission = useSubmission(link.eventId, seriesId)
+  const submission = useSubmission(link.eventId, link.matchKey)
   const [confirmed, setConfirmed] = useState<string[]>([])
   const [sending, setSending] = useState<Sending>('idle')
 
@@ -37,7 +36,7 @@ export const EventSubmit = ({ link, seriesGames }: { link: EventSeriesLink; seri
   const send = async () => {
     setSending('sending')
     const timer = setTimeout(() => setSending('waiting'), SEND_TIMEOUT_MS)
-    await submitSeries(link.eventId, seriesId, link.court, seriesGames, members)
+    await submitSeries(link.eventId, link.matchKey, seriesGames, members)
     clearTimeout(timer)
     setSending('idle')
     setConfirmed([])
@@ -46,7 +45,7 @@ export const EventSubmit = ({ link, seriesGames }: { link: EventSeriesLink; seri
   return (
     <section className="border-b border-rule px-5 py-5">
       <div className="flex items-center justify-between">
-        <p className="eyebrow text-muted">本部への提出・コート {link.court}</p>
+        <p className="eyebrow text-muted">本部への提出・{link.label}</p>
         <SubmissionBadge status={submission?.status ?? 'none'} />
       </div>
 

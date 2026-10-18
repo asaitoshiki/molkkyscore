@@ -77,7 +77,7 @@ const GameView = ({ gameId }: { gameId: string }) => {
   const eventLink = useAppStore((state) => state.eventSeries[game.seriesId])
   useEffect(() => {
     if (eventLink === undefined) return
-    publishLive(eventLink.eventId, eventLink.court, seriesGames, members).catch(() => undefined)
+    publishLive(eventLink.eventId, eventLink.matchKey, seriesGames, members).catch(() => undefined)
   }, [eventLink, seriesGames, members])
 
   // 合図は流し終えたら片付ける
@@ -152,7 +152,7 @@ const GameView = ({ gameId }: { gameId: string }) => {
   return (
     <div className="mx-auto flex min-h-full max-w-md flex-col bg-paper">
       <AppBar
-        title={`${eventLink === undefined ? '' : `コート ${eventLink.court}・`}${gameTitle(game)}`}
+        title={`${eventLink === undefined ? '' : `${eventLink.label}・`}${gameTitle(game)}`}
         left={
           <>
             <button onClick={() => navigate('/')} aria-label="中断してホームへ">
@@ -211,6 +211,7 @@ const GameView = ({ gameId }: { gameId: string }) => {
             {entryOf(state.currentEntryId!).name}
           </p>
           <p className="tabular text-[12px] text-muted">
+            {game.rules.maxTurns !== null && `ターン ${state.round} / ${game.rules.maxTurns}　`}
             残り {game.rules.targetScore - currentState.score}
           </p>
         </div>
@@ -438,7 +439,9 @@ const ResultView = ({
           {timedOut && '・時間切れ'}
         </p>
         {winnerName === null ? (
-          <p className="mt-2 font-serif text-2xl">{timedOut ? '引き分け' : '勝者なしで終了'}</p>
+          <p className="mt-2 font-serif text-2xl">
+            {timedOut || game.rules.maxTurns !== null ? '引き分け' : '勝者なしで終了'}
+          </p>
         ) : (
           <p className="mt-2 font-serif text-3xl leading-snug">
             <span className="text-accent">{winnerName}</span> の勝利
@@ -476,7 +479,7 @@ const ResultView = ({
                 {standing.wins}勝{standing.draws > 0 && `${standing.draws}分`}
                 {'　'}
                 {standing.perGame
-                  .map((score, index) => `第${seriesGames[index].gameNumber}ゲーム：${score}`)
+                  .map((score, index) => `第${seriesGames[index].gameNumber}ゲーム：${score ?? '−'}`)
                   .join('　')}
               </span>
             </span>
