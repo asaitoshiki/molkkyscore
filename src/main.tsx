@@ -4,8 +4,11 @@ import { HashRouter } from 'react-router-dom'
 import { App } from './App'
 import { initializeAds } from './ads/admob'
 import { initializePurchases } from './billing/purchases'
+import { keepUpToDate } from './pwa'
 import { useAppStore } from './store/useAppStore'
 import './index.css'
+
+keepUpToDate()
 
 // 端末のストアに購入が残っていれば、起動時に引き継ぐ
 void initializePurchases(() => useAppStore.getState().setAdFree(true))
