@@ -5,7 +5,9 @@ import {
   drawGroups,
   groupStandings,
   matchesOf,
-  playersFromText,
+  namesFromText,
+  playersFromNames,
+  resizeNames,
   qualify,
   startPlan,
   swapPlayers,
@@ -13,7 +15,7 @@ import {
 import type { MatchResult, PlanMatch, Stage } from './eventPlan'
 
 const players = (count: number) =>
-  playersFromText(Array.from({ length: count }, (_, index) => `選手${index + 1}`).join('\n'))
+  playersFromNames(Array.from({ length: count }, (_, index) => `選手${index + 1}`))
 
 const [hyogo] = PLAN_TEMPLATES
 
@@ -35,8 +37,19 @@ const leagueOf = (count: number, patch: Partial<Stage> = {}): Stage => {
 }
 
 describe('大会プラン', () => {
-  it('参加者は 1 行 1 人で、空行と同じ名前はまとめる', () => {
-    expect(playersFromText('A\n\n B \nA\nC').map((player) => player.name)).toEqual(['A', 'B', 'C'])
+  it('貼り付けた名前は 1 行 1 チームで、空行と同じ名前はまとめる', () => {
+    expect(namesFromText('A\n\n B \nA\nC')).toEqual(['A', 'B', 'C'])
+  })
+
+  it('チーム数を増やすと空いている番号を名前にして足し、減らすと後ろから外す', () => {
+    expect(resizeNames(['1', 'ひまわり'], 4)).toEqual(['1', 'ひまわり', '2', '3'])
+    expect(resizeNames(['1', '2', '3'], 1)).toEqual(['1'])
+    // 途中の名前を変えても、番号は一番大きいものの続きになる
+    expect(resizeNames(['1', 'ひまわり', '3'], 4)).toEqual(['1', 'ひまわり', '3', '4'])
+    expect(playersFromNames([' A ', 'B'])).toEqual([
+      { id: 'p1', name: 'A' },
+      { id: 'p2', name: 'B' },
+    ])
   })
 
   it('5 人ブロックの総当たりは 10 試合で、各人 4 試合・5 巡で毎巡 2 試合', () => {

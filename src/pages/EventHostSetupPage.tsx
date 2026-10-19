@@ -2,11 +2,22 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Icon } from '../components/Icon'
+import { OrderList } from '../components/OrderList'
 import { RulesEditor } from '../components/RulesEditor'
 import { Button, SectionTitle, TextInput } from '../components/ui'
-import { FORMAT_LABEL, PLAN_TEMPLATES, playersFromText, shuffled, startPlan } from '../domain/eventPlan'
+import {
+  FORMAT_LABEL,
+  PLAN_TEMPLATES,
+  namesFromText,
+  nextNumberName,
+  playersFromNames,
+  resizeNames,
+  shuffled,
+  startPlan,
+} from '../domain/eventPlan'
 import type { Stage, StageFormat } from '../domain/eventPlan'
 import { TOURNAMENT_PRESETS, formatLabel } from '../domain/formats'
+import { moveItem } from '../domain/order'
 import { clampNumber } from '../domain/rules'
 import { createEvent } from '../sync/eventChannel'
 import { useAppStore } from '../store/useAppStore'
@@ -24,13 +35,18 @@ export const EventHostSetupPage = () => {
   const addHostedEvent = useAppStore((state) => state.addHostedEvent)
 
   const [name, setName] = useState('')
-  const [playersText, setPlayersText] = useState('')
+  // 名前の初期値は番号。ゼッケン番号のまま使ってもよい
+  const [names, setNames] = useState(['1', '2'])
+  const [pasted, setPasted] = useState('')
   const [lottery, setLottery] = useState(true)
   const [template, setTemplate] = useState(0)
   const [stages, setStages] = useState<Stage[]>(() => PLAN_TEMPLATES[0].build([]))
   const [status, setStatus] = useState<'idle' | 'creating' | 'failed'>('idle')
 
-  const players = playersFromText(playersText)
+  const players = playersFromNames(names)
+  const trimmed = names.map((item) => item.trim())
+  const blank = trimmed.some((item) => item === '')
+  const duplicated = new Set(trimmed).size !== trimmed.length
 
   // 1 対 1 のトーナメントは人数でラウンド数が変わるので、選んだ時点の人数で作る
   const chooseTemplate = (index: number) => {
@@ -88,15 +104,93 @@ export const EventHostSetupPage = () => {
         />
       </section>
 
-      <section>
-        <SectionTitle>参加者（{players.length} 人）</SectionTitle>
-        <textarea
-          className="h-40 w-full rounded border border-rule bg-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-faint focus:border-accent"
-          placeholder={'1 行に 1 人（チーム戦ならチーム名）\n山田 太郎\n佐藤 花子'}
-          value={playersText}
-          onChange={(event) => setPlayersText(event.target.value)}
+      <section className="border-t border-rule pt-4">
+        <div className="flex items-baseline justify-between">
+          <h2 className="font-serif text-2xl">参加チーム</h2>
+          {/* 数を入れるとまとめて増減できる。打っている途中で丸めないよう、確定は入力欄を離れたとき */}
+          <label className="flex items-center gap-1.5 text-[12px] text-muted">
+            <span className="w-16">
+              <TextInput
+                key={names.length}
+                aria-label="チーム数"
+                type="number"
+                inputMode="numeric"
+                className="tabular py-1.5 text-right"
+                defaultValue={names.length}
+                onBlur={(event) => setNames(resizeNames(names, clampNumber(event.target.value, 2, 300)))}
+              />
+            </span>
+            チーム
+          </label>
+        </div>
+        <p className="mt-1 mb-5 text-[12px] text-muted">
+          上から順に並びます。取っ手で順番を入れ替え、名前はタップして直せます（シングルスなら選手名）。
+        </p>
+
+        <OrderList
+          items={names}
+          onMove={(from, to) => setNames(moveItem(names, from, to))}
+          renderItem={(item, index) => (
+            <>
+              <input
+                aria-label={`${index + 1} 番目のチームの名前`}
+                className="min-w-0 flex-1 border-b border-transparent bg-transparent py-1 text-[15px] outline-none placeholder:text-faint focus:border-accent focus-visible:outline-none"
+                placeholder="チーム名"
+                value={item}
+                onChange={(event) =>
+                  setNames(names.map((name, position) => (position === index ? event.target.value : name)))
+                }
+              />
+              {names.length > 2 && (
+                <button
+                  aria-label={`${item} を外す`}
+                  className="shrink-0 p-1 text-faint"
+                  onClick={() => setNames(names.filter((_, position) => position !== index))}
+                >
+                  <Icon name="close" size={16} />
+                </button>
+              )}
+            </>
+          )}
         />
-        <label className="mt-2 flex items-center gap-2 text-[13px]">
+
+        <button
+          className="mt-3 flex items-center gap-2 py-1 text-[14px] text-accent"
+          onClick={() => setNames([...names, nextNumberName(names)])}
+        >
+          <Icon name="plus" size={16} />
+          チームを追加
+        </button>
+
+        {(blank || duplicated) && (
+          <p className="mt-2 text-[12px] text-alert">
+            {blank ? '名前が空のチームがあります' : '同じ名前のチームがあります'}
+          </p>
+        )}
+
+        {/* 申込の一覧などから、名前をまとめて入れたいとき用 */}
+        <details className="mt-4">
+          <summary className="cursor-pointer text-[12px] text-accent">名前をまとめて貼り付ける</summary>
+          <textarea
+            className="mt-2 h-32 w-full rounded border border-rule bg-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-faint focus:border-accent"
+            placeholder={'1 行に 1 チーム\n山田 太郎\n佐藤 花子'}
+            value={pasted}
+            onChange={(event) => setPasted(event.target.value)}
+          />
+          <Button
+            variant="outline"
+            className="mt-2 w-full py-2 text-[13px]"
+            disabled={namesFromText(pasted).length < 2}
+            onClick={() => {
+              setNames(namesFromText(pasted))
+              setPasted('')
+            }}
+          >
+            この {namesFromText(pasted).length} チームに置き換える
+          </Button>
+        </details>
+
+        <label className="mt-4 flex items-center gap-2 text-[13px]">
           <input
             type="checkbox"
             className="accent-accent"
@@ -155,7 +249,7 @@ export const EventHostSetupPage = () => {
 
       <Button
         className="w-full py-4"
-        disabled={name.trim() === '' || players.length < 2 || status === 'creating'}
+        disabled={name.trim() === '' || blank || duplicated || status === 'creating'}
         onClick={create}
       >
         {status === 'creating' ? '準備しています…' : '大会を開く'}

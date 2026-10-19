@@ -422,11 +422,24 @@ export const PLAN_TEMPLATES: PlanTemplate[] = [
   },
 ]
 
-/** 名前の一覧（1 行 1 人）から参加者を作る。同じ名前は 1 人にまとめる */
-export const playersFromText = (text: string): Player[] =>
-  [...new Set(text.split('\n').map((line) => line.trim()))]
-    .filter((name) => name !== '')
-    .map((name, index) => ({ id: `p${index + 1}`, name }))
+/** 貼り付けた名前の一覧（1 行 1 チーム）を並びにする。空行は飛ばし、同じ名前は 1 つにまとめる */
+export const namesFromText = (text: string): string[] =>
+  [...new Set(text.split('\n').map((line) => line.trim()))].filter((name) => name !== '')
+
+/** 参加チームの名前の並びから参加者を作る。ID は並び順で振る */
+export const playersFromNames = (names: string[]): Player[] =>
+  names.map((name, index) => ({ id: `p${index + 1}`, name: name.trim() }))
+
+/**
+ * 足すチームの名前の初期値。番号の名前のうち一番大きいものの次（ゼッケン番号のように使える）。
+ * 途中の名前を変えていても、末尾に足した番号が前に戻らないようにする
+ */
+export const nextNumberName = (names: string[]): string =>
+  String(Math.max(0, ...names.filter((name) => /^\d+$/.test(name)).map(Number)) + 1)
+
+/** チーム数を合わせる。増やすときは番号の名前を後ろに足し、減らすときは後ろから外す */
+export const resizeNames = (names: string[], count: number): string[] =>
+  count <= names.length ? names.slice(0, count) : resizeNames([...names, nextNumberName(names)], count)
 
 /** 最初のステージの組み合わせ。参加者を入れた順（またはシャッフルした順）に配る */
 export const startPlan = (players: Player[], stages: Stage[]): EventPlan => ({
