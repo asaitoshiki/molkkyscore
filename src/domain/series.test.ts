@@ -164,3 +164,25 @@ describe('ターン制限と最終ゲーム', () => {
   })
 })
 
+describe('時間切れ', () => {
+  it('時間切れのあとはラウンドの終わりまで投げ、その時点の点数で決める', () => {
+    const rules = { gameCount: 1 }
+    // a が投げたところで時間切れ。b が投げるまでは続く
+    const midway = { ...withRules(game(1, [['a', [7]]]), rules), timeUpAt: 1 }
+    expect(seriesResult([midway]).finished).toBe(false)
+
+    const done = { ...withRules(game(1, [['a', [7]], ['b', [9]]]), rules), timeUpAt: 1 }
+    expect(seriesResult([done]).winnerEntryId).toBe('b')
+  })
+
+  it('時間切れのあとのラウンドで 50 点に届けば、ふつうに上がりで勝つ', () => {
+    const rules = { gameCount: 1 }
+    const throws: [string, number[]][] = [
+      ['a', [12]], ['b', [1]], ['a', [12]], ['b', [1]], ['a', [12]], ['b', [1]], ['a', [12]], ['b', [1]],
+      ['a', [2]],
+    ]
+    const reached = { ...withRules(game(1, throws), rules), timeUpAt: 1 }
+    expect(seriesResult([reached]).winnerEntryId).toBe('a')
+  })
+})
+

@@ -126,15 +126,26 @@ describe('試合ルール', () => {
     expect(matchOf().winnerEntryId).toBe('e2')
   })
 
-  it('タイムアップで打ち切ったゲームは、時刻を外すと続きから投げられる', () => {
+  it('時間切れのあとは全チームが同じ数だけ投げてから終わり、戻しても時間切れは残る', () => {
     const rules: GameRules = { ...DEFAULT_RULES, gameCount: 1, timeLimitMinutes: 20 }
     const gameId = useAppStore.getState().createGame(entriesOf(2), rules, null)
+    const gameOf = () => useAppStore.getState().games.find((g) => g.id === gameId)!
     useAppStore.getState().recordThrow(gameId, [12], 'm1')
     useAppStore.getState().setTimeUp(gameId, 1)
-    const gameOf = () => useAppStore.getState().games.find((g) => g.id === gameId)!
+    // 後攻がまだ投げていないので終わらない
+    expect(gameOf().finishedAt).toBeNull()
+
+    useAppStore.getState().recordThrow(gameId, [5], 'm2')
     expect(gameOf().finishedAt).not.toBeNull()
 
+    // 最後の投球を戻しても時間切れのまま。後攻が投げ直せる
+    useAppStore.getState().rewindTo(gameId, 1)
+    expect(gameOf().finishedAt).toBeNull()
+    expect(gameOf().timeUpAt).toBe(1)
+
+    // 押し間違いなら時間切れそのものを外せる
     useAppStore.getState().setTimeUp(gameId, null)
+    useAppStore.getState().recordThrow(gameId, [5], 'm2')
     expect(gameOf().finishedAt).toBeNull()
   })
 })

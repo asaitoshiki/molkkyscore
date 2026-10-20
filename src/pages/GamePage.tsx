@@ -14,7 +14,7 @@ import type { ScoreEffect } from '../components/ScoreTable'
 import { Button, Numeral } from '../components/ui'
 import { INTERSTITIAL_INTERVAL } from '../domain/billing'
 import { formatLabel } from '../domain/formats'
-import { computeGameState } from '../domain/game'
+import { computeGameState, teamsLeftInRound } from '../domain/game'
 import { outcomeOf } from '../domain/outcome'
 import type { ThrowOutcome } from '../domain/outcome'
 import { pointsOf } from '../domain/rules'
@@ -200,7 +200,10 @@ const GameView = ({ gameId }: { gameId: string }) => {
         <MatchClock
           startedAt={seriesGames[0].throws[0]?.at ?? null}
           limitMinutes={game.rules.timeLimitMinutes}
+          timeUpAt={game.timeUpAt}
+          teamsLeft={teamsLeftInRound(state)}
           onTimeUp={() => setTimeUp(game.id, Date.now())}
+          onCancel={() => setTimeUp(game.id, null)}
         />
       )}
 
@@ -316,16 +319,23 @@ const clock = (ms: number) => {
 
 /**
  * 試合の残り時間。第 1 ゲームの最初の投球から数える。
- * 時間が来ても勝手には止めない。ラウンドの最後まで投げる大会もあるので、打ち切りは手で押す
+ * 時間が来たら自動で時間切れにし、そのラウンドを全チームが投げ終えたところでゲームを終える。
+ * 本部の合図に合わせたいときは、タイムアップを手で押してもよい
  */
 const MatchClock = ({
   startedAt,
   limitMinutes,
+  timeUpAt,
+  teamsLeft,
   onTimeUp,
+  onCancel,
 }: {
   startedAt: number | null
   limitMinutes: number
+  timeUpAt: number | null
+  teamsLeft: number
   onTimeUp: () => void
+  onCancel: () => void
 }) => {
   const now = useNow()
   const limit = limitMinutes * 60_000
@@ -333,16 +343,34 @@ const MatchClock = ({
   const left = Math.min((startedAt ?? now) + limit - now, limit)
   const over = left <= 0
 
+  useEffect(() => {
+    if (over && timeUpAt === null) onTimeUp()
+  }, [over, timeUpAt, onTimeUp])
+
+  if (timeUpAt !== null) {
+    return (
+      <div className="flex items-center justify-between border-b border-alert bg-alert/10 px-5 py-2">
+        <p className="text-[13px] font-semibold text-alert">
+          時間切れ・あと {teamsLeft} チームが投げて終了
+        </p>
+        {/* 押し間違えたときだけ戻せる。本当に時間が来ていれば取り消せない */}
+        {!over && (
+          <button className="rounded-full border border-rule px-3 py-1 text-[12px] text-muted" onClick={onCancel}>
+            取り消す
+          </button>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="flex items-center justify-between border-b border-rule px-5 py-2">
-      <p className={`tabular text-[13px] ${over ? 'font-semibold text-alert' : 'text-muted'}`}>
-        {over ? '時間切れ' : `残り ${clock(left)}`}
+      <p className="tabular text-[13px] text-muted">
+        残り {clock(left)}
         {startedAt === null && <span className="ml-2 text-[11px]">第 1 投から計ります</span>}
       </p>
       <button
-        className={`rounded-full border px-3 py-1 text-[12px] ${
-          over ? 'border-alert bg-alert text-paper' : 'border-rule text-muted'
-        }`}
+        className="rounded-full border border-rule px-3 py-1 text-[12px] text-muted"
         onClick={onTimeUp}
       >
         タイムアップ
@@ -448,8 +476,9 @@ const ResultView = ({
           </p>
         )}
         {/* 誤タップで決着してしまったときの戻り道。続きのゲームを始めたあとは並びが崩れるので出さない */}
+        {/* 1 投もしないまま時間切れで終わったゲームは、戻す投球がないので打ち切りを取り消す */}
         {latest &&
-          (timedOut ? (
+          (game.throws.length === 0 ? (
             <UndoAction note="時間切れで打ち切りました" label="打ち切りを取り消す" onClick={onResume} />
           ) : (
             <UndoAction note={lastThrowNote(game)} label="1 つ戻る" onClick={onUndo} />

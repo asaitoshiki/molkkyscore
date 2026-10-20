@@ -69,7 +69,10 @@ type AppState = {
   recordThrow: (gameId: string, pins: number[], memberId?: string) => void
   /** 記録した投球を差し替える。誤入力の訂正に使う */
   editThrow: (gameId: string, index: number, pins: number[]) => void
-  /** 先頭から count 投だけ残して、それ以降を取り消す。打ち切りやモルックアウトの結果も外す */
+  /**
+   * 先頭から count 投だけ残して、それ以降を取り消す。モルックアウトの結果は外す。
+   * 時間切れはそのまま残す（時間切れのあとのラウンドで投げ直すこともあるため）
+   */
   rewindTo: (gameId: string, count: number) => void
   /** 時間切れでゲームを打ち切る。null を渡すと打ち切りを取り消す */
   setTimeUp: (gameId: string, at: number | null) => void
@@ -273,7 +276,6 @@ export const useAppStore = create<AppState>()(
             ...game,
             throws: game.throws.slice(0, count),
             finishedAt: null,
-            timeUpAt: null,
             shootoutWinnerId: null,
           }),
         )

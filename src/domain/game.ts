@@ -65,12 +65,13 @@ export const computeGameState = (game: Game): GameState => {
     states.find((state) => state.entryId === lastSurvivor)!.score = game.rules.targetScore
   }
 
-  // 時間切れで打ち切ったゲームと、決めたターン数を全員が投げ終えたゲームは、
-  // その時点でいちばん点の高い組の勝ち。並んだら引き分け
+  // 時間切れのあとは、全チームが同じ数だけ投げ終えたところ（ラウンドの終わり）で打ち切る。
+  // 決めたターン数を全員が投げ終えたときも同じ。その時点でいちばん点の高い組の勝ち、並んだら引き分け
   const turnsUp =
     game.rules.maxTurns !== null &&
     survivors.every((state) => state.throwCount >= game.rules.maxTurns!)
-  const cutOff = game.timeUpAt !== null || turnsUp
+  const roundEven = survivors.every((state) => state.throwCount === survivors[0].throwCount)
+  const cutOff = (game.timeUpAt !== null && roundEven) || turnsUp
   const top = Math.max(...states.map((state) => state.score))
   const leaders = states.filter((state) => state.score === top)
   const cutOffWinner = cutOff && leaders.length === 1 ? leaders[0].entryId : null
@@ -109,3 +110,10 @@ export const createThrow = (state: GameState, pins: number[]): ThrowRecord => ({
 
 /** 目標点までの残り。超過扱いになる投球を UI で警告するために使う。 */
 export const remainingTo = (score: number, game: Game): number => game.rules.targetScore - score
+
+/** 今のラウンドで、まだ投げていないチームの数。時間切れのあと、あと何チームで終わるかを示す */
+export const teamsLeftInRound = (state: GameState): number => {
+  const survivors = state.entries.filter((entry) => !entry.eliminated)
+  const most = Math.max(...survivors.map((entry) => entry.throwCount))
+  return survivors.filter((entry) => entry.throwCount < most).length
+}
