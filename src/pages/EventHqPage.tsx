@@ -73,7 +73,7 @@ const HqView = ({ eventId, info }: { eventId: string; info: EventInfo }) => {
 
       <section className="px-5 pt-5">
         <p className="text-[12px] text-muted">
-          参加 {info.plan.players.length} 人・{info.plan.stages.map((stage) => stage.name).join(' → ')}
+          参加 {info.plan.players.length} チーム・{info.plan.stages.map((stage) => stage.name).join(' → ')}
         </p>
         {!owner && (
           <p className="mt-2 rounded border border-rule px-3 py-2 text-[12px] text-muted">

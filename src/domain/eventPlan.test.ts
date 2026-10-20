@@ -5,7 +5,6 @@ import {
   drawGroups,
   groupStandings,
   matchesOf,
-  namesFromText,
   playersFromNames,
   resizeNames,
   qualify,
@@ -37,10 +36,6 @@ const leagueOf = (count: number, patch: Partial<Stage> = {}): Stage => {
 }
 
 describe('大会プラン', () => {
-  it('貼り付けた名前は 1 行 1 チームで、空行と同じ名前はまとめる', () => {
-    expect(namesFromText('A\n\n B \nA\nC')).toEqual(['A', 'B', 'C'])
-  })
-
   it('チーム数を増やすと空いている番号を名前にして足し、減らすと後ろから外す', () => {
     expect(resizeNames(['1', 'ひまわり'], 4)).toEqual(['1', 'ひまわり', '2', '3'])
     expect(resizeNames(['1', '2', '3'], 1)).toEqual(['1'])

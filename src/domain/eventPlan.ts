@@ -373,8 +373,8 @@ const roundName = (fromFinal: number, round: number) =>
  */
 export const PLAN_TEMPLATES: PlanTemplate[] = [
   {
-    label: '予選リーグ＋3 人対戦トーナメント',
-    note: '5 人ブロックの総当たり（2 ゲーム・15 ターン）→ 各ブロック 1 位と敗者復活 4 人が、3 人対戦の 2 ゲーム先取で勝ち上がる',
+    label: '予選リーグ＋決勝トーナメント',
+    note: '5 チームずつのブロックで総当たり（2 ゲーム・15 ターン）。各ブロックの 1 位と、敗者復活の 4 チームが決勝トーナメントへ。決勝トーナメントは 3 チームずつの対戦で、2 ゲーム先取で勝ち上がります',
     build: () => [
       newStage(0, {
         name: '予選',
@@ -396,7 +396,7 @@ export const PLAN_TEMPLATES: PlanTemplate[] = [
   },
   {
     label: '総当たりリーグのみ',
-    note: '全員を 5 人ずつのブロックに分けて総当たり。各ブロックの 1 位が決まる',
+    note: '5 チームずつのブロックに分けて総当たり。各ブロックの 1 位を決めます',
     build: () => [
       newStage(0, {
         name: 'リーグ',
@@ -407,8 +407,8 @@ export const PLAN_TEMPLATES: PlanTemplate[] = [
     ],
   },
   {
-    label: '1 対 1 のトーナメント',
-    note: '2 人ずつ対戦して勝ち上がる。人数に合わせてラウンドを作る',
+    label: 'トーナメント（1 対 1）',
+    note: '2 チームずつ対戦して勝ち上がります。ラウンドの数は参加チームの数に合わせて作ります',
     build: (players) => {
       const rounds = Math.max(1, Math.ceil(Math.log2(Math.max(players.length, 2))))
       return Array.from({ length: rounds }, (_, index) =>
@@ -421,10 +421,6 @@ export const PLAN_TEMPLATES: PlanTemplate[] = [
     },
   },
 ]
-
-/** 貼り付けた名前の一覧（1 行 1 チーム）を並びにする。空行は飛ばし、同じ名前は 1 つにまとめる */
-export const namesFromText = (text: string): string[] =>
-  [...new Set(text.split('\n').map((line) => line.trim()))].filter((name) => name !== '')
 
 /** 参加チームの名前の並びから参加者を作る。ID は並び順で振る */
 export const playersFromNames = (names: string[]): Player[] =>

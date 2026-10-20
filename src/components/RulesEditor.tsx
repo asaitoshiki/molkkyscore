@@ -109,7 +109,7 @@ export const RulesEditor = ({
             </select>
             <Unit>に投げる</Unit>
           </Field>
-          {/* 3 人以上の試合で、最終ゲームをゲームを取った人どうしの 1 対 1 にする大会向け */}
+          {/* 3 チーム以上の試合で、最終ゲームをゲームを取ったチームどうしの 1 対 1 にする大会向け */}
           <label className="flex items-start gap-2 pt-1 text-[13px]">
             <input
               type="checkbox"

@@ -40,7 +40,7 @@ export const StagePanel = (props: PanelProps) => {
         {formatLabel(stage.rules)}・{stage.rules.targetScore} 点
         {stage.rules.maxTurns !== null && `・${stage.rules.maxTurns} ターン`}
         {stage.rules.timeLimitMinutes !== null && `・${stage.rules.timeLimitMinutes} 分`}
-        {stage.rules.finalAmongWinners && '・最終ゲームはゲームを取った人だけ'}
+        {stage.rules.finalAmongWinners && '・最終ゲームはゲームを取ったチームだけ'}
       </p>
       {stage.groups.length === 0 ? (
         <NextDraw {...props} previous={previous} />
@@ -59,7 +59,7 @@ const NextDraw = ({ plan, stage, results, save, previous }: PanelProps & { previ
   if (!previous.started || qualification.blockers.length > 0) {
     return (
       <div className="rounded border border-rule bg-surface px-4 py-4 text-[13px]">
-        <p>「{previous.name}」が終わると、勝ち抜けた人で組み合わせを作れます。</p>
+        <p>「{previous.name}」が終わると、勝ち抜けたチームで組み合わせを作れます。</p>
         <ul className="mt-2 list-disc space-y-0.5 pl-5 text-[12px] text-muted">
           {qualification.blockers.slice(0, 8).map((blocker) => (
             <li key={blocker}>{blocker}</li>
@@ -70,9 +70,9 @@ const NextDraw = ({ plan, stage, results, save, previous }: PanelProps & { previ
   }
   return (
     <div className="rounded border border-accent bg-accent-soft px-4 py-4 text-[13px]">
-      <p>「{previous.name}」から {qualification.playerIds.length} 人が勝ち抜けました。</p>
+      <p>「{previous.name}」から {qualification.playerIds.length} チームが勝ち抜けました。</p>
       <p className="mt-1 text-[12px] text-muted">
-        成績の良い人どうしが早く当たらないよう、成績順に振り分けます。発表の前に入れ替えられます。
+        成績の良いチームどうしが早く当たらないよう、成績順に振り分けます。発表の前に入れ替えられます。
       </p>
       {save && (
         <Button
@@ -108,7 +108,7 @@ const Draft = ({ plan, stage, save }: PanelProps) => {
   return (
     <div className="space-y-3">
       <p className="text-[12px] text-muted">
-        まだコートには見えていません。入れ替えたい 2 人を順にタップしてください。
+        まだコートには表示されていません。入れ替えたい 2 チームを続けてタップしてください。
       </p>
       <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {stage.groups.map((group) => (
@@ -176,7 +176,7 @@ const Running = (props: PanelProps & { last: boolean }) => {
         ) : (
           <p className="mt-2 text-[13px]">
             {qualification.playerIds.map((id) => nameOf(plan, id)).join('、')}
-            <span className="ml-1 text-muted">（{qualification.playerIds.length} 人）</span>
+            <span className="ml-1 text-muted">（{qualification.playerIds.length} チーム）</span>
           </p>
         )}
       </section>
@@ -272,7 +272,7 @@ const StandingsTable = ({
     <thead>
       <tr className="text-[11px] text-muted">
         <th className="w-6 py-1 text-left font-normal">位</th>
-        <th className="py-1 text-left font-normal">名前</th>
+        <th className="py-1 text-left font-normal">チーム</th>
         <th className="w-10 py-1 text-right font-normal">試合</th>
         <th className="w-12 py-1 text-right font-normal">ゲーム</th>
         <th className="w-12 py-1 text-right font-normal">点</th>
@@ -308,7 +308,7 @@ const TieBreaker = ({
   onChange: (order: string[]) => void
 }) => (
   <div className="mt-3 rounded border border-alert px-3 py-3">
-    <p className="text-[12px] text-alert">同点です。7m 投などで決めて、勝った人から順にタップしてください。</p>
+    <p className="text-[12px] text-alert">同点です。7m 投などで順位を決め、勝ったチームから順にタップしてください。</p>
     <div className="mt-2 flex flex-wrap gap-1.5">
       {tied.map((line) => (
         <button
@@ -339,7 +339,7 @@ const Wildcards = ({
   return (
     <section className="rounded border border-rule bg-surface px-4 py-4">
       <p className="eyebrow text-muted">
-        敗者復活（各ブロック {stage.advancePerGroup + 1} 位から {stage.wildcards} 人）
+        敗者復活（各ブロックの {stage.advancePerGroup + 1} 位から {stage.wildcards} チーム）
       </p>
       <div className="mt-2">
         <StandingsTable plan={plan} lines={pool} advance={stage.wildcards} />

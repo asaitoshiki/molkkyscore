@@ -8,7 +8,6 @@ import { Button, SectionTitle, TextInput } from '../components/ui'
 import {
   FORMAT_LABEL,
   PLAN_TEMPLATES,
-  namesFromText,
   nextNumberName,
   playersFromNames,
   resizeNames,
@@ -37,7 +36,6 @@ export const EventHostSetupPage = () => {
   const [name, setName] = useState('')
   // 名前の初期値は番号。ゼッケン番号のまま使ってもよい
   const [names, setNames] = useState(['1', '2'])
-  const [pasted, setPasted] = useState('')
   const [lottery, setLottery] = useState(true)
   const [template, setTemplate] = useState(0)
   const [stages, setStages] = useState<Stage[]>(() => PLAN_TEMPLATES[0].build([]))
@@ -124,7 +122,7 @@ export const EventHostSetupPage = () => {
           </label>
         </div>
         <p className="mt-1 mb-5 text-[12px] text-muted">
-          上から順に並びます。取っ手で順番を入れ替え、名前はタップして直せます（シングルスなら選手名）。
+          取っ手で順番を入れ替え、名前はタップして直せます。
         </p>
 
         <OrderList
@@ -167,28 +165,6 @@ export const EventHostSetupPage = () => {
             {blank ? '名前が空のチームがあります' : '同じ名前のチームがあります'}
           </p>
         )}
-
-        {/* 申込の一覧などから、名前をまとめて入れたいとき用 */}
-        <details className="mt-4">
-          <summary className="cursor-pointer text-[12px] text-accent">名前をまとめて貼り付ける</summary>
-          <textarea
-            className="mt-2 h-32 w-full rounded border border-rule bg-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-faint focus:border-accent"
-            placeholder={'1 行に 1 チーム\n山田 太郎\n佐藤 花子'}
-            value={pasted}
-            onChange={(event) => setPasted(event.target.value)}
-          />
-          <Button
-            variant="outline"
-            className="mt-2 w-full py-2 text-[13px]"
-            disabled={namesFromText(pasted).length < 2}
-            onClick={() => {
-              setNames(namesFromText(pasted))
-              setPasted('')
-            }}
-          >
-            この {namesFromText(pasted).length} チームに置き換える
-          </Button>
-        </details>
 
         <label className="mt-4 flex items-center gap-2 text-[13px]">
           <input
@@ -263,7 +239,7 @@ const FORMATS: StageFormat[] = ['league', 'knockout']
 /** 勝ち抜けの数え方。リーグはブロック内の順位、トーナメントは 1 試合から進む人数 */
 const ADVANCE_UNIT: Record<StageFormat, string> = {
   league: '位まで（各ブロック）',
-  knockout: '人（各試合）',
+  knockout: 'チーム（各試合）',
 }
 
 const GROUP_UNIT: Record<StageFormat, string> = { league: '1 ブロック', knockout: '1 試合' }
@@ -287,7 +263,7 @@ const StageCard = ({
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[15px]">{stage.name}</span>
           <span className="block text-[12px] text-muted">
-            {FORMAT_LABEL[stage.format]}・{stage.groupSize} 人ずつ・{formatLabel(stage.rules)}
+            {FORMAT_LABEL[stage.format]}・{stage.groupSize} チームずつ・{formatLabel(stage.rules)}
             {stage.rules.maxTurns !== null && `・${stage.rules.maxTurns} ターン`}
             {stage.rules.timeLimitMinutes !== null && `・${stage.rules.timeLimitMinutes} 分`}
           </span>
@@ -315,7 +291,7 @@ const StageCard = ({
         </div>
         <NumberRow
           label={GROUP_UNIT[stage.format]}
-          unit="人"
+          unit="チーム"
           value={stage.groupSize}
           onChange={(raw) => onChange({ groupSize: clampNumber(raw, 1, 12) })}
         />
@@ -329,7 +305,7 @@ const StageCard = ({
           <>
             <NumberRow
               label="敗者復活"
-              unit={`人（各ブロック ${stage.advancePerGroup + 1} 位から）`}
+              unit={`チーム（各ブロックの ${stage.advancePerGroup + 1} 位から）`}
               value={stage.wildcards}
               onChange={(raw) => onChange({ wildcards: clampNumber(raw, 0, 99) })}
             />
@@ -340,7 +316,7 @@ const StageCard = ({
                 checked={stage.pointsBreakTies}
                 onChange={(event) => onChange({ pointsBreakTies: event.target.checked })}
               />
-              勝ったゲーム数が並んだら合計点で決める（外すと 7m 投などの結果を本部が入力）
+              勝ったゲーム数が並んだら、合計点で順位を決める（チェックしないときは、7m 投などの結果を本部が入力します）
             </label>
           </>
         )}
