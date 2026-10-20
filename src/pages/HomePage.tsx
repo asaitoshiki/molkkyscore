@@ -7,6 +7,7 @@ import { useAppStore } from '../store/useAppStore'
 export const HomePage = () => {
   const navigate = useNavigate()
   const games = useAppStore((state) => state.games)
+  const deleteGame = useAppStore((state) => state.deleteGame)
   const ongoing = games.filter((game) => game.finishedAt === null)
   const recent = games
     .filter((game) => game.finishedAt !== null)
@@ -30,23 +31,39 @@ export const HomePage = () => {
         <section>
           <SectionTitle>進行中</SectionTitle>
           <ul className="divide-y divide-rule border-y border-rule">
-            {ongoing.map((game) => (
-              <li key={game.id}>
-                <Link to={`/games/${game.id}`} className="flex items-center justify-between py-3.5">
-                  <span>
-                    <span className="block text-[15px]">
-                      {game.entries.map((entry) => entry.name).join(' 対 ')}
+            {ongoing.map((game) => {
+              const teams = game.entries.map((entry) => entry.name).join(' 対 ')
+              return (
+                <li key={game.id} className="flex items-center gap-2">
+                  <Link
+                    to={`/games/${game.id}`}
+                    className="flex min-w-0 flex-1 items-center justify-between py-3.5"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-[15px]">{teams}</span>
+                      <span className="tabular block text-[12px] text-muted">
+                        {game.throws.length} 投まで記録
+                      </span>
                     </span>
-                    <span className="tabular block text-[12px] text-muted">
-                      {game.throws.length} 投まで記録
+                    <span className="text-accent">
+                      <Icon name="arrowRight" size={18} />
                     </span>
-                  </span>
-                  <span className="text-accent">
-                    <Icon name="arrowRight" size={18} />
-                  </span>
-                </Link>
-              </li>
-            ))}
+                  </Link>
+                  {/* 押し間違いで記録を失わないよう、消す前に一度確かめる */}
+                  <button
+                    aria-label={`${teams} の試合を削除する`}
+                    className="shrink-0 p-2 text-faint"
+                    onClick={() => {
+                      if (window.confirm(`「${teams}」の試合を削除しますか？記録は元に戻せません。`)) {
+                        deleteGame(game.id)
+                      }
+                    }}
+                  >
+                    <Icon name="close" size={16} />
+                  </button>
+                </li>
+              )
+            })}
           </ul>
         </section>
       )}
