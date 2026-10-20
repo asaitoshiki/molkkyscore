@@ -374,7 +374,7 @@ const roundName = (fromFinal: number, round: number) =>
 export const PLAN_TEMPLATES: PlanTemplate[] = [
   {
     label: '予選リーグ＋決勝トーナメント',
-    note: '5 チームずつのブロックで総当たり（2 ゲーム・15 ターン）。各ブロックの 1 位と、敗者復活の 4 チームが決勝トーナメントへ。決勝トーナメントは 3 チームずつの対戦で、2 ゲーム先取で勝ち上がります',
+    note: 'ブロックごとの総当たりで予選を行い、各ブロックの上位と敗者復活のチームが決勝トーナメントに進みます',
     build: () => [
       newStage(0, {
         name: '予選',
@@ -396,7 +396,7 @@ export const PLAN_TEMPLATES: PlanTemplate[] = [
   },
   {
     label: '総当たりリーグのみ',
-    note: '5 チームずつのブロックに分けて総当たり。各ブロックの 1 位を決めます',
+    note: 'ブロックに分けて総当たりを行い、各ブロックの順位を決めます',
     build: () => [
       newStage(0, {
         name: 'リーグ',
@@ -408,7 +408,7 @@ export const PLAN_TEMPLATES: PlanTemplate[] = [
   },
   {
     label: 'トーナメント（1 対 1）',
-    note: '2 チームずつ対戦して勝ち上がります。ラウンドの数は参加チームの数に合わせて作ります',
+    note: '1 対 1 で対戦して勝ち上がります。ラウンドの数は参加チームの数に合わせて作ります',
     build: (players) => {
       const rounds = Math.max(1, Math.ceil(Math.log2(Math.max(players.length, 2))))
       return Array.from({ length: rounds }, (_, index) =>

@@ -198,7 +198,7 @@ export const EventHostSetupPage = () => {
       <section>
         <SectionTitle>ステージ</SectionTitle>
         <p className="-mt-1 mb-3 text-[12px] text-muted">
-          ステージごとにルールを変えられます。決勝だけ 100 点ゲームにする、などもここで。
+          1 ブロックのチーム数・勝ち抜けの数・ルールは、ステージごとに変えられます（決勝だけ 100 点ゲームにする、など）。
         </p>
         <ol className="space-y-3">
           {stages.map((stage, index) => (
