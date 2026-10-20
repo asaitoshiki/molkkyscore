@@ -1,5 +1,6 @@
-import { matchesOf } from './eventPlan'
-import type { EventPlan, MatchResult } from './eventPlan'
+import { findMatch, matchesOf, withPlanDefaults } from './eventPlan'
+import type { EventPlan, MatchResult, Stage } from './eventPlan'
+import { seriesPoints } from './points'
 import { seriesResult } from './series'
 import { decodeSeries } from './watchSnapshot'
 import type { SeriesPayload } from './watchSnapshot'
@@ -64,7 +65,8 @@ export type EventInfo = {
 
 export const toEventInfo = (meta: EventMeta): EventInfo => ({
   name: meta.name,
-  plan: JSON.parse(meta.plan) as EventPlan,
+  // 古い版で作った大会でも開けるよう、足りない項目を補う
+  plan: withPlanDefaults(JSON.parse(meta.plan) as Parameters<typeof withPlanDefaults>[0]),
   ownerUid: meta.ownerUid,
   expiresAt: meta.expiresAt,
 })
@@ -82,23 +84,28 @@ export const buildEventMeta = (
   expiresAt: now + EVENT_TTL_MS,
 })
 
-/** 提出されたスコアシートから、順位の計算に要る数字を取り出す */
-const toMatchResult = (submission: Submission): MatchResult => {
-  const result = seriesResult(decodeSeries(submission.payload).games)
+/** 提出されたスコアシートから、順位の計算に要る数字を取り出す。ポイントはステージの決まりで数える */
+const toMatchResult = (stage: Stage, submission: Submission): MatchResult => {
+  const { games } = decodeSeries(submission.payload)
+  const result = seriesResult(games)
   return {
     sets: Object.fromEntries(result.standings.map((line) => [line.entry.id, line.wins])),
-    points: Object.fromEntries(result.standings.map((line) => [line.entry.id, line.total])),
+    score: Object.fromEntries(result.standings.map((line) => [line.entry.id, line.total])),
+    rankPoints: seriesPoints(games, stage.points),
     winnerId: result.winnerEntryId,
     approved: submission.status === 'approved',
   }
 }
 
 /** 試合ごとの結果。差し戻した試合は数えない（直して出し直すまで結果が無いのと同じ） */
-export const resultsOf = (submissions: Record<string, Submission>): Record<string, MatchResult> =>
+export const resultsOf = (
+  plan: EventPlan,
+  submissions: Record<string, Submission>,
+): Record<string, MatchResult> =>
   Object.fromEntries(
     Object.entries(submissions)
       .filter(([, submission]) => submission.status !== 'returned')
-      .map(([key, submission]) => [key, toMatchResult(submission)]),
+      .map(([key, submission]) => [key, toMatchResult(findMatch(plan, key).stage, submission)]),
   )
 
 /** 本部の一覧に出す 1 試合のまとめ */
@@ -132,7 +139,7 @@ export const summarize = (series: SeriesPayload): MatchSummary => {
 const csvCell = (value: string | number) => `"${String(value).replaceAll('"', '""')}"`
 
 /**
- * 提出された試合を表計算ソフトで開ける形にする。1 行が 1 人（1 チーム）。
+ * 提出された試合を表計算ソフトで開ける形にする。1 行が 1 チーム。
  * 本部が記録の保管や表彰の確認に使う
  */
 export const submissionsCsv = (plan: EventPlan, submissions: Record<string, Submission>): string => {
@@ -144,8 +151,10 @@ export const submissionsCsv = (plan: EventPlan, submissions: Record<string, Subm
       .flatMap((match) => {
         const submission = submissions[match.key]
         const group = stage.groups.find((item) => item.id === match.groupId)!
-        const summary = summarize(decodeSeries(submission.payload))
-        return summary.teams.map((team) => [
+        const series = decodeSeries(submission.payload)
+        const summary = summarize(series)
+        const points = seriesPoints(series.games, stage.points)
+        return summary.teams.map((team, index) => [
           stage.name,
           group.label,
           match.key,
@@ -154,6 +163,7 @@ export const submissionsCsv = (plan: EventPlan, submissions: Record<string, Subm
           ...games.map((index) => team.perGame[index] ?? ''),
           team.total,
           team.wins,
+          points[series.games[0].entries[index].id],
           team.name === summary.winnerName ? '勝ち' : '',
           SUBMISSION_LABEL[submission.status],
         ])
@@ -167,6 +177,7 @@ export const submissionsCsv = (plan: EventPlan, submissions: Record<string, Subm
     ...games.map((index) => `第${index + 1}ゲーム`),
     '合計',
     '勝ったゲーム',
+    'ポイント',
     '勝敗',
     '状態',
   ]

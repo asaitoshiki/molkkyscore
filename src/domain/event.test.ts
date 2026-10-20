@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildEventMeta, resultsOf, submissionsCsv, summarize, toEventInfo } from './event'
+import { newStage } from './eventPlan'
 import type { EventPlan } from './eventPlan'
 import type { Submission } from './event'
 import { DEFAULT_RULES } from './rules'
@@ -38,19 +39,12 @@ const plan: EventPlan = {
     { id: 'b', name: 'B' },
   ],
   stages: [
-    {
-      id: 's1',
+    newStage(0, {
       name: '決勝',
-      format: 'knockout',
       rules,
-      groupSize: 2,
-      advancePerGroup: 1,
-      wildcards: 0,
-      pointsBreakTies: false,
-      tiebreaks: {},
       groups: [{ id: 'g1', label: '第 1 試合', playerIds: ['a', 'b'] }],
       started: true,
-    },
+    }),
   ],
 }
 
@@ -83,24 +77,26 @@ describe('本部とコートの大会', () => {
   })
 
   it('提出から勝ったゲーム数と合計点を取り出し、差し戻した試合は数えない', () => {
-    const results = resultsOf({ 's1-g1-1': submission('approved'), other: submission('returned') })
+    const results = resultsOf(plan, { 's1-g1-1': submission('approved'), 's1-g1-2': submission('returned') })
     expect(Object.keys(results)).toEqual(['s1-g1-1'])
     expect(results['s1-g1-1']).toEqual({
       sets: { a: 2, b: 0 },
-      points: { a: 100, b: 9 },
+      score: { a: 100, b: 9 },
+      // 2 ゲームとも a が 50 点で上がって 10P ずつ、b は 2 位で 6P ずつ
+      rankPoints: { a: 20, b: 12 },
       winnerId: 'a',
       approved: true,
     })
   })
 
-  it('CSV は 1 行 1 人で、ステージとグループを添える', () => {
+  it('CSV は 1 行 1 チームで、ステージとグループを添える', () => {
     const lines = submissionsCsv(plan, { 's1-g1-1': submission('approved') })
       .replace('\ufeff', '')
       .split('\r\n')
     expect(lines[0]).toBe(
-      '"ステージ","グループ","試合","名前","第1ゲーム","第2ゲーム","合計","勝ったゲーム","勝敗","状態"',
+      '"ステージ","グループ","試合","名前","第1ゲーム","第2ゲーム","合計","勝ったゲーム","ポイント","勝敗","状態"',
     )
-    expect(lines[1]).toBe('"決勝","第 1 試合","s1-g1-1","A","50","50","100","2","勝ち","承認済み"')
-    expect(lines[2]).toBe('"決勝","第 1 試合","s1-g1-1","B","4","5","9","0","","承認済み"')
+    expect(lines[1]).toBe('"決勝","第 1 試合","s1-g1-1","A","50","50","100","2","20","勝ち","承認済み"')
+    expect(lines[2]).toBe('"決勝","第 1 試合","s1-g1-1","B","4","5","9","0","12","","承認済み"')
   })
 })

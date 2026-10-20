@@ -1,3 +1,5 @@
+import { DEFAULT_POINT_RULES } from './points'
+import type { PointRules } from './points'
 import { DEFAULT_RULES } from './rules'
 import type { GameRules } from './types'
 
@@ -6,8 +8,10 @@ import type { GameRules } from './types'
  *
  * 大会はいくつかのステージ（予選リーグ → 決勝トーナメント 1 回戦 → 準決勝 → 決勝 など）で進み、
  * ステージごとにルールを変えられる（決勝だけ 100 点ゲーム、予選だけ 15 ターン制限など）。
- * ステージは「グループ」に分かれる。リーグならブロック（5 人で総当たり）、
- * トーナメントなら 1 試合（3 人対戦なら 3 人）がひとつのグループになる。
+ * ステージは「グループ」に分かれる。リーグならブロック（5 チームで総当たりなど）、
+ * トーナメントなら 1 試合（3 チーム対戦なら 3 チーム）がひとつのグループになる。
+ * 順位はステージごとに決めた基準（ポイント・勝ったゲーム数・合計点）の順に比べ、
+ * それでも並んだら 7m 投などの結果を本部が入れる。
  *
  * プランは本部だけが書き換え、各コートは読むだけ。試合の結果は提出されたスコアシートから
  * 毎回計算し、プランには持たない。
@@ -16,6 +20,15 @@ import type { GameRules } from './types'
 export type Player = { id: string; name: string }
 
 export type StageFormat = 'league' | 'knockout'
+
+/** 順位を比べる数字。ポイント（ポイント制）、勝ったゲーム数、合計点 */
+export type RankKey = 'rankPoints' | 'sets' | 'score'
+
+export const RANK_KEY_LABEL: Record<RankKey, string> = {
+  rankPoints: 'ポイント',
+  sets: '勝ったゲーム数',
+  score: '合計点',
+}
 
 export type Group = {
   id: string
@@ -29,14 +42,23 @@ export type Stage = {
   name: string
   format: StageFormat
   rules: GameRules
-  /** 1 グループの人数。リーグはブロックの人数、トーナメントは 1 試合の人数 */
+  /** 1 グループのチーム数。リーグはブロックのチーム数、トーナメントは 1 試合のチーム数 */
   groupSize: number
-  /** 各グループから次のステージへ進む人数 */
+  /**
+   * リーグの試合の組み方。null は 1 対 1 の総当たり。
+   * 数を入れると、ブロックの中で matchSize チームずつの試合をその回数だけ行う（相手は毎回入れ替える）
+   */
+  rounds: number | null
+  /** リーグで rounds を決めたときの、1 試合のチーム数 */
+  matchSize: number
+  /** 各グループから次のステージへ進むチーム数 */
   advancePerGroup: number
-  /** 各グループで次点だった人から、成績順に拾う人数（敗者復活）。0 なら拾わない */
+  /** 各グループで次点だったチームから、成績順に拾う数（敗者復活）。0 なら拾わない */
   wildcards: number
-  /** 勝ったゲーム数が並んだとき、合計点で並びを決めるか。決めないなら 7m 投などで決める */
-  pointsBreakTies: boolean
+  /** 順位を比べる順。前の数字が並んだら次の数字で比べ、全部並んだら 7m 投などで決める */
+  ranking: RankKey[]
+  /** ポイント制のとき、ゲームの順位ごとに配るポイント */
+  points: PointRules
   /** 同点を 7m 投などで決めた結果の並び。キーはグループ ID、敗者復活は WILDCARD_KEY */
   tiebreaks: Record<string, string[]>
   groups: Group[]
@@ -49,9 +71,21 @@ export type EventPlan = { players: Player[]; stages: Stage[] }
 export const WILDCARD_KEY = 'wildcard'
 
 export const FORMAT_LABEL: Record<StageFormat, string> = {
-  league: 'リーグ（総当たり）',
+  league: 'リーグ',
   knockout: 'トーナメント',
 }
+
+/** 順位の決め方を一文で。ポイント → 合計点 → 7m 投など */
+export const rankingLabel = (stage: Stage): string =>
+  [...stage.ranking.map((key) => RANK_KEY_LABEL[key]), '7m 投など'].join(' → ')
+
+/** ポイントの配り方を一文で。上がり 10P・15 ターン 8P・2 位 6P・3 位 2P */
+export const pointsLabel = (stage: Stage): string =>
+  [
+    `上がり ${stage.points.targetWin}P`,
+    `${stage.rules.maxTurns === null ? '時間切れ' : `${stage.rules.maxTurns} ターン`} ${stage.points.cutoffWin}P`,
+    ...stage.points.places.map((value, index) => `${index + 2} 位 ${value}P`),
+  ].join('・')
 
 /** 予定されている 1 試合。key は提出の置き場所を兼ねる */
 export type PlanMatch = {
@@ -68,7 +102,9 @@ export type MatchResult = {
   /** 勝ったゲーム数 */
   sets: Record<string, number>
   /** 合計点 */
-  points: Record<string, number>
+  score: Record<string, number>
+  /** ポイント制のポイント */
+  rankPoints: Record<string, number>
   winnerId: string | null
   approved: boolean
 }
@@ -95,10 +131,55 @@ const roundRobin = (ids: string[]): { round: number; pair: string[] }[] => {
   return pairs
 }
 
-/** グループの試合。リーグはブロック内の総当たり、トーナメントは 1 グループ 1 試合 */
+const pairKey = (a: string, b: string) => [a, b].sort().join('/')
+
+/**
+ * 何チームかずつの試合を rounds 回。同じ相手と何度も当たらないよう、
+ * それまでに当たった回数がいちばん少ない相手から順に組む。
+ * チーム数が割り切れなければ、少ないチームの試合ができる。
+ * 投げる順は登録順を巡ごとに 1 つずつずらして、どのチームにも先に投げる回が来るようにする
+ */
+const rotation = (ids: string[], size: number, rounds: number): { round: number; pair: string[] }[] => {
+  const met = new Map<string, number>()
+  const meetings = (a: string, b: string) => met.get(pairKey(a, b)) ?? 0
+  const count = Math.max(1, Math.ceil(ids.length / size))
+  const sizes = Array.from(
+    { length: count },
+    (_, index) => Math.floor(ids.length / count) + Number(index < ids.length % count),
+  )
+  return Array.from({ length: rounds }, (_, index) => index + 1).flatMap((round) => {
+    const pool = [...ids.slice(round - 1), ...ids.slice(0, round - 1)]
+    const groups = sizes.map((groupSize) => {
+      const group = [pool.shift()!]
+      while (group.length < groupSize) {
+        const cost = (id: string) => group.reduce((sum, member) => sum + meetings(id, member), 0)
+        const best = pool.reduce((picked, id) => (cost(id) < cost(picked) ? id : picked))
+        group.push(best)
+        pool.splice(pool.indexOf(best), 1)
+      }
+      return group
+    })
+    groups.forEach((group) =>
+      group.forEach((a, position) =>
+        group.slice(position + 1).forEach((b) => met.set(pairKey(a, b), meetings(a, b) + 1)),
+      ),
+    )
+    return groups.map((group) => {
+      const ordered = ids.filter((id) => group.includes(id))
+      const shift = (round - 1) % ordered.length
+      return { round, pair: [...ordered.slice(shift), ...ordered.slice(0, shift)] }
+    })
+  })
+}
+
+/** リーグの組み合わせ。回数を決めていなければ 1 対 1 の総当たり */
+const leagueSchedule = (stage: Stage, ids: string[]) =>
+  stage.rounds === null ? roundRobin(ids) : rotation(ids, stage.matchSize, stage.rounds)
+
+/** グループの試合。リーグはブロック内の試合、トーナメントは 1 グループ 1 試合 */
 const GROUP_MATCHES: Record<StageFormat, (stage: Stage, group: Group) => PlanMatch[]> = {
   league: (stage, group) =>
-    roundRobin(group.playerIds).map(({ round, pair }, index) => ({
+    leagueSchedule(stage, group.playerIds).map(({ round, pair }, index) => ({
       key: matchKey(stage.id, group.id, index + 1),
       stageId: stage.id,
       groupId: group.id,
@@ -123,52 +204,55 @@ const GROUP_MATCHES: Record<StageFormat, (stage: Stage, group: Group) => PlanMat
 export const matchesOf = (stage: Stage): PlanMatch[] =>
   stage.groups.flatMap((group) => GROUP_MATCHES[stage.format](stage, group))
 
-export type GroupStanding = {
-  playerId: string
+/** 順位の計算に使う、チームごとの成績 */
+type Totals = { playerId: string; sets: number; score: number; rankPoints: number }
+
+export type GroupStanding = Totals & {
   played: number
-  sets: number
-  points: number
+  /** 並び順。勝ち抜けはこの順で決まる */
   rank: number
+  /** 画面に出す順位。成績がまったく同じチームは同じ順位にする */
+  place: number
   /** 並びが決まらない同点。7m 投などで決める必要がある */
   tied: boolean
 }
 
-/** 並べる基準。勝ったゲーム数、決まりによっては合計点 */
-const scoreKey = (stage: Stage, line: { sets: number; points: number }) =>
-  [line.sets, stage.pointsBreakTies ? line.points : 0]
-
-const sameKey = (stage: Stage, a: { sets: number; points: number }, b: { sets: number; points: number }) =>
-  scoreKey(stage, a).every((value, index) => value === scoreKey(stage, b)[index])
+/** ステージで決めた基準の順に、成績を比べる。大きいほうが上 */
+const compareTotals = (stage: Stage, a: Totals, b: Totals) =>
+  stage.ranking.reduce((result, key) => result || b[key] - a[key], 0)
 
 /**
  * 成績で並べる。数字が同じなら 7m 投などの結果（tiebreak の並び）に従い、
  * それも無ければ同点のまま印を付ける。印を付けるのは、同点の人たちが
  * 勝ち抜け・次点などの境目（boundaries の順位）をまたぐときだけ
  */
-const rankLines = <T extends { playerId: string; sets: number; points: number }>(
+const rankLines = <T extends Totals>(
   stage: Stage,
   lines: T[],
   tiebreak: string[],
   boundaries: number[],
-): (T & { rank: number; tied: boolean })[] => {
+): (T & { rank: number; place: number; tied: boolean })[] => {
   const order = (id: string) => {
     const index = tiebreak.indexOf(id)
     return index === -1 ? Infinity : index
   }
-  const sorted = [...lines].sort((a, b) => {
-    const [aSets, aPoints] = scoreKey(stage, a)
-    const [bSets, bPoints] = scoreKey(stage, b)
-    return bSets - aSets || bPoints - aPoints || order(a.playerId) - order(b.playerId)
-  })
-  // 7m 投の並びに入った人は、入っていない人より上。どちらも入っていなければ決まっていない
+  const sorted = [...lines].sort(
+    (a, b) => compareTotals(stage, a, b) || order(a.playerId) - order(b.playerId),
+  )
+  // 7m 投の並びに入ったチームは、入っていないチームより上。どちらも入っていなければ決まっていない
   const unresolved = (a: T, b: T) =>
-    sameKey(stage, a, b) && order(a.playerId) === Infinity && order(b.playerId) === Infinity
+    compareTotals(stage, a, b) === 0 && order(a.playerId) === Infinity && order(b.playerId) === Infinity
   const crosses = (a: number, b: number) =>
     boundaries.some((boundary) => Math.min(a, b) < boundary && Math.max(a, b) >= boundary)
+
+  const before = (a: T, b: T) =>
+    compareTotals(stage, a, b) < 0 ||
+    (compareTotals(stage, a, b) === 0 && order(a.playerId) < order(b.playerId))
 
   return sorted.map((line, index) => ({
     ...line,
     rank: index + 1,
+    place: 1 + sorted.filter((other) => before(other, line)).length,
     tied: sorted.some(
       (other, position) => position !== index && unresolved(line, other) && crosses(index, position),
     ),
@@ -190,7 +274,8 @@ export const groupStandings = (
       playerId,
       played: mine.length,
       sets: mine.reduce((sum, match) => sum + results[match.key].sets[playerId], 0),
-      points: mine.reduce((sum, match) => sum + results[match.key].points[playerId], 0),
+      score: mine.reduce((sum, match) => sum + results[match.key].score[playerId], 0),
+      rankPoints: mine.reduce((sum, match) => sum + results[match.key].rankPoints[playerId], 0),
       // トーナメントでは試合の勝者を何より先に置く
       won: mine.filter((match) => results[match.key].winnerId === playerId).length,
     }
@@ -227,8 +312,8 @@ export type Qualification = {
 }
 
 /**
- * ステージを勝ち抜けた人。各グループの上位と、次点からの敗者復活。
- * 並びは次のステージの組み合わせ（シード）に使う。グループ順位 → 勝ったゲーム数 → 合計点
+ * ステージを勝ち抜けたチーム。各グループの上位と、次点からの敗者復活。
+ * 並びは次のステージの組み合わせ（シード）に使う。グループ順位 → ステージの順位の基準
  */
 export const qualify = (stage: Stage, results: Record<string, MatchResult>): Qualification => {
   const standings = stage.groups.map((group) => ({
@@ -246,7 +331,7 @@ export const qualify = (stage: Stage, results: Record<string, MatchResult>): Qua
 
   const winners = standings
     .flatMap(({ lines }) => lines.filter((line) => line.rank <= stage.advancePerGroup))
-    .sort((a, b) => a.rank - b.rank || b.sets - a.sets || b.points - a.points)
+    .sort((a, b) => a.rank - b.rank || compareTotals(stage, a, b))
 
   const pool = standings.flatMap(({ group, lines }) =>
     lines
@@ -333,7 +418,8 @@ export const replaceStage = (plan: EventPlan, stageId: string, patch: Partial<St
   stages: plan.stages.map((stage) => (stage.id === stageId ? { ...stage, ...patch } : stage)),
 })
 
-const newStage = (index: number, patch: Partial<Stage>): Stage => ({
+/** 新しいステージ。はじめは 1 対 1 のトーナメント */
+export const newStage = (index: number, patch: Partial<Stage>): Stage => ({
   id: `s${index + 1}`,
   name: '',
   format: 'knockout',
@@ -341,7 +427,10 @@ const newStage = (index: number, patch: Partial<Stage>): Stage => ({
   groupSize: 2,
   advancePerGroup: 1,
   wildcards: 0,
-  pointsBreakTies: false,
+  rounds: null,
+  matchSize: 2,
+  ranking: ['sets'],
+  points: DEFAULT_POINT_RULES,
   tiebreaks: {},
   groups: [],
   started: false,
@@ -407,6 +496,21 @@ export const PLAN_TEMPLATES: PlanTemplate[] = [
     ],
   },
   {
+    label: 'ポイント制リーグ',
+    note: 'ブロックのチームで何試合か行い、各ゲームの順位に応じたポイントの合計で順位を決めます',
+    build: () => [
+      newStage(0, {
+        name: '予選',
+        format: 'league',
+        rules: { ...DEFAULT_RULES, gameCount: 1, maxTurns: 15 },
+        groupSize: 4,
+        rounds: 4,
+        matchSize: 4,
+        ranking: ['rankPoints', 'score'],
+      }),
+    ],
+  },
+  {
     label: 'トーナメント（1 対 1）',
     note: '1 対 1 で対戦して勝ち上がります。ラウンドの数は参加チームの数に合わせて作ります',
     build: (players) => {
@@ -421,6 +525,24 @@ export const PLAN_TEMPLATES: PlanTemplate[] = [
     },
   },
 ]
+
+type AddedFields = 'rounds' | 'matchSize' | 'ranking' | 'points'
+
+/** 古い版で作ったステージ。あとから足した項目が欠け、合計点で並びを決めるかを旗で持っていた */
+export type LegacyStage = Omit<Stage, AddedFields> &
+  Partial<Pick<Stage, AddedFields>> & { pointsBreakTies?: boolean }
+
+/** 古い版で作った大会プランに、あとから増えた項目（試合の組み方・順位の基準・ポイント）を補う */
+export const withPlanDefaults = (plan: { players: Player[]; stages: LegacyStage[] }): EventPlan => ({
+  ...plan,
+  stages: plan.stages.map(({ pointsBreakTies, ...stage }) => ({
+    ...stage,
+    rounds: stage.rounds ?? null,
+    matchSize: stage.matchSize ?? 2,
+    ranking: stage.ranking ?? (pointsBreakTies ? ['sets', 'score'] : ['sets']),
+    points: stage.points ?? DEFAULT_POINT_RULES,
+  })),
+})
 
 /** 参加チームの名前の並びから参加者を作る。ID は並び順で振る */
 export const playersFromNames = (names: string[]): Player[] =>

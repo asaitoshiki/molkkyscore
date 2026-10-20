@@ -10,6 +10,7 @@ import {
   qualify,
   startPlan,
   swapPlayers,
+  withPlanDefaults,
 } from './eventPlan'
 import type { MatchResult, PlanMatch, Stage } from './eventPlan'
 
@@ -18,12 +19,13 @@ const players = (count: number) =>
 
 const [hyogo] = PLAN_TEMPLATES
 
-/** 2 人の試合の結果。勝ったゲーム数と合計点を渡す */
+/** 2 チームの試合の結果。勝ったゲーム数を渡すと、合計点とポイントもそれに合わせて作る */
 const duel = (match: PlanMatch, sets: [number, number], approved = true): MatchResult => {
   const [first, second] = match.playerIds
   return {
     sets: { [first]: sets[0], [second]: sets[1] },
-    points: { [first]: sets[0] * 50, [second]: sets[1] * 50 },
+    score: { [first]: sets[0] * 50, [second]: sets[1] * 50 },
+    rankPoints: { [first]: sets[0] * 10, [second]: sets[1] * 10 },
     winnerId: sets[0] > sets[1] ? first : sets[1] > sets[0] ? second : null,
     approved,
   }
@@ -160,7 +162,8 @@ describe('大会プラン', () => {
     const results = {
       [match.key]: {
         sets: { a: 1, b: 1, c: 0 },
-        points: { a: 60, b: 90, c: 20 },
+        score: { a: 60, b: 90, c: 20 },
+        rankPoints: { a: 16, b: 16, c: 4 },
         winnerId: 'a',
         approved: true,
       },
@@ -169,10 +172,84 @@ describe('大会プラン', () => {
   })
 
   it('1 対 1 のトーナメントで人数が半端なら、1 人だけの組は試合なしで勝ち抜け', () => {
-    const [first] = PLAN_TEMPLATES[2].build(players(3))
+    const [first] = PLAN_TEMPLATES[3].build(players(3))
     const stage = { ...first, groups: drawGroups(first, ['a', 'b', 'c']) }
     expect(stage.groups.map((group) => group.playerIds)).toEqual([['a'], ['b', 'c']])
     const [match] = matchesOf(stage)
     expect(qualify(stage, { [match.key]: duel(match, [0, 1]) }).playerIds).toEqual(['c', 'a'])
+  })
+
+  it('何チームかずつの試合は、決めた回数だけ相手を入れ替えて組む', () => {
+    const [points] = PLAN_TEMPLATES[2].build([])
+    const stage = { ...points, groupSize: 6, matchSize: 3, rounds: 4 }
+    const withGroups = { ...stage, groups: drawGroups(stage, players(6).map((player) => player.id)) }
+    const matches = matchesOf(withGroups)
+    // 6 チームを 3 チームずつ 2 試合 × 4 回
+    expect(matches).toHaveLength(8)
+    expect(matches.every((match) => match.playerIds.length === 3)).toBe(true)
+    for (const id of ['p1', 'p2', 'p3', 'p4', 'p5', 'p6']) {
+      expect(matches.filter((match) => match.playerIds.includes(id))).toHaveLength(4)
+    }
+    // 同じ巡に 2 度出るチームはいない
+    for (const round of [1, 2, 3, 4]) {
+      const ids = matches.filter((match) => match.round === round).flatMap((match) => match.playerIds)
+      expect(new Set(ids).size).toBe(6)
+    }
+    // 1 回目の相手とは 2 回目に当たらない
+    const [first] = matches
+    const second = matches.filter((match) => match.round === 2)
+    expect(second.some((match) => first.playerIds.every((id) => match.playerIds.includes(id)))).toBe(false)
+  })
+
+  it('ブロック全員で何試合かするときは、どのチームにも先に投げる回が来る', () => {
+    const [points] = PLAN_TEMPLATES[2].build([])
+    const withGroups = { ...points, groups: drawGroups(points, ['a', 'b', 'c', 'd']) }
+    expect(matchesOf(withGroups).map((match) => match.playerIds[0])).toEqual(['a', 'b', 'c', 'd'])
+  })
+
+  it('ポイント制はポイントの合計で並べ、並んだら合計点で決める', () => {
+    const [points] = PLAN_TEMPLATES[2].build([])
+    const stage = { ...points, groupSize: 3, matchSize: 3, rounds: 1, advancePerGroup: 1 }
+    const withGroups = { ...stage, groups: drawGroups(stage, ['a', 'b', 'c']) }
+    const [match] = matchesOf(withGroups)
+    const results = {
+      [match.key]: {
+        sets: { a: 0, b: 0, c: 1 },
+        score: { a: 40, b: 45, c: 30 },
+        rankPoints: { a: 8, b: 8, c: 2 },
+        winnerId: null,
+        approved: true,
+      },
+    }
+    const lines = groupStandings(withGroups, withGroups.groups[0], results)
+    // 勝ったゲーム数は c が多いが、ポイントでは a と b が上。並んだ a と b は合計点で b が上
+    expect(lines.map((line) => line.playerId)).toEqual(['b', 'a', 'c'])
+    expect(lines.some((line) => line.tied)).toBe(false)
+  })
+
+  it('成績がまったく同じチームは、画面では同じ順位で出す', () => {
+    const [points] = PLAN_TEMPLATES[2].build([])
+    const stage = { ...points, groupSize: 4, matchSize: 4, rounds: 1 }
+    const withGroups = { ...stage, groups: drawGroups(stage, ['a', 'b', 'c', 'd']) }
+    const [match] = matchesOf(withGroups)
+    const results = {
+      [match.key]: {
+        sets: { a: 1, b: 0, c: 0, d: 0 },
+        score: { a: 50, b: 4, c: 4, d: 4 },
+        rankPoints: { a: 10, b: 6, c: 6, d: 6 },
+        winnerId: 'a',
+        approved: true,
+      },
+    }
+    const lines = groupStandings(withGroups, withGroups.groups[0], results)
+    expect(lines.map((line) => line.place)).toEqual([1, 2, 2, 2])
+  })
+
+  it('古い形のステージには、あとから増えた項目を補う', () => {
+    const { rounds, matchSize, ranking, points, ...old } = PLAN_TEMPLATES[0].build([])[0]
+    expect([rounds, matchSize, ranking, points]).toBeDefined()
+    const [stage] = withPlanDefaults({ players: [], stages: [{ ...old, pointsBreakTies: true }] }).stages
+    expect(stage).toMatchObject({ rounds: null, matchSize: 2, ranking: ['sets', 'score'] })
+    expect('pointsBreakTies' in stage).toBe(false)
   })
 })

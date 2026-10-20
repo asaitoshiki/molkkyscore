@@ -9,11 +9,13 @@ import {
   groupStandings,
   matchesOf,
   nameOf,
+  pointsLabel,
   qualify,
+  rankingLabel,
   replaceStage,
   swapPlayers,
 } from '../domain/eventPlan'
-import type { EventPlan, Group, GroupStanding, MatchResult, Stage } from '../domain/eventPlan'
+import type { EventPlan, Group, GroupStanding, MatchResult, RankKey, Stage } from '../domain/eventPlan'
 import { formatLabel } from '../domain/formats'
 
 type PanelProps = {
@@ -41,6 +43,10 @@ export const StagePanel = (props: PanelProps) => {
         {stage.rules.maxTurns !== null && `・${stage.rules.maxTurns} ターン`}
         {stage.rules.timeLimitMinutes !== null && `・${stage.rules.timeLimitMinutes} 分`}
         {stage.rules.finalAmongWinners && '・最終ゲームはゲームを取ったチームだけ'}
+      </p>
+      <p className="-mt-3 text-[12px] text-muted">
+        順位：{rankingLabel(stage)}
+        {stage.ranking.includes('rankPoints') && <span className="block">ポイント：{pointsLabel(stage)}</span>}
       </p>
       {stage.groups.length === 0 ? (
         <NextDraw {...props} previous={previous} />
@@ -208,6 +214,13 @@ const FinalResult = ({
   </ol>
 )
 
+/** グループの見出しに添える一言。同点の知らせ、試合前、今の 1 位のどれか */
+const summaryOf = (plan: EventPlan, lines: GroupStanding[], tied: number) => {
+  if (tied > 0) return '同点の順位を決めてください'
+  if (lines.every((line) => line.played === 0)) return '試合前'
+  return `1 位 ${nameOf(plan, lines[0].playerId)}`
+}
+
 /** グループ 1 つ。ふだんは要点だけ見せ、開くと順位表と試合が出る */
 const GroupCard = ({ plan, stage, group, results, submissions, save }: PanelProps & { group: Group }) => {
   const lines = groupStandings(stage, group, results)
@@ -222,14 +235,14 @@ const GroupCard = ({ plan, stage, group, results, submissions, save }: PanelProp
         <summary className="flex cursor-pointer items-center gap-3 px-4 py-3">
           <span className="font-serif text-lg">{group.label}</span>
           <span className="min-w-0 flex-1 truncate text-[12px] text-muted">
-            {tied.length > 0 ? '同点の順位を決めてください' : `1 位 ${nameOf(plan, lines[0].playerId)}`}
+            {summaryOf(plan, lines, tied.length)}
           </span>
           <span className={`tabular shrink-0 text-[12px] ${done ? 'text-accent' : 'text-muted'}`}>
             {done ? '完了' : `${approved} / ${matches.length}`}
           </span>
         </summary>
         <div className="border-t border-rule px-4 py-3">
-          <StandingsTable plan={plan} lines={lines} advance={stage.advancePerGroup} />
+          <StandingsTable plan={plan} stage={stage} lines={lines} advance={stage.advancePerGroup} />
           {tied.length > 0 && save && (
             <TieBreaker
               plan={plan}
@@ -259,38 +272,59 @@ const GroupCard = ({ plan, stage, group, results, submissions, save }: PanelProp
   )
 }
 
+/** 順位表の列の見出し。ポイントは P と短く書く */
+const COLUMN_LABEL: Record<RankKey, string> = { rankPoints: 'P', sets: 'ゲーム', score: '点' }
+
+/**
+ * 順位表。順位を比べる数字を、比べる順に左から並べる。いちばん先に比べる数字を太くする。
+ * 勝ったゲーム数と合計点は、順位に使わなくても参考に出す
+ */
 const StandingsTable = ({
   plan,
+  stage,
   lines,
   advance,
 }: {
   plan: EventPlan
+  stage: Stage
   lines: GroupStanding[]
   advance: number
-}) => (
-  <table className="tabular w-full text-[13px]">
-    <thead>
-      <tr className="text-[11px] text-muted">
-        <th className="w-6 py-1 text-left font-normal">位</th>
-        <th className="py-1 text-left font-normal">チーム</th>
-        <th className="w-10 py-1 text-right font-normal">試合</th>
-        <th className="w-12 py-1 text-right font-normal">ゲーム</th>
-        <th className="w-12 py-1 text-right font-normal">点</th>
-      </tr>
-    </thead>
-    <tbody className="divide-y divide-rule">
-      {lines.map((line) => (
-        <tr key={line.playerId} className={line.rank <= advance ? 'text-accent' : ''}>
-          <td className="py-1.5">{line.tied ? '＝' : line.rank}</td>
-          <td className="max-w-0 truncate py-1.5">{nameOf(plan, line.playerId)}</td>
-          <td className="py-1.5 text-right text-muted">{line.played}</td>
-          <td className="py-1.5 text-right font-semibold">{line.sets}</td>
-          <td className="py-1.5 text-right text-muted">{line.points}</td>
+}) => {
+  const columns = [...new Set<RankKey>([...stage.ranking, 'sets', 'score'])]
+  return (
+    <table className="tabular w-full text-[13px]">
+      <thead>
+        <tr className="text-[11px] text-muted">
+          <th className="w-6 py-1 text-left font-normal">位</th>
+          <th className="py-1 text-left font-normal">チーム</th>
+          <th className="w-10 py-1 text-right font-normal">試合</th>
+          {columns.map((key) => (
+            <th key={key} className="w-12 py-1 text-right font-normal">
+              {COLUMN_LABEL[key]}
+            </th>
+          ))}
         </tr>
-      ))}
-    </tbody>
-  </table>
-)
+      </thead>
+      <tbody className="divide-y divide-rule">
+        {lines.map((line) => (
+          <tr key={line.playerId} className={line.rank <= advance ? 'text-accent' : ''}>
+            <td className="py-1.5">{line.tied ? '＝' : line.place}</td>
+            <td className="max-w-0 truncate py-1.5">{nameOf(plan, line.playerId)}</td>
+            <td className="py-1.5 text-right text-muted">{line.played}</td>
+            {columns.map((key) => (
+              <td
+                key={key}
+                className={`py-1.5 text-right ${key === stage.ranking[0] ? 'font-semibold' : 'text-muted'}`}
+              >
+                {line[key]}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}
 
 /**
  * 同点の人たちの順位を 7m 投などで決めた結果を入れる。勝った人から順にタップする。
@@ -342,7 +376,7 @@ const Wildcards = ({
         敗者復活（各ブロックの {stage.advancePerGroup + 1} 位から {stage.wildcards} チーム）
       </p>
       <div className="mt-2">
-        <StandingsTable plan={plan} lines={pool} advance={stage.wildcards} />
+        <StandingsTable plan={plan} stage={stage} lines={pool} advance={stage.wildcards} />
       </div>
       {tied.length > 0 && save && (
         <TieBreaker

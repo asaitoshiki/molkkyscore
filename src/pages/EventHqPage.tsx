@@ -140,7 +140,7 @@ const Progress = ({
 }) => {
   const [stageId, setStageId] = useState((activeStage(plan) ?? plan.stages[0]).id)
   const stage = plan.stages.find((item) => item.id === stageId)!
-  const results = resultsOf(submissions)
+  const results = resultsOf(plan, submissions)
 
   return (
     <div className="space-y-4 px-5 py-5">
