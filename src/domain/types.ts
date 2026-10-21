@@ -24,8 +24,11 @@ export type ThrowRecord = {
   at: number
 }
 
-/** 試合の勝敗の決め方。wins は勝ったゲーム数を先に比べ、total は合計点だけで比べる */
-export type DecideBy = 'wins' | 'total'
+/**
+ * 試合の勝敗の決め方。wins は決めたゲーム数を行って勝ったゲーム数を先に比べ、
+ * total は合計点だけで比べる。race は先に決めた数のゲームを取ったチームの勝ち（2 ゲーム先取など）
+ */
+export type DecideBy = 'wins' | 'total' | 'race'
 
 /** 2 ゲーム目以降の投げる順番。reverse は前のゲームの逆順、loserFirst は点の低い組から */
 export type NextOrder = 'reverse' | 'same' | 'loserFirst'
@@ -38,7 +41,10 @@ export type GameRules = {
   targetScore: number
   penaltyScore: number
   maxMisses: number
-  /** 試合のゲーム数。null は決めずに続けたいだけ続ける */
+  /**
+   * 試合のゲーム数。null は決めずに続けたいだけ続ける。
+   * 先取（race）のときは、先に取ったら勝ちになるゲーム数で、決まるまで何ゲームでも続ける
+   */
   gameCount: number | null
   decideBy: DecideBy
   nextOrder: NextOrder

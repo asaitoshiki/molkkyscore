@@ -437,11 +437,11 @@ export const newStage = (index: number, patch: Partial<Stage>): Stage => ({
   ...patch,
 })
 
-/** 3 人対戦・最大 3 ゲームの 2 ゲーム先取。3 ゲーム目はゲームを取った人どうしで行う */
+/** 3 チーム対戦の 2 ゲーム先取。あと 1 ゲームで勝ちのチームが 2 つそろったら、その 2 チームで行う */
 const THREE_WAY_RULES: GameRules = {
   ...DEFAULT_RULES,
-  gameCount: 3,
-  decideBy: 'wins',
+  gameCount: 2,
+  decideBy: 'race',
   finalAmongWinners: true,
   timeLimitMinutes: 40,
 }

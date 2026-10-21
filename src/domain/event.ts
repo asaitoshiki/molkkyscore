@@ -143,7 +143,11 @@ const csvCell = (value: string | number) => `"${String(value).replaceAll('"', '"
  * 本部が記録の保管や表彰の確認に使う
  */
 export const submissionsCsv = (plan: EventPlan, submissions: Record<string, Submission>): string => {
-  const gameCount = Math.max(...plan.stages.map((stage) => stage.rules.gameCount ?? 1))
+  // 先取は何ゲームまで続くか決まっていないので、実際にいちばん長かった試合に列を合わせる
+  const gameCount = Math.max(
+    1,
+    ...Object.values(submissions).map((submission) => decodeSeries(submission.payload).games.length),
+  )
   const games = Array.from({ length: gameCount }, (_, index) => index)
   const rows = plan.stages.flatMap((stage) =>
     matchesOf(stage)

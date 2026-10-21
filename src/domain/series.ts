@@ -48,13 +48,29 @@ export const seriesStandings = (seriesGames: Game[]): SeriesStanding[] => {
   })
 }
 
+const byWins = (a: SeriesStanding, b: SeriesStanding) =>
+  b.wins - a.wins || b.draws - a.draws || b.total - a.total
+
 /**
- * 順位の比べ方。wins は公式どおり勝ったゲーム数 → 引き分け → 合計点、
+ * 順位の比べ方。wins と race は公式どおり勝ったゲーム数 → 引き分け → 合計点、
  * total は 100 点ゲームのように合計点を先に比べる。
  */
 const COMPARE: Record<DecideBy, (a: SeriesStanding, b: SeriesStanding) => number> = {
-  wins: (a, b) => b.wins - a.wins || b.draws - a.draws || b.total - a.total,
+  wins: byWins,
   total: (a, b) => b.total - a.total || b.wins - a.wins || b.draws - a.draws,
+  race: byWins,
+}
+
+/**
+ * 試合が決着したか（時間切れを除く）。standings は順位の並び、played は終えたゲーム数。
+ * wins は決めたゲーム数を終えたか、残りを全部取っても追いつけないとき。
+ * race は誰かが決めた数のゲームを取ったとき。チームが多いと何ゲームでも続く
+ */
+const SETTLED: Record<DecideBy, (standings: SeriesStanding[], played: number, count: number) => boolean> = {
+  wins: ([first, second], played, count) =>
+    played >= count || first.wins > second.wins + (count - played),
+  total: (_, played, count) => played >= count,
+  race: ([first], _, count) => first.wins >= count,
 }
 
 export const rankStandings = (
@@ -78,15 +94,12 @@ export const seriesResult = (seriesGames: Game[]): SeriesResult => {
   const last = seriesGames.at(-1)!
   const { gameCount, decideBy } = last.rules
   const standings = rankStandings(seriesStandings(seriesGames), decideBy)
-  const [first, second] = standings
-  const remaining = (gameCount ?? Infinity) - seriesGames.length
-  // 残りのゲームを全部取っても勝ち数で追いつけなければ、そこで決着
-  const clinched = decideBy === 'wins' && first.wins > second.wins + remaining
+  const [first] = standings
 
   const finished =
     gameCount !== null &&
     computeGameState(last).finished &&
-    (remaining === 0 || last.timeUpAt !== null || clinched)
+    (last.timeUpAt !== null || SETTLED[decideBy](standings, seriesGames.length, gameCount))
   const leaders = standings
     .filter((standing) => COMPARE[decideBy](first, standing) === 0)
     .map((standing) => standing.entry)
@@ -112,17 +125,31 @@ const NEXT_ORDER: Record<NextOrder, (previous: Game) => Entry[]> = {
 }
 
 /**
+ * 最終ゲームに出られるチームの見分け方。wins は勝ったゲーム数、played は終えたゲーム数、count は決めた数。
+ * 決めたゲーム数で行う形は、最後のゲームをそれまでにゲームを取ったチームで行う。
+ * 先取は、あと 1 ゲーム取れば勝ちのチームどうしで行う（兵庫の「3 セット目はセットを取った人同士」）
+ */
+const FINALIST: Record<DecideBy, (wins: number, played: number, count: number) => boolean> = {
+  wins: (wins, played, count) => played + 1 === count && wins > 0,
+  total: (wins, played, count) => played + 1 === count && wins > 0,
+  race: (wins, _, count) => wins === count - 1,
+}
+
+/**
  * 続きのゲームに出る組と投げる順番。
- * 最終ゲームを勝った組だけで行う決まりなら、それまでにゲームを取った組に絞る
+ * 最終ゲームを勝った組だけで行う決まりなら、出られる組に絞る
  */
 export const nextEntries = (seriesGames: Game[]): Entry[] => {
   const previous = seriesGames.at(-1)!
   const ordered = NEXT_ORDER[previous.rules.nextOrder](previous)
-  const isFinal = previous.gameNumber + 1 === previous.rules.gameCount
-  if (!previous.rules.finalAmongWinners || !isFinal) return ordered
+  if (!previous.rules.finalAmongWinners) return ordered
 
-  const winners = new Set(seriesGames.map((game) => computeGameState(game).winnerEntryId))
-  const finalists = ordered.filter((entry) => winners.has(entry.id))
-  // ゲームを取った組が 1 組以下なら絞りようがないので、全員で行う
+  const { decideBy, gameCount } = previous.rules
+  const winsOf = (entryId: string) =>
+    seriesGames.filter((game) => computeGameState(game).winnerEntryId === entryId).length
+  const finalists = ordered.filter((entry) =>
+    FINALIST[decideBy](winsOf(entry.id), seriesGames.length, gameCount ?? Infinity),
+  )
+  // 出られる組が 1 組以下なら絞りようがないので、全員で行う
   return finalists.length >= 2 ? finalists : ordered
 }

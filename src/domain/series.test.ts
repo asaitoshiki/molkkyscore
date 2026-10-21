@@ -186,3 +186,39 @@ describe('時間切れ', () => {
   })
 })
 
+describe('先取', () => {
+  const teams = (ids: string[]) =>
+    ids.map((id, index) => ({ id, name: id.toUpperCase(), memberIds: [`m${index}`], handicap: 0 }))
+  // 1 ターンで打ち切る 1 巡だけのゲーム。winner に 12 点、ほかは 1 点
+  const quickGame = (gameNumber: number, ids: string[], winner: string, rules: Partial<GameRules>): Game => ({
+    ...withRules(
+      game(gameNumber, ids.map((id): [string, number[]] => [id, [id === winner ? 12 : 1]])),
+      { maxTurns: 1, nextOrder: 'same', ...rules },
+    ),
+    id: `g${gameNumber}`,
+    entries: teams(ids),
+  })
+
+  it('3 チームが 1 ゲームずつ取っても終わらず、誰かが 2 ゲーム取るまで続く', () => {
+    const rules = { gameCount: 2, decideBy: 'race' as const }
+    const ids = ['a', 'b', 'c']
+    const played = [quickGame(1, ids, 'a', rules), quickGame(2, ids, 'b', rules), quickGame(3, ids, 'c', rules)]
+    expect(seriesResult(played).finished).toBe(false)
+
+    const decided = seriesResult([...played, quickGame(4, ids, 'b', rules)])
+    expect(decided.finished).toBe(true)
+    expect(decided.winnerEntryId).toBe('b')
+  })
+
+  it('あと 1 ゲームで勝ちのチームが 2 つそろったら、そのチームだけで次のゲームを行う', () => {
+    const rules = { gameCount: 2, decideBy: 'race' as const, finalAmongWinners: true }
+    const ids = ['a', 'b', 'c', 'd']
+    const first = quickGame(1, ids, 'a', rules)
+    // 1 ゲーム目のあとは、あと 1 ゲームのチームが a だけなので全員で行う
+    expect(nextEntries([first]).map((entry) => entry.id)).toEqual(ids)
+
+    const second = quickGame(2, ids, 'c', rules)
+    expect(nextEntries([first, second]).map((entry) => entry.id)).toEqual(['a', 'c'])
+  })
+})
+

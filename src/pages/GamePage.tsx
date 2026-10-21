@@ -13,7 +13,7 @@ import { ScoreTable } from '../components/ScoreTable'
 import type { ScoreEffect } from '../components/ScoreTable'
 import { Button, Numeral } from '../components/ui'
 import { INTERSTITIAL_INTERVAL } from '../domain/billing'
-import { formatLabel } from '../domain/formats'
+import { formatLabel, gameTitle } from '../domain/formats'
 import { computeGameState, teamsLeftInRound } from '../domain/game'
 import { outcomeOf } from '../domain/outcome'
 import type { ThrowOutcome } from '../domain/outcome'
@@ -152,7 +152,7 @@ const GameView = ({ gameId }: { gameId: string }) => {
   return (
     <div className="mx-auto flex min-h-full max-w-md flex-col bg-paper">
       <AppBar
-        title={`${eventLink === undefined ? '' : `${eventLink.label}・`}${gameTitle(game)}`}
+        title={`${eventLink === undefined ? '' : `${eventLink.label}・`}${gameTitle(game.gameNumber, game.rules)}`}
         left={
           <>
             <button onClick={() => navigate('/')} aria-label="中断してホームへ">
@@ -297,10 +297,6 @@ const finishPath = (game: Game, eventLink: EventSeriesLink | undefined) => {
   if (game.tournamentId !== null) return `/tournaments/${game.tournamentId}`
   return '/'
 }
-
-/** 「第 1 ゲーム」。ゲーム数を決めた試合では全体の何ゲーム目かも添える */
-const gameTitle = (game: Game) =>
-  `第 ${game.gameNumber} ゲーム${game.rules.gameCount === null ? '' : ` / ${game.rules.gameCount}`}`
 
 /** 1 秒ごとに今の時刻を返す。残り時間の表示に使う */
 const useNow = () => {
@@ -463,7 +459,7 @@ const ResultView = ({
 
       <section className="border-b border-rule px-5 py-8 text-center">
         <p className="eyebrow text-muted">
-          {gameTitle(game)}
+          {gameTitle(game.gameNumber, game.rules)}
           {timedOut && '・時間切れ'}
         </p>
         {winnerName === null ? (

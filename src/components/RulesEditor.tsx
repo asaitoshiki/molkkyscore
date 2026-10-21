@@ -3,7 +3,21 @@ import { TextInput } from './ui'
 import { formatLabel } from '../domain/formats'
 import type { FormatPreset } from '../domain/formats'
 import { clampNumber } from '../domain/rules'
-import type { GameRules, NextOrder } from '../domain/types'
+import type { DecideBy, GameRules, NextOrder } from '../domain/types'
+
+/** ゲーム数の欄の名前と単位。先取は「何ゲーム取ったら勝ちか」を入れる */
+const COUNT_FIELD: Record<DecideBy, { label: string; unit: string }> = {
+  wins: { label: 'ゲーム数', unit: 'ゲーム' },
+  total: { label: 'ゲーム数', unit: 'ゲーム（合計点で決める）' },
+  race: { label: '先取', unit: 'ゲーム先に取ったら勝ち' },
+}
+
+/** 最終ゲームを絞る決まりの説明。先取は終わりが決まっていないので言い方が変わる */
+const FINALIST_NOTE: Record<DecideBy, string> = {
+  wins: '最終ゲームは、それまでにゲームを取ったチームだけで行う',
+  total: '最終ゲームは、それまでにゲームを取ったチームだけで行う',
+  race: 'あと 1 ゲームで勝ちのチームが 2 つ以上そろったら、そのチームだけで次のゲームを行う',
+}
 
 const ORDER_OPTIONS: { value: NextOrder; label: string }[] = [
   { value: 'reverse', label: '前のゲームの逆順' },
@@ -50,6 +64,15 @@ export const RulesEditor = ({
       <details className="mt-3">
         <summary className="cursor-pointer text-[12px] text-accent">細かいルールを変える</summary>
         <div className="mt-3 space-y-2.5">
+          {rules.gameCount !== null && (
+            <Field label={COUNT_FIELD[rules.decideBy].label}>
+              <NumberInput
+                value={rules.gameCount}
+                onChange={(raw) => update({ gameCount: clampNumber(raw, 1, 9) })}
+              />
+              <Unit>{COUNT_FIELD[rules.decideBy].unit}</Unit>
+            </Field>
+          )}
           <Field label="目標点">
             <NumberInput
               value={rules.targetScore}
@@ -117,7 +140,7 @@ export const RulesEditor = ({
               checked={rules.finalAmongWinners}
               onChange={(event) => update({ finalAmongWinners: event.target.checked })}
             />
-            <span>最終ゲームは、それまでにゲームを取った組だけで行う</span>
+            <span>{FINALIST_NOTE[rules.decideBy]}</span>
           </label>
         </div>
       </details>
