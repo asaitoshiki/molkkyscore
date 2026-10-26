@@ -148,6 +148,9 @@ const GameView = ({ gameId }: { gameId: string }) => {
   const currentState = state.entries.find((entry) => entry.entryId === state.currentEntryId)!
   const overshoot = currentState.score + points > game.rules.targetScore
   const roster = entryOf(state.currentEntryId!).memberIds
+  const team = entryOf(state.currentEntryId!).name
+  // メンバーを入れていないチームはチーム名がそのまま投げる人の名前なので、重ねて出さない
+  const personOf = (memberId: string) => (memberName(memberId) === team ? null : memberName(memberId))
 
   return (
     <div className="mx-auto flex min-h-full max-w-md flex-col bg-paper">
@@ -211,7 +214,9 @@ const GameView = ({ gameId }: { gameId: string }) => {
         <div className="flex items-baseline justify-between">
           <p className="text-[15px]">
             <span className="eyebrow mr-2 text-muted">NEXT</span>
-            {entryOf(state.currentEntryId!).name}
+            {team}
+            {/* メンバーを入れたチームは、チーム名の横に今投げる人を大きく出す */}
+            <span className="ml-2 font-serif text-xl">{personOf(thrower ?? state.currentMemberId!)}</span>
           </p>
           <p className="tabular text-[12px] text-muted">
             {game.rules.maxTurns !== null && `ターン ${state.round} / ${game.rules.maxTurns}　`}
@@ -238,8 +243,10 @@ const GameView = ({ gameId }: { gameId: string }) => {
           </div>
         )}
 
-        <div className="flex flex-1 items-center justify-center py-5">
+        <div className="relative flex flex-1 items-center justify-center py-5">
           <PinPad selected={selectedPins} onToggle={togglePin} />
+          {/* 手番が変わるたびに、次に投げるチーム（と人）を一瞬大きく知らせる */}
+          <TurnCall key={game.throws.length} team={team} member={personOf(state.currentMemberId!)} />
         </div>
 
         <p className="text-center text-[13px]">
@@ -297,6 +304,17 @@ const finishPath = (game: Game, eventLink: EventSeriesLink | undefined) => {
   if (game.tournamentId !== null) return `/tournaments/${game.tournamentId}`
   return '/'
 }
+
+/** 手番の知らせ。表示し終えたら消えるので、押す操作の邪魔をしない */
+const TurnCall = ({ team, member }: { team: string; member: string | null }) => (
+  <div className="turn-call pointer-events-none absolute inset-x-0 top-1/2 flex justify-center">
+    <div className="rounded border border-rule bg-surface/95 px-7 py-4 text-center shadow-sm">
+      <p className="eyebrow text-muted">次は</p>
+      <p className="mt-1 font-serif text-3xl leading-tight">{member ?? team}</p>
+      {member !== null && <p className="mt-1 text-[13px] text-muted">{team}</p>}
+    </div>
+  </div>
+)
 
 /** 1 秒ごとに今の時刻を返す。残り時間の表示に使う */
 const useNow = () => {

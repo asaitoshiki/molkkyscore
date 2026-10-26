@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppBar } from '../components/AppBar'
 import { Icon } from '../components/Icon'
+import { MemberField } from '../components/MemberField'
 import { OrderList } from '../components/OrderList'
 import { RulesEditor } from '../components/RulesEditor'
 import { CASUAL_PRESETS } from '../domain/formats'
@@ -36,26 +37,35 @@ export const GameSetupPage = () => {
   const [names, setNames] = useState(['チーム1', 'チーム2'])
   // 力の差を埋めるための持ち点。並びは names と対応する
   const [handicaps, setHandicaps] = useState([0, 0])
+  // チームで投げるメンバーの名前。入れると試合中に次に投げる人が出る。並びは names と対応する
+  const [rosters, setRosters] = useState<string[][]>([[], []])
   const [rules, setRules] = useState(DEFAULT_RULES)
 
   const add = () => {
     setNames([...names, nextTeamName(names)])
     setHandicaps([...handicaps, 0])
+    setRosters([...rosters, []])
   }
 
   const remove = (index: number) => {
     setNames(names.filter((_, position) => position !== index))
     setHandicaps(handicaps.filter((_, position) => position !== index))
+    setRosters(rosters.filter((_, position) => position !== index))
   }
+
+  const setRoster = (index: number, roster: string[]) =>
+    setRosters(rosters.map((item, position) => (position === index ? roster : item)))
 
   const rename = (index: number, name: string) =>
     setNames(names.map((item, position) => (position === index ? name : item)))
 
   const start = () => {
-    // 同じ名前のメンバーがいれば使い回し、いなければ登録する
+    // 同じ名前のメンバーがいれば使い回し、いなければ登録する。
+    // メンバーを入れていないチームは、チーム名を 1 人のメンバーとして記録する
+    const memberOf = (name: string) => members.find((item) => item.name === name) ?? addMember(name)
     const entries: Entry[] = names.map((name, index) => {
-      const member = members.find((item) => item.name === name) ?? addMember(name)
-      return { id: newId(), name, memberIds: [member.id], handicap: handicaps[index] }
+      const roster = rosters[index].length > 0 ? rosters[index] : [name]
+      return { id: newId(), name, memberIds: roster.map((item) => memberOf(item).id), handicap: handicaps[index] }
     })
     navigate(`/games/${createGame(entries, rules, null)}`, { replace: true })
   }
@@ -87,9 +97,10 @@ export const GameSetupPage = () => {
         <OrderList
           items={names}
           onMove={(from, to) => {
-            // 名前とハンデは同じ位置で対応しているので、そろえて動かす
+            // 名前・ハンデ・メンバーは同じ位置で対応しているので、そろえて動かす
             setNames(moveItem(names, from, to))
             setHandicaps(moveItem(handicaps, from, to))
+            setRosters(moveItem(rosters, from, to))
           }}
           renderItem={(name, index) => (
             <>
@@ -121,6 +132,43 @@ export const GameSetupPage = () => {
           <Icon name="plus" size={16} />
           チームを追加
         </button>
+
+        {/* 大人数のチームでも次に投げる人が分かるよう、メンバーを入れられる。入れなくても始められる */}
+        <details className="mt-6 border-t border-rule pt-3">
+          <summary className="eyebrow cursor-pointer text-muted">チームのメンバーを入れる</summary>
+          <p className="mt-2 text-[12px] text-muted">
+            入れた順に交代で投げます。試合中は、次に投げる人が画面に出ます。
+          </p>
+          <div className="mt-3 space-y-4">
+            {names.map((name, index) => (
+              <div key={index}>
+                <p className="text-[14px]">{name}</p>
+                {rosters[index].length > 0 && (
+                  <ol className="mt-1.5 flex flex-wrap gap-1.5">
+                    {rosters[index].map((member, position) => (
+                      <li key={member}>
+                        <button
+                          aria-label={`${member} を外す`}
+                          className="flex items-center gap-1.5 rounded-full border border-rule bg-surface px-3 py-1 text-[12px]"
+                          onClick={() => setRoster(index, rosters[index].filter((item) => item !== member))}
+                        >
+                          <span className="tabular text-faint">{position + 1}</span>
+                          {member}
+                          <span className="text-faint">
+                            <Icon name="close" size={12} />
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+                <MemberField
+                  onAdd={(member) => setRoster(index, [...new Set([...rosters[index], member])])}
+                />
+              </div>
+            ))}
+          </div>
+        </details>
 
         <section className="mt-6 border-t border-rule pt-3">
           <h2 className="eyebrow mb-3 text-muted">試合ルール</h2>

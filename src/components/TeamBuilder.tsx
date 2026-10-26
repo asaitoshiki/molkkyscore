@@ -1,5 +1,5 @@
-import { useState } from 'react'
 import { Icon } from './Icon'
+import { MemberField } from './MemberField'
 import { Button, SectionTitle, TextInput } from './ui'
 import { clampHandicap } from '../domain/rules'
 import { displayName, newTeam } from '../domain/teamDraft'
@@ -120,36 +120,5 @@ export const TeamBuilder = ({
         メンバーを入れておくと、誰が何番のスキットルを倒したかまで記録されます。
       </p>
     </section>
-  )
-}
-
-const MemberField = ({ onAdd }: { onAdd: (name: string) => void }) => {
-  const members = useAppStore((state) => state.members)
-  const [name, setName] = useState('')
-
-  const submit = () => {
-    onAdd(name)
-    setName('')
-  }
-
-  return (
-    <div className="mt-2 flex gap-2">
-      <TextInput
-        list="registered-members"
-        value={name}
-        placeholder="メンバーを追加"
-        className="py-2 text-[14px]"
-        onChange={(event) => setName(event.target.value)}
-        onKeyDown={(event) => event.key === 'Enter' && submit()}
-      />
-      <datalist id="registered-members">
-        {members.map((member) => (
-          <option key={member.id} value={member.name} />
-        ))}
-      </datalist>
-      <Button variant="outline" className="shrink-0 px-3 py-2 text-[13px]" onClick={submit}>
-        追加
-      </Button>
-    </div>
   )
 }
