@@ -1,31 +1,40 @@
 import { useState } from 'react'
-import { Button, EmptyState, Numeral, TextInput } from '../components/ui'
+import { Link } from 'react-router-dom'
+import { Avatar } from '../components/Avatar'
+import { Icon } from '../components/Icon'
+import { Button, EmptyState, TextInput } from '../components/ui'
 import { computeMemberStats } from '../domain/stats'
 import { useAppStore } from '../store/useAppStore'
 
+const percent = (value: number) => `${(value * 100).toFixed(0)}%`
+
+/**
+ * よく一緒に遊ぶプレイヤーの一覧。登録しておくと、試合の準備で名前を選ぶだけで済み、
+ * 試合を重ねるごとにプレイヤーごとの成績がたまる
+ */
 export const MembersPage = () => {
   const members = useAppStore((state) => state.members)
   const games = useAppStore((state) => state.games)
-  const addMember = useAppStore((state) => state.addMember)
-  const renameMember = useAppStore((state) => state.renameMember)
-  const removeMember = useAppStore((state) => state.removeMember)
+  const memberNamed = useAppStore((state) => state.memberNamed)
   const [name, setName] = useState('')
-  const [editing, setEditing] = useState<string | null>(null)
 
-  const stats = new Map(computeMemberStats(games, members).map((stat) => [stat.member.id, stat]))
+  const players = members.filter((member) => member.listed)
+  const stats = new Map(computeMemberStats(games, players).map((stat) => [stat.member.id, stat]))
 
   const add = () => {
-    const trimmed = name.trim()
-    if (trimmed === '') return
-    addMember(trimmed)
+    if (name.trim() === '') return
+    memberNamed(name, true)
     setName('')
   }
 
   return (
     <div className="space-y-6">
       <header>
-        <p className="eyebrow text-muted">MEMBERS</p>
+        <p className="eyebrow text-muted">PLAYERS</p>
         <h1 className="mt-1 font-serif text-2xl">メンバー</h1>
+        <p className="mt-2 text-[13px] text-muted">
+          よく遊ぶ人を登録しておくと、試合の準備で選ぶだけで済み、一人ひとりの成績がたまります。
+        </p>
       </header>
 
       <div className="flex gap-2">
@@ -40,48 +49,33 @@ export const MembersPage = () => {
         </Button>
       </div>
 
-      {members.length === 0 ? (
-        <EmptyState>よく遊ぶ人を登録しておくと、試合の準備が早くなります</EmptyState>
+      {players.length === 0 ? (
+        <EmptyState>まだ登録されたメンバーはいません</EmptyState>
       ) : (
         <ul className="divide-y divide-rule border-y border-rule">
-          {members.map((member) => {
+          {players.map((member) => {
             const stat = stats.get(member.id)!
             return (
-              <li key={member.id} className="flex items-center gap-3 py-3">
-                {editing === member.id ? (
-                  <TextInput
-                    autoFocus
-                    defaultValue={member.name}
-                    onBlur={(event) => {
-                      // 空のまま離れたときは変更せず元の名前を残す
-                      const next = event.target.value.trim()
-                      if (next !== '') renameMember(member.id, next)
-                      setEditing(null)
-                    }}
-                    onKeyDown={(event) => event.key === 'Enter' && event.currentTarget.blur()}
-                  />
-                ) : (
-                  <button className="flex-1 text-left" onClick={() => setEditing(member.id)}>
-                    <span className="block text-[15px]">{member.name}</span>
+              <li key={member.id}>
+                <Link to={`/members/${member.id}`} className="flex items-center gap-3 py-3">
+                  <Avatar avatar={member.avatar} size={40} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[15px]">{member.name}</span>
                     <span className="tabular block text-[12px] text-muted">
-                      {stat.games} 試合　{stat.wins} 勝　勝率{' '}
-                      <Numeral>{(stat.winRate * 100).toFixed(0)}</Numeral>%
+                      {stat.games === 0
+                        ? 'まだ試合がありません'
+                        : `${stat.games} 試合　勝率 ${percent(stat.winRate)}　命中率 ${percent(stat.hitRate)}`}
                     </span>
-                  </button>
-                )}
-                <Button
-                  variant="danger"
-                  className="px-2 py-1 text-[12px]"
-                  onClick={() => removeMember(member.id)}
-                >
-                  削除
-                </Button>
+                  </span>
+                  <span className="text-faint">
+                    <Icon name="arrowRight" size={18} />
+                  </span>
+                </Link>
               </li>
             )
           })}
         </ul>
       )}
-      <p className="text-[11px] text-faint">名前をタップすると変更できます。</p>
     </div>
   )
 }

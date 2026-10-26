@@ -206,8 +206,7 @@ const StartMatch = ({
   match: PlanMatch
 }) => {
   const navigate = useNavigate()
-  const members = useAppStore((state) => state.members)
-  const addMember = useAppStore((state) => state.addMember)
+  const memberNamed = useAppStore((state) => state.memberNamed)
   const createGame = useAppStore((state) => state.createGame)
   const linkEventSeries = useAppStore((state) => state.linkEventSeries)
   const [order, setOrder] = useState(match.playerIds)
@@ -216,7 +215,8 @@ const StartMatch = ({
     // チームの ID を参加者の ID にそろえ、本部で人ごとの成績を集められるようにする
     const entries: Entry[] = order.map((playerId) => {
       const name = nameOf(plan, playerId)
-      const member = members.find((item) => item.name === name) ?? addMember(name)
+      // 大会の参加者はチーム名のこともあるので、プレイヤーの一覧には出さずに記録する
+      const member = memberNamed(name, false)
       return { id: playerId, name, memberIds: [member.id], handicap: 0 }
     })
     const gameId = createGame(entries, stage.rules, null)

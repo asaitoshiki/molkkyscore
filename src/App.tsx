@@ -13,6 +13,7 @@ import { EventHostSetupPage } from './pages/EventHostSetupPage'
 import { EventHqPage } from './pages/EventHqPage'
 import { HistoryPage } from './pages/HistoryPage'
 import { MembersPage } from './pages/MembersPage'
+import { PlayerPage } from './pages/PlayerPage'
 import { PracticePage } from './pages/PracticePage'
 import { RulesPage } from './pages/RulesPage'
 import { StatsPage } from './pages/StatsPage'
@@ -43,6 +44,7 @@ export const App = () => {
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/stats" element={<StatsPage />} />
         <Route path="/members" element={<MembersPage />} />
+        <Route path="/members/:memberId" element={<PlayerPage />} />
         <Route path="/practice" element={<PracticePage />} />
         <Route path="/rules" element={<RulesPage />} />
         <Route path="/tournaments" element={<TournamentsPage />} />

@@ -10,9 +10,9 @@ import {
 import type { Game, Member } from './types'
 
 const members: Member[] = [
-  { id: 'm1', name: 'たろう', createdAt: 0 },
-  { id: 'm2', name: 'はなこ', createdAt: 0 },
-  { id: 'm3', name: '関係ない人', createdAt: 0 },
+  { id: 'm1', name: 'たろう', createdAt: 0, avatar: { color: '#000', mark: 'x' }, listed: true },
+  { id: 'm2', name: 'はなこ', createdAt: 0, avatar: { color: '#000', mark: 'x' }, listed: true },
+  { id: 'm3', name: '関係ない人', createdAt: 0, avatar: { color: '#000', mark: 'x' }, listed: true },
 ]
 
 const game: Game = {

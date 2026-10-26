@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { computeGameState } from '../domain/game'
+import { defaultAvatar } from '../domain/avatar'
 import { newId } from '../domain/id'
 import { withGameDefaults, withHandicap, withRules } from '../domain/legacy'
 import type { LegacyGame } from '../domain/legacy'
@@ -59,9 +60,14 @@ type AppState = {
   setEventGroup: (eventId: string, groupId: string | null) => void
   linkEventSeries: (seriesId: string, link: EventSeriesLink) => void
 
-  addMember: (name: string) => Member
-  renameMember: (memberId: string, name: string) => void
-  removeMember: (memberId: string) => void
+  /**
+   * 名前でメンバーを探し、いなければ作る。同じ名前は同じ人として扱う。
+   * listed を付けて呼ぶと、チーム名として記録していただけの人もプレイヤーの一覧に出す
+   */
+  memberNamed: (name: string, listed: boolean) => Member
+  updateMember: (memberId: string, patch: Partial<Pick<Member, 'name' | 'avatar'>>) => void
+  /** プレイヤーの一覧から外す。投球の記録と名前は試合の履歴に残す */
+  unlistMember: (memberId: string) => void
 
   createGame: (entries: Entry[], rules: GameRules, link: MatchLink | null) => string
   /** 同じ顔ぶれで次のゲームを始める */
@@ -177,21 +183,35 @@ export const useAppStore = create<AppState>()(
       linkEventSeries: (seriesId, link) =>
         set((state) => ({ eventSeries: { ...state.eventSeries, [seriesId]: link } })),
 
-      addMember: (name) => {
-        const member: Member = { id: newId(), name: name.trim(), createdAt: Date.now() }
+      memberNamed: (rawName, listed) => {
+        const name = rawName.trim()
+        const found = get().members.find((member) => member.name === name)
+        if (found !== undefined) {
+          const promoted = { ...found, listed: found.listed || listed }
+          set((state) => ({
+            members: state.members.map((member) => (member.id === found.id ? promoted : member)),
+          }))
+          return promoted
+        }
+        const id = newId()
+        const member: Member = { id, name, createdAt: Date.now(), avatar: defaultAvatar(name, id), listed }
         set((state) => ({ members: [...state.members, member] }))
         return member
       },
 
-      renameMember: (memberId, name) =>
+      updateMember: (memberId, patch) =>
         set((state) => ({
           members: state.members.map((member) =>
-            member.id === memberId ? { ...member, name: name.trim() } : member,
+            member.id === memberId ? { ...member, ...patch } : member,
           ),
         })),
 
-      removeMember: (memberId) =>
-        set((state) => ({ members: state.members.filter((member) => member.id !== memberId) })),
+      unlistMember: (memberId) =>
+        set((state) => ({
+          members: state.members.map((member) =>
+            member.id === memberId ? { ...member, listed: false } : member,
+          ),
+        })),
 
       createGame: (entries, rules, link) => {
         const game: Game = {
@@ -368,9 +388,9 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'molkky-note-v1',
-      version: 8,
+      version: 9,
       // 保存済みの形に足りない項目を補う。セット（連戦）・ハンデ・観戦の共有・効果音・
-      // 試合ルール（ゲーム数・時間切れなど）・本部とつなぐ大会はあとから入れた
+      // 試合ルール（ゲーム数・時間切れなど）・本部とつなぐ大会・プレイヤーのアバターはあとから入れた
       migrate: (persisted) => {
         const state = persisted as {
           games?: LegacyGame[]
@@ -383,9 +403,16 @@ export const useAppStore = create<AppState>()(
           hostedEvents?: HostedEvent[]
           eventGroups?: Record<string, string>
           eventSeries?: Record<string, EventSeriesLink>
+          members?: (Omit<Member, 'avatar' | 'listed'> & Partial<Pick<Member, 'avatar' | 'listed'>>)[]
         }
         return {
           ...state,
+          // 以前はチーム名もメンバーとして登録していた。「チーム1」や番号だけの名前はプレイヤーの一覧に出さない
+          members: (state.members ?? []).map((member) => ({
+            ...member,
+            avatar: member.avatar ?? defaultAvatar(member.name, member.id),
+            listed: member.listed ?? !/^(チーム\d+|\d+)$/.test(member.name),
+          })),
           shares: state.shares ?? {},
           soundOn: state.soundOn ?? true,
           hostedEvents: state.hostedEvents ?? [],

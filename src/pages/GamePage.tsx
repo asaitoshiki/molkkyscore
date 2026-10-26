@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { isNative } from '../ads/admob'
 import { InterstitialAd } from '../ads/InterstitialAd'
+import { Avatar } from '../components/Avatar'
 import { EventSubmit } from '../components/EventSubmit'
 import { WatchInvite } from '../components/WatchInvite'
 import { AppBar } from '../components/AppBar'
@@ -19,6 +20,7 @@ import { outcomeOf } from '../domain/outcome'
 import type { ThrowOutcome } from '../domain/outcome'
 import { pointsOf } from '../domain/rules'
 import { gamesOfSeries, seriesResult } from '../domain/series'
+import type { Avatar as AvatarData } from '../domain/avatar'
 import type { Entry, Game } from '../domain/types'
 import { shareImage } from '../share/canvas'
 import { renderResultCard } from '../share/resultCard'
@@ -91,6 +93,9 @@ const GameView = ({ gameId }: { gameId: string }) => {
   const entryOf = (entryId: string) => game.entries.find((entry) => entry.id === entryId)!
   const memberName = (memberId: string) =>
     members.find((member) => member.id === memberId)?.name ?? '—'
+  // 観戦から開いた記録などで本人が端末にいないときは、アバターを出さない
+  const avatarOf = (memberId: string) =>
+    members.find((member) => member.id === memberId)?.avatar ?? null
 
   const submit = () => {
     const entryId = state.currentEntryId!
@@ -211,14 +216,15 @@ const GameView = ({ gameId }: { gameId: string }) => {
       )}
 
       <section className="flex flex-1 flex-col px-5 pt-5 pb-5">
-        <div className="flex items-baseline justify-between">
-          <p className="text-[15px]">
-            <span className="eyebrow mr-2 text-muted">NEXT</span>
-            {team}
+        <div className="flex items-center justify-between gap-3">
+          <p className="flex min-w-0 items-center gap-2 text-[15px]">
+            <span className="eyebrow text-muted">NEXT</span>
+            <PersonAvatar avatar={avatarOf(thrower ?? state.currentMemberId!)} size={28} />
+            <span className="truncate">{team}</span>
             {/* メンバーを入れたチームは、チーム名の横に今投げる人を大きく出す */}
-            <span className="ml-2 font-serif text-xl">{personOf(thrower ?? state.currentMemberId!)}</span>
+            <span className="truncate font-serif text-xl">{personOf(thrower ?? state.currentMemberId!)}</span>
           </p>
-          <p className="tabular text-[12px] text-muted">
+          <p className="tabular shrink-0 text-[12px] text-muted">
             {game.rules.maxTurns !== null && `ターン ${state.round} / ${game.rules.maxTurns}　`}
             残り {game.rules.targetScore - currentState.score}
           </p>
@@ -246,7 +252,12 @@ const GameView = ({ gameId }: { gameId: string }) => {
         <div className="relative flex flex-1 items-center justify-center py-5">
           <PinPad selected={selectedPins} onToggle={togglePin} />
           {/* 手番が変わるたびに、次に投げるチーム（と人）を一瞬大きく知らせる */}
-          <TurnCall key={game.throws.length} team={team} member={personOf(state.currentMemberId!)} />
+          <TurnCall
+            key={game.throws.length}
+            team={team}
+            member={personOf(state.currentMemberId!)}
+            avatar={avatarOf(state.currentMemberId!)}
+          />
         </div>
 
         <p className="text-center text-[13px]">
@@ -305,11 +316,26 @@ const finishPath = (game: Game, eventLink: EventSeriesLink | undefined) => {
   return '/'
 }
 
+/** 本人の分からない記録ではアバターを出さない */
+const PersonAvatar = ({ avatar, size }: { avatar: AvatarData | null; size: number }) =>
+  avatar === null ? null : <Avatar avatar={avatar} size={size} />
+
 /** 手番の知らせ。表示し終えたら消えるので、押す操作の邪魔をしない */
-const TurnCall = ({ team, member }: { team: string; member: string | null }) => (
+const TurnCall = ({
+  team,
+  member,
+  avatar,
+}: {
+  team: string
+  member: string | null
+  avatar: AvatarData | null
+}) => (
   <div className="turn-call pointer-events-none absolute inset-x-0 top-1/2 flex justify-center">
     <div className="rounded border border-rule bg-surface/95 px-7 py-4 text-center shadow-sm">
       <p className="eyebrow text-muted">次は</p>
+      <div className="mt-2 flex justify-center">
+        <PersonAvatar avatar={avatar} size={48} />
+      </div>
       <p className="mt-1 font-serif text-3xl leading-tight">{member ?? team}</p>
       {member !== null && <p className="mt-1 text-[13px] text-muted">{team}</p>}
     </div>

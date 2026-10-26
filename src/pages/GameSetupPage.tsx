@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppBar } from '../components/AppBar'
 import { Icon } from '../components/Icon'
+import { Avatar } from '../components/Avatar'
 import { MemberField } from '../components/MemberField'
 import { OrderList } from '../components/OrderList'
 import { RulesEditor } from '../components/RulesEditor'
@@ -31,7 +32,7 @@ const nextTeamName = (names: string[]) => {
 export const GameSetupPage = () => {
   const navigate = useNavigate()
   const members = useAppStore((state) => state.members)
-  const addMember = useAppStore((state) => state.addMember)
+  const memberNamed = useAppStore((state) => state.memberNamed)
   const createGame = useAppStore((state) => state.createGame)
 
   const [names, setNames] = useState(['チーム1', 'チーム2'])
@@ -53,6 +54,23 @@ export const GameSetupPage = () => {
     setRosters(rosters.filter((_, position) => position !== index))
   }
 
+  // 登録メンバーを選んだら、まだ手を付けていない「チーム◯」の枠に入れる。空きがなければ足す。
+  // もう入っている人を選んだら外す
+  const openSlot = names.findIndex(
+    (item, index) => /^チーム\d+$/.test(item) && rosters[index].length === 0,
+  )
+  const full = openSlot === -1 && names.length >= MAX_TEAMS
+  const togglePlayer = (name: string) => {
+    const index = names.indexOf(name)
+    if (index !== -1) return names.length > 1 && remove(index)
+    if (openSlot !== -1) return rename(openSlot, name)
+    setNames([...names, name])
+    setHandicaps([...handicaps, 0])
+    setRosters([...rosters, []])
+  }
+
+  const players = members.filter((member) => member.listed)
+
   const setRoster = (index: number, roster: string[]) =>
     setRosters(rosters.map((item, position) => (position === index ? roster : item)))
 
@@ -62,11 +80,17 @@ export const GameSetupPage = () => {
   const start = () => {
     // 同じ名前のメンバーがいれば使い回し、いなければ登録する。
     // メンバーを入れていないチームは、チーム名を 1 人のメンバーとして記録する
-    const memberOf = (name: string) => members.find((item) => item.name === name) ?? addMember(name)
-    const entries: Entry[] = names.map((name, index) => {
-      const roster = rosters[index].length > 0 ? rosters[index] : [name]
-      return { id: newId(), name, memberIds: roster.map((item) => memberOf(item).id), handicap: handicaps[index] }
-    })
+    // メンバーとして入れた人はプレイヤーの一覧に出し、チーム名だけのときは出さない
+    const memberIdsOf = (index: number) =>
+      rosters[index].length > 0
+        ? rosters[index].map((member) => memberNamed(member, true).id)
+        : [memberNamed(names[index], false).id]
+    const entries: Entry[] = names.map((name, index) => ({
+      id: newId(),
+      name,
+      memberIds: memberIdsOf(index),
+      handicap: handicaps[index],
+    }))
     navigate(`/games/${createGame(entries, rules, null)}`, { replace: true })
   }
 
@@ -93,6 +117,28 @@ export const GameSetupPage = () => {
         <p className="mt-1 mb-5 text-[12px] text-muted">
           上から順に投げます。取っ手で順番を入れ替え、名前は試合中でも直せます。
         </p>
+
+        {/* 登録したメンバーは押すだけで参加チームに入る。もう一度押すと外れる */}
+        {players.length > 0 && (
+          <div className="mb-5 flex flex-wrap gap-1.5">
+            {players.map((player) => {
+              const joined = names.includes(player.name)
+              return (
+                <button
+                  key={player.id}
+                  disabled={!joined && full}
+                  className={`flex items-center gap-1.5 rounded-full border py-1 pr-3 pl-1 text-[13px] disabled:opacity-35 ${
+                    joined ? 'border-accent bg-accent-soft' : 'border-rule bg-surface'
+                  }`}
+                  onClick={() => togglePlayer(player.name)}
+                >
+                  <Avatar avatar={player.avatar} size={24} />
+                  {player.name}
+                </button>
+              )
+            })}
+          </div>
+        )}
 
         <OrderList
           items={names}

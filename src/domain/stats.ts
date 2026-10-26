@@ -12,6 +12,10 @@ export type MemberStats = {
   averagePoints: number
   misses: number
   missRate: number
+  /** 1 本以上倒した投球の割合 */
+  hitRate: number
+  /** 自分の投球で目標点ちょうどに届かせて、ゲームを決めた回数 */
+  finishes: number
   /** 1 本だけ狙って倒した回数 */
   singleHits: number
   /** 2 本以上まとめて倒した回数 */
@@ -32,6 +36,8 @@ const emptyStats = (member: Member): MemberStats => ({
   averagePoints: 0,
   misses: 0,
   missRate: 0,
+  hitRate: 0,
+  finishes: 0,
   singleHits: 0,
   multiHits: 0,
   overshoots: 0,
@@ -72,6 +78,7 @@ export const computeMemberStats = (games: Game[], members: Member[]): MemberStat
       stat.multiHits += record.pins.length >= 2 ? 1 : 0
       stat.overshoots += after === game.rules.penaltyScore && before + points > game.rules.targetScore ? 1 : 0
       record.pins.forEach((pin) => (stat.pinHits[pin - 1] += 1))
+      stat.finishes += after === game.rules.targetScore && record.entryId === state.winnerEntryId ? 1 : 0
     }
   }
 
@@ -80,6 +87,7 @@ export const computeMemberStats = (games: Game[], members: Member[]): MemberStat
     winRate: ratio(stat.wins, stat.games),
     averagePoints: stat.throws === 0 ? 0 : stat.totalPoints / stat.throws,
     missRate: ratio(stat.misses, stat.throws),
+    hitRate: ratio(stat.throws - stat.misses, stat.throws),
   }))
 }
 

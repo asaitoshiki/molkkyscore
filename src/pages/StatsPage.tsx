@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { EmptyState, Numeral } from '../components/ui'
+import { Avatar } from '../components/Avatar'
 import { PinHitChart } from '../components/PinHitChart'
 import { computeMemberStats } from '../domain/stats'
 import { useAppStore } from '../store/useAppStore'
@@ -11,7 +12,8 @@ export const StatsPage = () => {
   const games = useAppStore((state) => state.games)
   const [openId, setOpenId] = useState<string | null>(null)
 
-  const stats = computeMemberStats(games, members)
+  // チーム名で記録しただけのものは除き、メンバーとして登録した人だけを並べる
+  const stats = computeMemberStats(games, members.filter((member) => member.listed))
     .filter((stat) => stat.games > 0)
     .sort((a, b) => b.winRate - a.winRate || b.games - a.games)
 
@@ -36,6 +38,9 @@ export const StatsPage = () => {
                 >
                   <span className="flex min-w-0 items-baseline gap-3">
                     <Numeral className="w-5 shrink-0 text-[13px] text-faint">{rank + 1}</Numeral>
+                    <span className="self-center">
+                      <Avatar avatar={stat.member.avatar} size={28} />
+                    </span>
                     <span className="truncate text-[15px]">{stat.member.name}</span>
                   </span>
                   <span className="shrink-0 text-[12px] text-muted">
@@ -51,8 +56,10 @@ export const StatsPage = () => {
                     <dl className="grid grid-cols-3 gap-x-4 gap-y-4">
                       {(
                         [
-                          ['総投数', `${stat.throws}`, '投'],
+                          ['命中率', percent(stat.hitRate), ''],
                           ['平均得点', stat.averagePoints.toFixed(1), '点/投'],
+                          ['上がり', `${stat.finishes}`, '回'],
+                          ['総投数', `${stat.throws}`, '投'],
                           ['ミス率', percent(stat.missRate), ''],
                           ['1 本倒し', `${stat.singleHits}`, '回'],
                           ['複数本', `${stat.multiHits}`, '回'],

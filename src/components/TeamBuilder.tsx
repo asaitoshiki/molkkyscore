@@ -21,7 +21,7 @@ export const TeamBuilder = ({
   onChange: (teams: TeamDraft[]) => void
 }) => {
   const members = useAppStore((state) => state.members)
-  const addMember = useAppStore((state) => state.addMember)
+  const memberNamed = useAppStore((state) => state.memberNamed)
 
   const update = (key: string, patch: Partial<TeamDraft>) =>
     onChange(teams.map((team) => (team.key === key ? { ...team, ...patch } : team)))
@@ -29,7 +29,7 @@ export const TeamBuilder = ({
   const addMemberTo = (key: string, rawName: string) => {
     const name = rawName.trim()
     if (name === '') return
-    const member = members.find((item) => item.name === name) ?? addMember(name)
+    const member = memberNamed(name, true)
     const team = teams.find((item) => item.key === key)!
     update(key, { memberIds: [...new Set([...team.memberIds, member.id])] })
   }

@@ -149,3 +149,22 @@ describe('試合ルール', () => {
     expect(gameOf().finishedAt).toBeNull()
   })
 })
+
+describe('メンバー', () => {
+  it('チーム名で記録しただけの人は一覧に出さず、メンバーとして選ばれたら一覧に出す', () => {
+    const asTeam = useAppStore.getState().memberNamed('ひまわり', false)
+    expect(asTeam.listed).toBe(false)
+    const asPlayer = useAppStore.getState().memberNamed(' ひまわり ', true)
+    // 同じ名前は同じ人。記録をまとめるため ID は変えない
+    expect(asPlayer.id).toBe(asTeam.id)
+    expect(useAppStore.getState().members.find((m) => m.id === asTeam.id)!.listed).toBe(true)
+  })
+
+  it('一覧から外しても、名前と記録は残る', () => {
+    const player = useAppStore.getState().memberNamed('山田', true)
+    useAppStore.getState().unlistMember(player.id)
+    const kept = useAppStore.getState().members.find((m) => m.id === player.id)!
+    expect(kept).toMatchObject({ name: '山田', listed: false })
+  })
+})
+
