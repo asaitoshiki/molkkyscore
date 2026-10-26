@@ -11,8 +11,13 @@ import { Button, TextInput } from '../components/ui'
 import { newId } from '../domain/id'
 import { moveItem } from '../domain/order'
 import { DEFAULT_RULES, clampHandicap } from '../domain/rules'
+import type { Avatar as AvatarData } from '../domain/avatar'
 import type { Entry } from '../domain/types'
 import { useAppStore } from '../store/useAppStore'
+
+/** 登録メンバーならアバターを添える。その場で入れた名前は登録されるまでアバターがない */
+const MemberAvatar = ({ avatar }: { avatar: AvatarData | undefined }) =>
+  avatar === undefined ? null : <Avatar avatar={avatar} size={22} />
 
 /** 公式のスコアシートが 4 チーム分までなので、それに合わせる */
 const MAX_TEAMS = 4
@@ -54,25 +59,18 @@ export const GameSetupPage = () => {
     setRosters(rosters.filter((_, position) => position !== index))
   }
 
-  // 登録メンバーを選んだら、まだ手を付けていない「チーム◯」の枠に入れる。空きがなければ足す。
-  // もう入っている人を選んだら外す
-  const openSlot = names.findIndex(
-    (item, index) => /^チーム\d+$/.test(item) && rosters[index].length === 0,
-  )
-  const full = openSlot === -1 && names.length >= MAX_TEAMS
-  const togglePlayer = (name: string) => {
-    const index = names.indexOf(name)
-    if (index !== -1) return names.length > 1 && remove(index)
-    if (openSlot !== -1) return rename(openSlot, name)
-    setNames([...names, name])
-    setHandicaps([...handicaps, 0])
-    setRosters([...rosters, []])
-  }
-
   const players = members.filter((member) => member.listed)
 
-  const setRoster = (index: number, roster: string[]) =>
-    setRosters(rosters.map((item, position) => (position === index ? roster : item)))
+  // メンバーを入れる・外す。同じ人は 1 チームにしか入れないので、ほかのチームからは外して移す
+  const toggleMember = (index: number, member: string) => {
+    const here = rosters[index].includes(member)
+    setRosters(
+      rosters.map((roster, position) => {
+        const without = roster.filter((item) => item !== member)
+        return position === index && !here ? [...without, member] : without
+      }),
+    )
+  }
 
   const rename = (index: number, name: string) =>
     setNames(names.map((item, position) => (position === index ? name : item)))
@@ -118,28 +116,6 @@ export const GameSetupPage = () => {
           上から順に投げます。取っ手で順番を入れ替え、名前は試合中でも直せます。
         </p>
 
-        {/* 登録したメンバーは押すだけで参加チームに入る。もう一度押すと外れる */}
-        {players.length > 0 && (
-          <div className="mb-5 flex flex-wrap gap-1.5">
-            {players.map((player) => {
-              const joined = names.includes(player.name)
-              return (
-                <button
-                  key={player.id}
-                  disabled={!joined && full}
-                  className={`flex items-center gap-1.5 rounded-full border py-1 pr-3 pl-1 text-[13px] disabled:opacity-35 ${
-                    joined ? 'border-accent bg-accent-soft' : 'border-rule bg-surface'
-                  }`}
-                  onClick={() => togglePlayer(player.name)}
-                >
-                  <Avatar avatar={player.avatar} size={24} />
-                  {player.name}
-                </button>
-              )
-            })}
-          </div>
-        )}
-
         <OrderList
           items={names}
           onMove={(from, to) => {
@@ -180,12 +156,12 @@ export const GameSetupPage = () => {
         </button>
 
         {/* 大人数のチームでも次に投げる人が分かるよう、メンバーを入れられる。入れなくても始められる */}
-        <details className="mt-6 border-t border-rule pt-3">
-          <summary className="eyebrow cursor-pointer text-muted">チームのメンバーを入れる</summary>
+        <section className="mt-6 border-t border-rule pt-3">
+          <h2 className="eyebrow text-muted">チームのメンバー（任意）</h2>
           <p className="mt-2 text-[12px] text-muted">
-            入れた順に交代で投げます。試合中は、次に投げる人が画面に出ます。
+            入れた順に交代で投げ、試合中は次に投げる人が画面に出ます。入れた人の成績はメンバーのページにたまります。
           </p>
-          <div className="mt-3 space-y-4">
+          <div className="mt-3 space-y-5">
             {names.map((name, index) => (
               <div key={index}>
                 <p className="text-[14px]">{name}</p>
@@ -195,10 +171,11 @@ export const GameSetupPage = () => {
                       <li key={member}>
                         <button
                           aria-label={`${member} を外す`}
-                          className="flex items-center gap-1.5 rounded-full border border-rule bg-surface px-3 py-1 text-[12px]"
-                          onClick={() => setRoster(index, rosters[index].filter((item) => item !== member))}
+                          className="flex items-center gap-1.5 rounded-full border border-accent bg-accent-soft py-1 pr-3 pl-1 text-[12px]"
+                          onClick={() => toggleMember(index, member)}
                         >
-                          <span className="tabular text-faint">{position + 1}</span>
+                          <span className="tabular w-4 text-center text-faint">{position + 1}</span>
+                          <MemberAvatar avatar={players.find((player) => player.name === member)?.avatar} />
                           {member}
                           <span className="text-faint">
                             <Icon name="close" size={12} />
@@ -208,13 +185,30 @@ export const GameSetupPage = () => {
                     ))}
                   </ol>
                 )}
-                <MemberField
-                  onAdd={(member) => setRoster(index, [...new Set([...rosters[index], member])])}
-                />
+                {/* 登録メンバーは押すだけで入る。ほかのチームに入っている人を押すと、こちらへ移る */}
+                {players.some((player) => !rosters[index].includes(player.name)) && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {players
+                      .filter((player) => !rosters[index].includes(player.name))
+                      .map((player) => (
+                        <button
+                          key={player.id}
+                          className={`flex items-center gap-1.5 rounded-full border border-rule bg-surface py-1 pr-3 pl-1 text-[12px] ${
+                            rosters.some((roster) => roster.includes(player.name)) ? 'opacity-40' : ''
+                          }`}
+                          onClick={() => toggleMember(index, player.name)}
+                        >
+                          <Avatar avatar={player.avatar} size={22} />
+                          {player.name}
+                        </button>
+                      ))}
+                  </div>
+                )}
+                <MemberField onAdd={(member) => toggleMember(index, member)} />
               </div>
             ))}
           </div>
-        </details>
+        </section>
 
         <section className="mt-6 border-t border-rule pt-3">
           <h2 className="eyebrow mb-3 text-muted">試合ルール</h2>

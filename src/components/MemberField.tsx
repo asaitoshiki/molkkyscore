@@ -28,9 +28,12 @@ export const MemberField = ({ onAdd }: { onAdd: (name: string) => void }) => {
         onKeyDown={(event) => event.key === 'Enter' && submit()}
       />
       <datalist id="registered-members">
-        {members.map((member) => (
-          <option key={member.id} value={member.name} />
-        ))}
+        {/* 候補は登録したメンバーだけ。チーム名で記録しただけの名前は出さない */}
+        {members
+          .filter((member) => member.listed)
+          .map((member) => (
+            <option key={member.id} value={member.name} />
+          ))}
       </datalist>
       <Button
         variant="outline"
