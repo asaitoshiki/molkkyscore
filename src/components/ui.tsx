@@ -1,6 +1,6 @@
 import type { ComponentProps, ReactNode } from 'react'
 
-/** 罫線で囲った面。影と角丸は最小限にして、紙の区画のように見せる。 */
+/** 白いカード。クリームの地から少し浮かせる */
 export const Panel = ({ className = '', ...props }: ComponentProps<'div'>) => (
   <div className={`rounded border border-rule bg-surface ${className}`} {...props} />
 )
@@ -9,23 +9,24 @@ type ButtonProps = ComponentProps<'button'> & {
   variant?: 'primary' | 'outline' | 'quiet' | 'danger'
 }
 
+/** 押すボタンには厚み（press）を付け、文字だけのボタンは平らにする */
 const buttonStyles = {
-  primary: 'bg-accent text-paper border-accent',
-  outline: 'bg-surface text-ink border-rule',
+  primary: 'press bg-accent text-white border-accent [--press:var(--color-accent-deep)]',
+  outline: 'press bg-surface text-ink border-rule [--press:var(--color-rule)]',
   quiet: 'bg-transparent text-muted border-transparent',
   danger: 'bg-transparent text-alert border-transparent',
 } as const
 
 export const Button = ({ variant = 'primary', className = '', ...props }: ButtonProps) => (
   <button
-    className={`rounded border px-4 py-3 text-[15px] font-medium transition-colors disabled:opacity-35 ${buttonStyles[variant]} ${className}`}
+    className={`rounded border-2 px-4 py-3 text-[15px] font-bold disabled:opacity-35 ${buttonStyles[variant]} ${className}`}
     {...props}
   />
 )
 
 export const TextInput = ({ className = '', ...props }: ComponentProps<'input'>) => (
   <input
-    className={`w-full rounded border border-rule bg-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-faint focus:border-accent ${className}`}
+    className={`w-full rounded border-2 border-rule bg-surface px-3 py-2.5 text-[15px] outline-none placeholder:text-faint focus:border-accent ${className}`}
     {...props}
   />
 )

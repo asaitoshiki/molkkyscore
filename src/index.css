@@ -1,24 +1,34 @@
 @import 'tailwindcss';
 
 /*
- * 配色は「白木のスキットルと芝」から。紙のスコアシートのような明るい地に、
- * 深緑のアクセントを一点だけ差す。装飾は罫線と余白で済ませ、影と角丸は最小限にする。
+ * 配色は「晴れた日の芝生と、白木のスキットル」。クリーム色の地に芝の緑を主役にし、
+ * 木の色と日なたのオレンジで楽しさを足す。角は丸く、押せるものには厚み（下の影）を付ける。
+ * 文字は丸ゴシック、数字はころんとした書体にして、外で遊ぶ道具らしく軽やかに見せる。
  */
 @theme {
-  --color-paper: #f3f4f1;
-  --color-surface: #fbfbfa;
-  --color-ink: #15191a;
-  --color-muted: #6b7370;
-  --color-faint: #9aa19c;
-  --color-rule: #dcdfd8;
-  --color-accent: #1d5240;
-  --color-accent-soft: #e4eae5;
-  --color-alert: #9c4a32;
+  --color-paper: #fff8ec;
+  --color-surface: #ffffff;
+  --color-ink: #23312b;
+  --color-muted: #6c776f;
+  --color-faint: #a5ada7;
+  --color-rule: #ece2cf;
+  --color-accent: #21844d;
+  --color-accent-deep: #166238;
+  --color-accent-soft: #ddf2e4;
+  --color-alert: #cf4430;
+  --color-sun: #ffb238;
+  --color-sun-deep: #d98a12;
+  --color-sun-soft: #fff0d1;
+  --color-wood: #f4dcae;
+  --color-wood-deep: #d4a964;
+
+  --radius: 0.875rem;
 
   --font-sans:
-    'IBM Plex Sans', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', system-ui,
+    'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', 'Hiragino Sans', 'Noto Sans JP', system-ui,
     sans-serif;
-  --font-serif: 'IBM Plex Serif', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+  /* 数字と見出し。英数字はころんとした Fredoka、日本語は丸ゴシックで受ける */
+  --font-serif: 'Fredoka', 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', sans-serif;
 }
 
 :root {
@@ -36,6 +46,7 @@ body {
   background-color: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-sans);
+  font-weight: 500;
   font-size: 15px;
   line-height: 1.7;
   -webkit-tap-highlight-color: transparent;
@@ -59,8 +70,21 @@ body {
 /* 小さな見出しラベル。字間を開けて本文と役割を分ける。色は使う側で決める */
 .eyebrow {
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+/* 押せるものの厚み。押すと沈む。色は使う側で --press に入れる */
+.press {
+  box-shadow: 0 4px 0 var(--press, var(--color-rule));
+  transition:
+    transform 0.08s ease-out,
+    box-shadow 0.08s ease-out;
+}
+
+.press:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--press, var(--color-rule));
 }
 
 button {
@@ -124,16 +148,20 @@ button {
 @keyframes turn-call {
   0% {
     opacity: 0;
-    transform: translateY(-50%) scale(0.94);
+    transform: translateY(-10px) scale(0.9);
   }
-  15%,
-  70% {
+  12% {
     opacity: 1;
-    transform: translateY(-50%) scale(1);
+    transform: translateY(0) scale(1.04);
+  }
+  20%,
+  75% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
   100% {
     opacity: 0;
-    transform: translateY(-50%) scale(1);
+    transform: translateY(-6px) scale(1);
   }
 }
 

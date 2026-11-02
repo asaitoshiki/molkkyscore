@@ -215,7 +215,14 @@ const GameView = ({ gameId }: { gameId: string }) => {
         />
       )}
 
-      <section className="flex flex-1 flex-col px-5 pt-5 pb-5">
+      <section className="relative flex flex-1 flex-col px-5 pt-5 pb-5">
+        {/* 手番が変わるたびに、次に投げるチーム（と人）を一瞬知らせる。ピンにかからないよう上に出す */}
+        <TurnCall
+          key={game.throws.length}
+          team={team}
+          member={personOf(state.currentMemberId!)}
+          avatar={avatarOf(state.currentMemberId!)}
+        />
         <div className="flex items-center justify-between gap-3">
           <p className="flex min-w-0 items-center gap-2 text-[15px]">
             <span className="eyebrow text-muted">NEXT</span>
@@ -249,15 +256,8 @@ const GameView = ({ gameId }: { gameId: string }) => {
           </div>
         )}
 
-        <div className="relative flex flex-1 items-center justify-center py-5">
+        <div className="flex flex-1 items-center justify-center py-5">
           <PinPad selected={selectedPins} onToggle={togglePin} />
-          {/* 手番が変わるたびに、次に投げるチーム（と人）を一瞬大きく知らせる */}
-          <TurnCall
-            key={game.throws.length}
-            team={team}
-            member={personOf(state.currentMemberId!)}
-            avatar={avatarOf(state.currentMemberId!)}
-          />
         </div>
 
         <p className="text-center text-[13px]">
@@ -330,14 +330,12 @@ const TurnCall = ({
   member: string | null
   avatar: AvatarData | null
 }) => (
-  <div className="turn-call pointer-events-none absolute inset-x-0 top-1/2 flex justify-center">
-    <div className="rounded border border-rule bg-surface/95 px-7 py-4 text-center shadow-sm">
-      <p className="eyebrow text-muted">次は</p>
-      <div className="mt-2 flex justify-center">
-        <PersonAvatar avatar={avatar} size={48} />
-      </div>
-      <p className="mt-1 font-serif text-3xl leading-tight">{member ?? team}</p>
-      {member !== null && <p className="mt-1 text-[13px] text-muted">{team}</p>}
+  <div className="turn-call pointer-events-none absolute inset-x-4 top-2 z-10 flex justify-center">
+    <div className="flex items-center gap-3 rounded-full border-2 border-sun-deep bg-sun py-2 pr-6 pl-2 text-ink shadow-[0_4px_0_var(--color-sun-deep)]">
+      <PersonAvatar avatar={avatar} size={40} />
+      <span className="text-[12px] font-bold">次は</span>
+      <span className="text-[22px] leading-tight font-bold">{member ?? team}</span>
+      {member !== null && <span className="text-[12px] font-bold opacity-70">{team}</span>}
     </div>
   </div>
 )

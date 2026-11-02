@@ -6,7 +6,7 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   android: {
     // 屋外で使うため、端末の暗いテーマに引きずられないようにする
-    backgroundColor: '#f3f4f1',
+    backgroundColor: '#fff8ec',
   },
 }
 

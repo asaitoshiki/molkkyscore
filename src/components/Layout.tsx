@@ -42,12 +42,15 @@ export const Layout = () => {
                 to={tab.to}
                 end={tab.to === '/'}
                 className={({ isActive }) =>
-                  `flex flex-col items-center gap-1 py-2.5 text-[10px] tracking-wide ${
+                  `group flex flex-col items-center gap-0.5 py-2 text-[10px] font-bold tracking-wide ${
                     isActive ? 'text-accent' : 'text-faint'
                   }`
                 }
               >
-                <Icon name={tab.icon} size={22} />
+                {/* 選んでいるタブは、アイコンを薄い緑の丸で囲む */}
+                <span className="rounded-full px-4 py-1 group-aria-[current=page]:bg-accent-soft">
+                  <Icon name={tab.icon} size={22} />
+                </span>
                 {tab.label}
               </NavLink>
             </li>

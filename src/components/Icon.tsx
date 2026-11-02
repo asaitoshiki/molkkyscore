@@ -1,6 +1,6 @@
 /**
  * 絵文字を使わず、細線のアイコンで統一する。
- * すべて 24 グリッド・線幅 1.5 で描き、色は currentColor に任せる。
+ * すべて 24 グリッド・線幅 2 で描き、色は currentColor に任せる。
  */
 const paths = {
   // スコアシート
@@ -47,7 +47,7 @@ export const Icon = ({ name, size = 20 }: { name: IconName; size?: number }) => 
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
-    strokeWidth="1.5"
+    strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
     aria-hidden="true"

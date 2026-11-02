@@ -6,6 +6,11 @@ import { initializeAds } from './ads/admob'
 import { initializePurchases } from './billing/purchases'
 import { keepUpToDate } from './pwa'
 import { useAppStore } from './store/useAppStore'
+// 丸ゴシックと数字の書体は、使う文字の分だけ読み込まれる
+import '@fontsource/zen-maru-gothic/500.css'
+import '@fontsource/zen-maru-gothic/700.css'
+import '@fontsource/fredoka/500.css'
+import '@fontsource/fredoka/600.css'
 import './index.css'
 
 keepUpToDate()

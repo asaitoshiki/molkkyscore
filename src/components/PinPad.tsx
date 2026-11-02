@@ -3,6 +3,7 @@ import { INITIAL_FORMATION } from '../domain/rules'
 /**
  * 実際のスキットルの並びどおりに番号を置く。
  * 盤面を見たまま指が動くよう、奥の列を上に描く。
+ * 白木のスキットルを上から見た形にし、倒した（選んだ）ものは芝の緑に変える。
  */
 const ROWS = [...INITIAL_FORMATION].reverse()
 
@@ -21,10 +22,10 @@ export const PinPad = ({
             key={pin}
             aria-pressed={selected.includes(pin)}
             onClick={() => onToggle(pin)}
-            className={`tabular h-14 w-14 rounded-full border font-serif text-xl transition active:scale-90 ${
+            className={`tabular press h-[60px] w-[60px] rounded-full border-2 font-serif text-2xl font-semibold ${
               selected.includes(pin)
-                ? 'border-accent bg-accent text-paper'
-                : 'border-rule bg-surface text-ink'
+                ? 'border-accent bg-accent text-white [--press:var(--color-accent-deep)]'
+                : 'border-wood-deep bg-wood text-ink [--press:var(--color-wood-deep)]'
             }`}
           >
             {pin}

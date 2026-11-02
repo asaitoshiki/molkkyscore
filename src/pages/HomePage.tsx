@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { Icon } from '../components/Icon'
-import { Button, EmptyState, SectionTitle } from '../components/ui'
+import { SkittleMark } from '../components/SkittleMark'
+import { EmptyState, SectionTitle } from '../components/ui'
 import { summarizeGame } from '../domain/stats'
 import { useAppStore } from '../store/useAppStore'
 
@@ -16,16 +17,22 @@ export const HomePage = () => {
 
   return (
     <div className="space-y-8">
-      <header>
-        <p className="eyebrow text-accent">MÖLKKY</p>
-        <h1 className="mt-1 font-serif text-3xl leading-tight">モルメモ</h1>
-        <p className="mt-2 text-[13px] text-muted">スコアと戦績を、その場で残す。</p>
+      <header className="flex items-baseline justify-between">
+        <h1 className="font-serif text-2xl font-semibold text-accent">モルメモ</h1>
+        <p className="text-[12px] text-muted">スコアと戦績を、その場で残す。</p>
       </header>
 
-      <Button className="flex w-full items-center justify-center gap-2 py-4" onClick={() => navigate('/games/new')}>
-        <Icon name="plus" size={18} />
-        新しい試合
-      </Button>
+      {/* いちばん使う「試合を始める」を、画面の真ん中に大きく置く */}
+      <section className="flex flex-col items-center py-6">
+        <button
+          className="press flex h-52 w-52 flex-col items-center justify-center gap-2 rounded-full border-4 border-white bg-accent text-white [--press:var(--color-accent-deep)]"
+          onClick={() => navigate('/games/new')}
+        >
+          <SkittleMark size={72} />
+          <span className="text-[20px] font-bold">試合を始める</span>
+        </button>
+        <p className="mt-4 text-[12px] text-muted">チームを決めたら、倒した番号を押すだけ</p>
+      </section>
 
       {ongoing.length > 0 && (
         <section>
