@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { TextInput } from './ui'
+import { Fold, TextInput } from './ui'
 import { formatLabel } from '../domain/formats'
 import type { FormatPreset } from '../domain/formats'
 import { clampNumber } from '../domain/rules'
@@ -25,20 +25,28 @@ const ORDER_OPTIONS: { value: NextOrder; label: string }[] = [
   { value: 'loserFirst', label: '点の低い組から' },
 ]
 
-/**
- * 試合ルールの設定。形を選ぶだけで始められ、細かい決まりは折りたたみの中で変える。
- * 大会ごとのローカルルール（目標点・ミスの回数・制限時間など）に合わせるためのもの。
- */
-export const RulesEditor = ({
+type RulesProps = {
+  rules: GameRules
+  onChange: (rules: GameRules) => void
+}
+
+/** 細かいルールの今の設定を 1 行で。閉じたままでも分かるようにする */
+const rulesHint = (rules: GameRules) =>
+  [
+    `${rules.targetScore}点`,
+    `${rules.maxMisses}ミス失格`,
+    rules.timeLimitMinutes !== null && `${rules.timeLimitMinutes}分`,
+    rules.maxTurns !== null && `${rules.maxTurns}ターン`,
+  ]
+    .filter(Boolean)
+    .join('・')
+
+/** 試合の形（自由・1 ゲーム・先取など）を選ぶ。これだけで始められる */
+export const RulePresets = ({
   rules,
   presets,
   onChange,
-}: {
-  rules: GameRules
-  presets: FormatPreset[]
-  onChange: (rules: GameRules) => void
-}) => {
-  const update = (patch: Partial<GameRules>) => onChange({ ...rules, ...patch })
+}: RulesProps & { presets: FormatPreset[] }) => {
   const selected = (preset: FormatPreset) =>
     preset.gameCount === rules.gameCount && preset.decideBy === rules.decideBy
 
@@ -48,10 +56,18 @@ export const RulesEditor = ({
         {presets.map((preset) => (
           <button
             key={preset.label}
-            className={`rounded-full border px-3 py-1.5 text-[13px] ${
-              selected(preset) ? 'border-accent bg-accent text-paper' : 'border-rule text-muted'
+            className={`rounded-full border-2 px-3 py-1.5 text-[13px] font-bold ${
+              selected(preset)
+                ? 'border-accent bg-accent text-white'
+                : 'border-rule bg-surface text-muted'
             }`}
-            onClick={() => update({ gameCount: preset.gameCount, decideBy: preset.decideBy })}
+            onClick={() =>
+              onChange({
+                ...rules,
+                gameCount: preset.gameCount,
+                decideBy: preset.decideBy,
+              })
+            }
           >
             {preset.label}
           </button>
@@ -60,103 +76,127 @@ export const RulesEditor = ({
       <p className="mt-2 text-[12px] text-muted">
         {presets.find(selected)?.note ?? formatLabel(rules)}
       </p>
-
-      <details className="mt-3">
-        <summary className="cursor-pointer text-[12px] text-accent">細かいルールを変える</summary>
-        <div className="mt-3 space-y-2.5">
-          {rules.gameCount !== null && (
-            <Field label={COUNT_FIELD[rules.decideBy].label}>
-              <NumberInput
-                value={rules.gameCount}
-                onChange={(raw) => update({ gameCount: clampNumber(raw, 1, 9) })}
-              />
-              <Unit>{COUNT_FIELD[rules.decideBy].unit}</Unit>
-            </Field>
-          )}
-          <Field label="目標点">
-            <NumberInput
-              value={rules.targetScore}
-              onChange={(raw) => {
-                const targetScore = clampNumber(raw, 10, 200)
-                // 戻る点は目標点より下でないと試合が終わらない
-                update({ targetScore, penaltyScore: Math.min(rules.penaltyScore, targetScore - 1) })
-              }}
-            />
-            <Unit>点ちょうどで勝ち</Unit>
-          </Field>
-          <Field label="超えたとき">
-            <NumberInput
-              value={rules.penaltyScore}
-              onChange={(raw) =>
-                update({ penaltyScore: clampNumber(raw, 0, rules.targetScore - 1) })
-              }
-            />
-            <Unit>点に戻る</Unit>
-          </Field>
-          <Field label="連続ミス">
-            <NumberInput
-              value={rules.maxMisses}
-              onChange={(raw) => update({ maxMisses: clampNumber(raw, 1, 9) })}
-            />
-            <Unit>回で失格</Unit>
-          </Field>
-          <Field label="制限時間">
-            <NumberInput
-              value={rules.timeLimitMinutes ?? ''}
-              placeholder="なし"
-              onChange={(raw) =>
-                update({ timeLimitMinutes: raw === '' ? null : clampNumber(raw, 1, 180) })
-              }
-            />
-            <Unit>分（試合全体）</Unit>
-          </Field>
-          <Field label="ターン制限">
-            <NumberInput
-              value={rules.maxTurns ?? ''}
-              placeholder="なし"
-              onChange={(raw) => update({ maxTurns: raw === '' ? null : clampNumber(raw, 1, 99) })}
-            />
-            <Unit>ターンで打ち切り、点の多い方の勝ち</Unit>
-          </Field>
-          <Field label="次のゲーム">
-            <select
-              className="rounded border border-rule bg-surface px-2 py-2 text-[14px]"
-              value={rules.nextOrder}
-              onChange={(event) => update({ nextOrder: event.target.value as NextOrder })}
-            >
-              {ORDER_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <Unit>に投げる</Unit>
-          </Field>
-          {/* 3 チーム以上の試合で、最終ゲームをゲームを取ったチームどうしの 1 対 1 にする大会向け */}
-          <label className="flex items-start gap-2 pt-1 text-[13px]">
-            <input
-              type="checkbox"
-              className="mt-0.5 accent-accent"
-              checked={rules.finalAmongWinners}
-              onChange={(event) => update({ finalAmongWinners: event.target.checked })}
-            />
-            <span>{FINALIST_NOTE[rules.decideBy]}</span>
-          </label>
-        </div>
-      </details>
     </div>
   )
 }
 
+/**
+ * 大会ごとのローカルルール（目標点・ミスの回数・制限時間など）。
+ * ふだんは使わないので、開いたときだけ出す
+ */
+export const RuleDetails = ({ rules, onChange }: RulesProps) => {
+  const update = (patch: Partial<GameRules>) => onChange({ ...rules, ...patch })
+
+  return (
+    <Fold label="細かいルール" hint={rulesHint(rules)}>
+      <div className="space-y-2.5">
+        {rules.gameCount !== null && (
+          <Field label={COUNT_FIELD[rules.decideBy].label}>
+            <NumberInput
+              value={rules.gameCount}
+              onChange={(raw) => update({ gameCount: clampNumber(raw, 1, 9) })}
+            />
+            <Unit>{COUNT_FIELD[rules.decideBy].unit}</Unit>
+          </Field>
+        )}
+        <Field label="目標点">
+          <NumberInput
+            value={rules.targetScore}
+            onChange={(raw) => {
+              const targetScore = clampNumber(raw, 10, 200)
+              // 戻る点は目標点より下でないと試合が終わらない
+              update({
+                targetScore,
+                penaltyScore: Math.min(rules.penaltyScore, targetScore - 1),
+              })
+            }}
+          />
+          <Unit>点ちょうどで勝ち</Unit>
+        </Field>
+        <Field label="超えたとき">
+          <NumberInput
+            value={rules.penaltyScore}
+            onChange={(raw) =>
+              update({
+                penaltyScore: clampNumber(raw, 0, rules.targetScore - 1),
+              })
+            }
+          />
+          <Unit>点に戻る</Unit>
+        </Field>
+        <Field label="連続ミス">
+          <NumberInput
+            value={rules.maxMisses}
+            onChange={(raw) => update({ maxMisses: clampNumber(raw, 1, 9) })}
+          />
+          <Unit>回で失格</Unit>
+        </Field>
+        <Field label="制限時間">
+          <NumberInput
+            value={rules.timeLimitMinutes ?? ''}
+            placeholder="なし"
+            onChange={(raw) =>
+              update({
+                timeLimitMinutes: raw === '' ? null : clampNumber(raw, 1, 180),
+              })
+            }
+          />
+          <Unit>分（試合全体）</Unit>
+        </Field>
+        <Field label="ターン制限">
+          <NumberInput
+            value={rules.maxTurns ?? ''}
+            placeholder="なし"
+            onChange={(raw) => update({ maxTurns: raw === '' ? null : clampNumber(raw, 1, 99) })}
+          />
+          <Unit>ターンで打ち切り、点の多い方の勝ち</Unit>
+        </Field>
+        <Field label="次のゲーム">
+          <select
+            className="rounded border-2 border-rule bg-surface px-2 py-2 text-[14px]"
+            value={rules.nextOrder}
+            onChange={(event) => update({ nextOrder: event.target.value as NextOrder })}
+          >
+            {ORDER_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <Unit>に投げる</Unit>
+        </Field>
+        {/* 3 チーム以上の試合で、最終ゲームをゲームを取ったチームどうしの 1 対 1 にする大会向け */}
+        <label className="flex items-start gap-2 pt-1 text-[13px]">
+          <input
+            type="checkbox"
+            className="mt-0.5 accent-accent"
+            checked={rules.finalAmongWinners}
+            onChange={(event) => update({ finalAmongWinners: event.target.checked })}
+          />
+          <span>{FINALIST_NOTE[rules.decideBy]}</span>
+        </label>
+      </div>
+    </Fold>
+  )
+}
+
+/** 形の選択と細かいルールをまとめたもの。設定がルールだけの画面で使う */
+export const RulesEditor = (props: RulesProps & { presets: FormatPreset[] }) => (
+  <div className="space-y-3">
+    <RulePresets {...props} />
+    <RuleDetails rules={props.rules} onChange={props.onChange} />
+  </div>
+)
+
 const Field = ({ label, children }: { label: string; children: ReactNode }) => (
   <label className="flex items-center gap-3 text-[14px]">
     <span className="w-20 shrink-0 text-muted">{label}</span>
-    <span className="flex items-center gap-1.5">{children}</span>
+    <span className="flex min-w-0 items-center gap-1.5">{children}</span>
   </label>
 )
 
 const Unit = ({ children }: { children: ReactNode }) => (
-  <span className="text-[12px] whitespace-nowrap text-muted">{children}</span>
+  <span className="text-[12px] text-muted">{children}</span>
 )
 
 /**

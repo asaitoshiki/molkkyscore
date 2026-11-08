@@ -1,6 +1,6 @@
 import { Icon } from './Icon'
 import { MemberField } from './MemberField'
-import { Button, SectionTitle, TextInput } from './ui'
+import { Button, Fold, SectionTitle, TextInput } from './ui'
 import { clampHandicap } from '../domain/rules'
 import { displayName, newTeam } from '../domain/teamDraft'
 import type { TeamDraft } from '../domain/teamDraft'
@@ -90,31 +90,34 @@ export const TeamBuilder = ({
         <Icon name="plus" size={16} />
         チームを追加
       </Button>
-      <details className="mt-6 border-t border-rule pt-3">
-        <summary className="eyebrow cursor-pointer text-muted">ハンデをつける</summary>
-        <p className="mt-2 text-[12px] text-muted">
-          力の差があるときは、持ち点から始められます。各ゲームの開始時に加算されます。
-        </p>
-        <div className="mt-3 space-y-2">
-          {teams.map((team, index) => (
-            <label key={team.key} className="flex items-center justify-between gap-3 text-[14px]">
-              <span className="min-w-0 truncate">{displayName(team, index)}</span>
-              <span className="flex shrink-0 items-center gap-1.5">
-                <TextInput
-                  type="number"
-                  min={0}
-                  className="tabular w-16 text-right"
-                  value={team.handicap}
-                  onChange={(event) =>
-                    update(team.key, { handicap: clampHandicap(event.target.value, rules) })
-                  }
-                />
-                <span className="text-[12px] whitespace-nowrap text-muted">点から</span>
-              </span>
-            </label>
-          ))}
-        </div>
-      </details>
+      <div className="mt-6">
+        <Fold label="ハンデ" hint={teams.some((team) => team.handicap > 0) ? 'あり' : 'なし'}>
+          <p className="text-[12px] text-muted">
+            力の差があるときは、持ち点から始められます。各ゲームの開始時に加算されます。
+          </p>
+          <div className="mt-3 space-y-2">
+            {teams.map((team, index) => (
+              <label key={team.key} className="flex items-center justify-between gap-3 text-[14px]">
+                <span className="min-w-0 truncate">{displayName(team, index)}</span>
+                <span className="flex shrink-0 items-center gap-1.5">
+                  <TextInput
+                    type="number"
+                    min={0}
+                    className="tabular w-16 text-right"
+                    value={team.handicap}
+                    onChange={(event) =>
+                      update(team.key, {
+                        handicap: clampHandicap(event.target.value, rules),
+                      })
+                    }
+                  />
+                  <span className="text-[12px] whitespace-nowrap text-muted">点から</span>
+                </span>
+              </label>
+            ))}
+          </div>
+        </Fold>
+      </div>
 
       <p className="mt-4 text-[11px] text-faint">
         メンバーを入れておくと、誰が何番のスキットルを倒したかまで記録されます。

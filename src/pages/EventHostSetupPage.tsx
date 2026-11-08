@@ -371,8 +371,8 @@ const Chips = <T extends string>({
     {options.map((option) => (
       <button
         key={option.value}
-        className={`rounded-full border px-3 py-1.5 text-[13px] ${
-          value === option.value ? 'border-accent bg-accent text-paper' : 'border-rule text-muted'
+        className={`rounded-full border-2 px-3 py-1.5 text-[13px] font-bold ${
+          value === option.value ? 'border-accent bg-accent text-white' : 'border-rule bg-surface text-muted'
         }`}
         onClick={() => onChange(option.value)}
       >

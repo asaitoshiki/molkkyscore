@@ -5,9 +5,9 @@ import { Icon } from '../components/Icon'
 import { Avatar } from '../components/Avatar'
 import { MemberField } from '../components/MemberField'
 import { OrderList } from '../components/OrderList'
-import { RulesEditor } from '../components/RulesEditor'
+import { RuleDetails, RulePresets } from '../components/RulesEditor'
 import { CASUAL_PRESETS } from '../domain/formats'
-import { Button, TextInput } from '../components/ui'
+import { Button, Fold, TextInput } from '../components/ui'
 import { newId } from '../domain/id'
 import { moveItem } from '../domain/order'
 import { DEFAULT_RULES, clampHandicap } from '../domain/rules'
@@ -32,7 +32,7 @@ const nextTeamName = (names: string[]) => {
 
 /**
  * 参加するチームを 1 画面で決める。
- * 追加・名前・投げる順番・ハンデを同じ並びの上で扱い、そのまま試合を始められる。
+ * いつも使うチームと試合の形だけを見せ、メンバー・細かいルール・ハンデは開いたときだけ出す
  */
 export const GameSetupPage = () => {
   const navigate = useNavigate()
@@ -93,6 +93,7 @@ export const GameSetupPage = () => {
   }
 
   const filled = names.every((name) => name.trim() !== '')
+  const memberCount = rosters.flat().length
 
   return (
     <div className="mx-auto flex min-h-full max-w-md flex-col bg-paper">
@@ -112,9 +113,7 @@ export const GameSetupPage = () => {
             {names.length} / {MAX_TEAMS}
           </span>
         </div>
-        <p className="mt-1 mb-5 text-[12px] text-muted">
-          上から順に投げます。取っ手で順番を入れ替え、名前は試合中でも直せます。
-        </p>
+        <p className="mt-1 mb-4 text-[12px] text-muted">上から順に投げます</p>
 
         <OrderList
           items={names}
@@ -155,94 +154,103 @@ export const GameSetupPage = () => {
           チームを追加
         </button>
 
-        {/* 大人数のチームでも次に投げる人が分かるよう、メンバーを入れられる。入れなくても始められる */}
-        <section className="mt-6 border-t border-rule pt-3">
-          <h2 className="eyebrow text-muted">チームのメンバー（任意）</h2>
-          <p className="mt-2 text-[12px] text-muted">
-            入れた順に交代で投げ、試合中は次に投げる人が画面に出ます。入れた人の成績はメンバーのページにたまります。
-          </p>
-          <div className="mt-3 space-y-5">
-            {names.map((name, index) => (
-              <div key={index}>
-                <p className="text-[14px]">{name}</p>
-                {rosters[index].length > 0 && (
-                  <ol className="mt-1.5 flex flex-wrap gap-1.5">
-                    {rosters[index].map((member, position) => (
-                      <li key={member}>
-                        <button
-                          aria-label={`${member} を外す`}
-                          className="flex items-center gap-1.5 rounded-full border border-accent bg-accent-soft py-1 pr-3 pl-1 text-[12px]"
-                          onClick={() => toggleMember(index, member)}
-                        >
-                          <span className="tabular w-4 text-center text-faint">{position + 1}</span>
-                          <MemberAvatar avatar={players.find((player) => player.name === member)?.avatar} />
-                          {member}
-                          <span className="text-faint">
-                            <Icon name="close" size={12} />
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ol>
-                )}
-                {/* 登録メンバーは押すだけで入る。ほかのチームに入っている人を押すと、こちらへ移る */}
-                {players.some((player) => !rosters[index].includes(player.name)) && (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {players
-                      .filter((player) => !rosters[index].includes(player.name))
-                      .map((player) => (
-                        <button
-                          key={player.id}
-                          className={`flex items-center gap-1.5 rounded-full border border-rule bg-surface py-1 pr-3 pl-1 text-[12px] ${
-                            rosters.some((roster) => roster.includes(player.name)) ? 'opacity-40' : ''
-                          }`}
-                          onClick={() => toggleMember(index, player.name)}
-                        >
-                          <Avatar avatar={player.avatar} size={22} />
-                          {player.name}
-                        </button>
+        <section className="mt-7">
+          <h2 className="eyebrow mb-3 text-muted">試合の形</h2>
+          <RulePresets rules={rules} presets={CASUAL_PRESETS} onChange={setRules} />
+        </section>
+
+        <section className="mt-7 space-y-2.5">
+          <h2 className="eyebrow text-muted">必要なときだけ</h2>
+          {/* 大人数のチームでも次に投げる人が分かるよう、メンバーを入れられる。入れなくても始められる */}
+          <Fold label="メンバーを入れる" hint={memberCount === 0 ? 'なし' : `${memberCount}人`}>
+            <p className="text-[12px] text-muted">
+              入れた順に交代で投げ、次に投げる人が画面に出ます。成績はメンバーのページにたまります。
+            </p>
+            <div className="mt-3 space-y-5">
+              {names.map((name, index) => (
+                <div key={index}>
+                  <p className="text-[14px] font-bold">{name}</p>
+                  {rosters[index].length > 0 && (
+                    <ol className="mt-1.5 flex flex-wrap gap-1.5">
+                      {rosters[index].map((member, position) => (
+                        <li key={member}>
+                          <button
+                            aria-label={`${member} を外す`}
+                            className="flex items-center gap-1.5 rounded-full border-2 border-accent bg-accent-soft py-1 pr-3 pl-1 text-[12px]"
+                            onClick={() => toggleMember(index, member)}
+                          >
+                            <span className="tabular w-4 text-center text-faint">
+                              {position + 1}
+                            </span>
+                            <MemberAvatar
+                              avatar={players.find((player) => player.name === member)?.avatar}
+                            />
+                            {member}
+                            <span className="text-faint">
+                              <Icon name="close" size={12} />
+                            </span>
+                          </button>
+                        </li>
                       ))}
-                  </div>
-                )}
-                <MemberField onAdd={(member) => toggleMember(index, member)} />
-              </div>
-            ))}
-          </div>
-        </section>
+                    </ol>
+                  )}
+                  {/* 登録メンバーは押すだけで入る。ほかのチームに入っている人を押すと、こちらへ移る */}
+                  {players.some((player) => !rosters[index].includes(player.name)) && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {players
+                        .filter((player) => !rosters[index].includes(player.name))
+                        .map((player) => (
+                          <button
+                            key={player.id}
+                            className={`flex items-center gap-1.5 rounded-full border-2 border-rule bg-surface py-1 pr-3 pl-1 text-[12px] ${
+                              rosters.some((roster) => roster.includes(player.name))
+                                ? 'opacity-40'
+                                : ''
+                            }`}
+                            onClick={() => toggleMember(index, player.name)}
+                          >
+                            <Avatar avatar={player.avatar} size={22} />
+                            {player.name}
+                          </button>
+                        ))}
+                    </div>
+                  )}
+                  <MemberField onAdd={(member) => toggleMember(index, member)} />
+                </div>
+              ))}
+            </div>
+          </Fold>
 
-        <section className="mt-6 border-t border-rule pt-3">
-          <h2 className="eyebrow mb-3 text-muted">試合ルール</h2>
-          <RulesEditor rules={rules} presets={CASUAL_PRESETS} onChange={setRules} />
-        </section>
+          <RuleDetails rules={rules} onChange={setRules} />
 
-        <details className="mt-6 border-t border-rule pt-3">
-          <summary className="eyebrow cursor-pointer text-muted">ハンデをつける</summary>
-          <p className="mt-2 text-[12px] text-muted">力の差があるときは、持ち点から始められます。</p>
-          <div className="mt-3 space-y-2">
-            {names.map((name, index) => (
-              <label key={index} className="flex items-center justify-between gap-3 text-[14px]">
-                <span className="min-w-0 truncate">{name}</span>
-                <span className="flex shrink-0 items-center gap-1.5">
-                  <TextInput
-                    type="number"
-                    min={0}
-                    max={rules.targetScore - 1}
-                    className="tabular w-16 text-right"
-                    value={handicaps[index]}
-                    onChange={(event) =>
-                      setHandicaps(
-                        handicaps.map((value, position) =>
-                          position === index ? clampHandicap(event.target.value, rules) : value,
-                        ),
-                      )
-                    }
-                  />
-                  <span className="text-[12px] whitespace-nowrap text-muted">点から</span>
-                </span>
-              </label>
-            ))}
-          </div>
-        </details>
+          <Fold label="ハンデ" hint={handicaps.some((value) => value > 0) ? 'あり' : 'なし'}>
+            <p className="text-[12px] text-muted">力の差があるときは、持ち点から始められます。</p>
+            <div className="mt-3 space-y-2">
+              {names.map((name, index) => (
+                <label key={index} className="flex items-center justify-between gap-3 text-[14px]">
+                  <span className="min-w-0 truncate">{name}</span>
+                  <span className="flex shrink-0 items-center gap-1.5">
+                    <TextInput
+                      type="number"
+                      min={0}
+                      max={rules.targetScore - 1}
+                      className="tabular w-16 text-right"
+                      value={handicaps[index]}
+                      onChange={(event) =>
+                        setHandicaps(
+                          handicaps.map((value, position) =>
+                            position === index ? clampHandicap(event.target.value, rules) : value,
+                          ),
+                        )
+                      }
+                    />
+                    <span className="text-[12px] whitespace-nowrap text-muted">点から</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </Fold>
+        </section>
 
         {/* 開始ボタンは親指の届く下端に寄せる。内容が多くても間は空ける */}
         <div className="min-h-8 flex-1" />
