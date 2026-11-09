@@ -19,13 +19,6 @@ const FIREBASE_CONFIG: FirebaseOptions = {
 }
 
 /**
- * 大会（本部とコート）の接続設定。
- * 普段の観戦と同時接続の上限を取り合わないよう、大会専用のプロジェクトに分けられるようにしてある。
- * 専用のプロジェクトを作るまでは観戦と同じプロジェクトを使う
- */
-const EVENT_FIREBASE_CONFIG: FirebaseOptions = FIREBASE_CONFIG
-
-/**
  * 開発中に手元の Firebase エミュレーターへつなぐときだけ設定する（例：127.0.0.1）。
  * 公開する版では空のままにして、本物のデータベースを使う
  */
@@ -39,7 +32,7 @@ export type FirebaseClient = {
 
 /**
  * 必要になるまで読み込まない。使わない人に Firebase の重さを負わせないため。
- * 名前を分けて初期化すると、同じ画面から観戦用と大会用の両方につなげる
+ * 名前を付けて初期化し、ほかの Firebase の利用と混ざらないようにする
  */
 const createClient = (config: FirebaseOptions, name: string): FirebaseClient => {
   let appLoading: Promise<FirebaseApp> | null = null
@@ -79,6 +72,3 @@ const createClient = (config: FirebaseOptions, name: string): FirebaseClient => 
 /** 普段の観戦用。名前は Firebase の既定のものにして、これまでのログイン状態を引き継ぐ */
 const watchClient = createClient(FIREBASE_CONFIG, '[DEFAULT]')
 export const { database, signedInUid } = watchClient
-
-/** 大会用 */
-export const eventClient = createClient(EVENT_FIREBASE_CONFIG, 'event')

@@ -8,18 +8,13 @@ import { TeamNamesPage } from './pages/TeamNamesPage'
 import { RemoveAdsPage } from './pages/RemoveAdsPage'
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage'
 import { WatchPage } from './pages/WatchPage'
-import { EventCourtPage } from './pages/EventCourtPage'
-import { EventHostSetupPage } from './pages/EventHostSetupPage'
-import { EventHqPage } from './pages/EventHqPage'
+import { MovedToTaikai } from './pages/MovedToTaikai'
 import { HistoryPage } from './pages/HistoryPage'
 import { MembersPage } from './pages/MembersPage'
 import { PlayerPage } from './pages/PlayerPage'
 import { PracticePage } from './pages/PracticePage'
 import { RulesPage } from './pages/RulesPage'
 import { StatsPage } from './pages/StatsPage'
-import { TournamentDetailPage } from './pages/TournamentDetailPage'
-import { TournamentSetupPage } from './pages/TournamentSetupPage'
-import { TournamentsPage } from './pages/TournamentsPage'
 import { useWidgetLaunch } from './native/widgetLaunch'
 import { useSharePurge } from './sync/useSharePurge'
 
@@ -34,8 +29,10 @@ export const App = () => {
       <Route path="/remove-ads" element={<RemoveAdsPage />} />
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
       <Route path="/watch/:shareId" element={<WatchPage />} />
-      <Route path="/e/:eventId" element={<EventCourtPage />} />
-      <Route path="/e/:eventId/hq" element={<EventHqPage />} />
+      {/* 大会の機能は「モルメモ 大会」に移した。配り済みのコートや本部のリンクはそちらへ送る */}
+      <Route path="/e/*" element={<MovedToTaikai />} />
+      <Route path="/tournaments/*" element={<MovedToTaikai />} />
+      <Route path="/hq/*" element={<MovedToTaikai />} />
       <Route path="/games/:gameId" element={<GamePage />} />
       <Route path="/games/:gameId/timeline" element={<TimelinePage />} />
       <Route path="/games/:gameId/teams" element={<TeamNamesPage />} />
@@ -47,10 +44,6 @@ export const App = () => {
         <Route path="/members/:memberId" element={<PlayerPage />} />
         <Route path="/practice" element={<PracticePage />} />
         <Route path="/rules" element={<RulesPage />} />
-        <Route path="/tournaments" element={<TournamentsPage />} />
-        <Route path="/tournaments/new" element={<TournamentSetupPage />} />
-        <Route path="/hq/new" element={<EventHostSetupPage />} />
-        <Route path="/tournaments/:tournamentId" element={<TournamentDetailPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

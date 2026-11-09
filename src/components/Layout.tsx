@@ -7,7 +7,6 @@ import { useAppStore } from '../store/useAppStore'
 
 const tabs: { to: string; label: string; icon: IconName }[] = [
   { to: '/', label: '試合', icon: 'play' },
-  { to: '/tournaments', label: '大会', icon: 'bracket' },
   { to: '/stats', label: '戦績', icon: 'chart' },
   { to: '/members', label: 'メンバー', icon: 'people' },
   { to: '/rules', label: 'ルール', icon: 'book' },
@@ -16,7 +15,6 @@ const tabs: { to: string; label: string; icon: IconName }[] = [
 /** 広告の帯を出す画面。ここに無い画面には出さない */
 const PROMO_ROUTES: { prefix: string; slot: PromoSlot }[] = [
   { prefix: '/rules', slot: 'rules' },
-  { prefix: '/tournaments', slot: 'tournament' },
   { prefix: '/practice', slot: 'practice' },
 ]
 

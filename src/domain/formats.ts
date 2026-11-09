@@ -39,8 +39,6 @@ const FIXED: FormatPreset[] = [
 
 /** 普段の試合はゲーム数を決めない形も選べる */
 export const CASUAL_PRESETS = [OPEN, ...FIXED]
-/** 大会は対戦表に勝者を書き込むので、必ず終わる形だけにする */
-export const TOURNAMENT_PRESETS = FIXED
 
 /** 型に当てはまらない数にしたときの名前 */
 const CUSTOM_LABEL: Record<DecideBy, (count: number) => string> = {

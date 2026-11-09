@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { SkittleMark } from '../components/SkittleMark'
 import { EmptyState, SectionTitle } from '../components/ui'
+import { TAIKAI_APP_URL } from '../domain/sharing'
 import { summarizeGame } from '../domain/stats'
 import { useAppStore } from '../store/useAppStore'
 
@@ -130,6 +131,24 @@ export const HomePage = () => {
         ))}
       </section>
 
+      {/* 大会の運営は別アプリ。組み合わせ・本部・コートの記録はそちらで行う */}
+      <a
+        href={TAIKAI_APP_URL}
+        target="_blank"
+        rel="noreferrer"
+        className="flex items-center gap-3 rounded border border-rule bg-surface px-4 py-4 text-ink"
+      >
+        <span className="text-accent">
+          <Icon name="bracket" size={20} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[14px]">大会を開く</span>
+          <span className="block text-[11px] text-muted">組み合わせや本部の運営は「モルメモ 大会」で</span>
+        </span>
+        <span className="text-faint">
+          <Icon name="arrowRight" size={18} />
+        </span>
+      </a>
 
       <footer className="flex justify-between border-t border-rule pt-4 text-[11px] text-muted">
         <Link to="/remove-ads">広告を表示しない</Link>

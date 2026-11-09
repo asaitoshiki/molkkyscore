@@ -89,7 +89,7 @@ export const GameSetupPage = () => {
       memberIds: memberIdsOf(index),
       handicap: handicaps[index],
     }))
-    navigate(`/games/${createGame(entries, rules, null)}`, { replace: true })
+    navigate(`/games/${createGame(entries, rules)}`, { replace: true })
   }
 
   const filled = names.every((name) => name.trim() !== '')

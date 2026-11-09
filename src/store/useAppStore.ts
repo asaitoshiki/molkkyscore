@@ -5,8 +5,7 @@ import { defaultAvatar } from '../domain/avatar'
 import { newId } from '../domain/id'
 import { withGameDefaults, withHandicap, withRules } from '../domain/legacy'
 import type { LegacyGame } from '../domain/legacy'
-import { gamesOfSeries, nextEntries, seriesResult } from '../domain/series'
-import { createMatches, propagateWinners } from '../domain/tournament'
+import { gamesOfSeries, nextEntries } from '../domain/series'
 import type {
   Entry,
   Game,
@@ -15,26 +14,11 @@ import type {
   PracticeSession,
   ThrowRecord,
   Tournament,
-  TournamentFormat,
 } from '../domain/types'
-
-type MatchLink = { tournamentId: string; matchId: string }
-
-/** 本部として開いた大会。開いた端末にだけ覚えておく */
-export type HostedEvent = { eventId: string; name: string; createdAt: number }
-
-/** 本部と結んだ大会の試合。どの大会のどの予定の試合を記録しているか */
-export type EventSeriesLink = {
-  eventId: string
-  matchKey: string
-  /** 画面に出す名前。A3 の 4 試合目、準決勝 第 2 試合 など */
-  label: string
-}
 
 type AppState = {
   members: Member[]
   games: Game[]
-  tournaments: Tournament[]
   practices: PracticeSession[]
   /** 広告除去を購入済みか */
   adFree: boolean
@@ -44,11 +28,6 @@ type AppState = {
   shares: Record<string, string>
   /** 前回の全画面広告から何ゲーム終えたか */
   gamesSinceInterstitial: number
-  hostedEvents: HostedEvent[]
-  /** 大会ごとに、この端末が受け持つグループ（ブロックや試合）。キーは大会 ID */
-  eventGroups: Record<string, string>
-  /** 大会の試合として記録しているセット。キーはセットの識別子 */
-  eventSeries: Record<string, EventSeriesLink>
 
   setAdFree: (adFree: boolean) => void
   setSoundOn: (soundOn: boolean) => void
@@ -56,9 +35,6 @@ type AppState = {
   endShare: (seriesId: string) => void
   countFinishedGame: () => void
   resetInterstitialCount: () => void
-  addHostedEvent: (event: Omit<HostedEvent, 'createdAt'>) => void
-  setEventGroup: (eventId: string, groupId: string | null) => void
-  linkEventSeries: (seriesId: string, link: EventSeriesLink) => void
 
   /**
    * 名前でメンバーを探し、いなければ作る。同じ名前は同じ人として扱う。
@@ -69,7 +45,7 @@ type AppState = {
   /** プレイヤーの一覧から外す。投球の記録と名前は試合の履歴に残す */
   unlistMember: (memberId: string) => void
 
-  createGame: (entries: Entry[], rules: GameRules, link: MatchLink | null) => string
+  createGame: (entries: Entry[], rules: GameRules) => string
   /** 同じ顔ぶれで次のゲームを始める */
   addGameToSeries: (seriesId: string) => string
   recordThrow: (gameId: string, pins: number[], memberId?: string) => void
@@ -88,43 +64,18 @@ type AppState = {
   /** チーム名を変える。キーはチームの ID */
   renameEntries: (names: Record<string, string>) => void
 
-  createTournament: (
-    name: string,
-    format: TournamentFormat,
-    entries: Entry[],
-    rules: GameRules,
-  ) => string
-  deleteTournament: (tournamentId: string) => void
-
   addPractice: (session: Omit<PracticeSession, 'id' | 'createdAt'>) => void
   removePractice: (practiceId: string) => void
 }
 
-/** 試合が決着していれば終了時刻を打ち、大会側の勝者も確定させる。 */
+/** 試合が決着していれば終了時刻を打つ */
 const settle = (state: AppState, game: Game): Partial<AppState> => {
   const computed = computeGameState(game)
   const finished: Game = {
     ...game,
     finishedAt: computed.finished ? (game.finishedAt ?? Date.now()) : null,
   }
-  const games = state.games.map((item) => (item.id === finished.id ? finished : item))
-  return { games, tournaments: linkWinners(state.tournaments, games, finished) }
-}
-
-/** 大会の一戦なら、試合（セット）全体の勝者を対戦表に書き込む */
-const linkWinners = (tournaments: Tournament[], games: Game[], game: Game): Tournament[] => {
-  const result = seriesResult(gamesOfSeries(games, game.seriesId))
-  return tournaments.map((tournament) => {
-    if (tournament.id !== game.tournamentId) return tournament
-    const matches = tournament.matches.map((match) =>
-      match.id === game.matchId ? { ...match, winnerEntryId: result.winnerEntryId } : match,
-    )
-    // 次のラウンドへ送る処理はトーナメントだけ。総当たりは対戦表が固定なので触らない
-    return {
-      ...tournament,
-      matches: tournament.format === 'knockout' ? propagateWinners(matches) : matches,
-    }
-  })
+  return { games: state.games.map((item) => (item.id === finished.id ? finished : item)) }
 }
 
 /** 投球記録を入れ替えた試合を作り、決着判定まで通す。 */
@@ -138,15 +89,11 @@ export const useAppStore = create<AppState>()(
     (set, get) => ({
       members: [],
       games: [],
-      tournaments: [],
       practices: [],
       adFree: false,
       soundOn: true,
       shares: {},
       gamesSinceInterstitial: 0,
-      hostedEvents: [],
-      eventGroups: {},
-      eventSeries: {},
 
       setAdFree: (adFree) => set({ adFree }),
 
@@ -164,24 +111,6 @@ export const useAppStore = create<AppState>()(
         set((state) => ({ gamesSinceInterstitial: state.gamesSinceInterstitial + 1 })),
 
       resetInterstitialCount: () => set({ gamesSinceInterstitial: 0 }),
-
-      addHostedEvent: (event) =>
-        set((state) => ({
-          hostedEvents: [...state.hostedEvents, { ...event, createdAt: Date.now() }],
-        })),
-
-      // null はグループを選び直すとき
-      setEventGroup: (eventId, groupId) =>
-        set((state) => ({
-          eventGroups: Object.fromEntries(
-            Object.entries({ ...state.eventGroups, [eventId]: groupId }).filter(
-              (entry): entry is [string, string] => entry[1] !== null,
-            ),
-          ),
-        })),
-
-      linkEventSeries: (seriesId, link) =>
-        set((state) => ({ eventSeries: { ...state.eventSeries, [seriesId]: link } })),
 
       memberNamed: (rawName, listed) => {
         const name = rawName.trim()
@@ -213,7 +142,8 @@ export const useAppStore = create<AppState>()(
           ),
         })),
 
-      createGame: (entries, rules, link) => {
+      // 大会の対戦表とのリンクは、大会アプリ（モルメモ 大会）に移したので持たない
+      createGame: (entries, rules) => {
         const game: Game = {
           id: newId(),
           createdAt: Date.now(),
@@ -225,22 +155,10 @@ export const useAppStore = create<AppState>()(
           gameNumber: 1,
           timeUpAt: null,
           shootoutWinnerId: null,
-          tournamentId: link?.tournamentId ?? null,
-          matchId: link?.matchId ?? null,
+          tournamentId: null,
+          matchId: null,
         }
-        set((state) => ({
-          games: [...state.games, game],
-          tournaments: state.tournaments.map((tournament) =>
-            tournament.id === game.tournamentId
-              ? {
-                  ...tournament,
-                  matches: tournament.matches.map((match) =>
-                    match.id === game.matchId ? { ...match, gameId: game.id } : match,
-                  ),
-                }
-              : tournament,
-          ),
-        }))
+        set((state) => ({ games: [...state.games, game] }))
         return game.id
       },
 
@@ -313,7 +231,7 @@ export const useAppStore = create<AppState>()(
         set(settle(state, { ...game, shootoutWinnerId: entryId }))
       },
 
-      // 同じチームが続きのゲームや大会の対戦表にもいるので、ID が同じものはまとめて変える。
+      // 同じチームが続きのゲームにもいるので、ID が同じものはまとめて変える。
       // 投球は ID にひも付いているため、名前を変えても点数と手番はそのまま残る
       renameEntries: (names) =>
         set((state) => {
@@ -321,60 +239,11 @@ export const useAppStore = create<AppState>()(
             entry.id in names ? { ...entry, name: names[entry.id].trim() } : entry
           return {
             games: state.games.map((game) => ({ ...game, entries: game.entries.map(rename) })),
-            tournaments: state.tournaments.map((tournament) => ({
-              ...tournament,
-              entries: tournament.entries.map(rename),
-            })),
           }
         }),
 
-      // 大会から作った試合を消すときは、対戦表に残るリンクと勝者も一緒に外す。
-      // 対戦表がひも付くのは最初のゲームなので、続きのゲームだけを消したときは残りで勝者を出し直す
       deleteGame: (gameId) =>
-        set((state) => {
-          const target = state.games.find((game) => game.id === gameId)!
-          const games = state.games.filter((game) => game.id !== gameId)
-          const earlier = gamesOfSeries(games, target.seriesId).filter(
-            (game) => game.gameNumber < target.gameNumber,
-          )
-          if (target.matchId !== null && earlier.length > 0) {
-            return { games, tournaments: linkWinners(state.tournaments, games, earlier.at(-1)!) }
-          }
-          const detached = games.map((game) =>
-            game.seriesId === target.seriesId ? { ...game, tournamentId: null, matchId: null } : game,
-          )
-          const tournaments = state.tournaments.map((tournament) => {
-            if (tournament.id !== target.tournamentId) return tournament
-            const matches = tournament.matches.map((match) =>
-              match.gameId === gameId ? { ...match, gameId: null, winnerEntryId: null } : match,
-            )
-            return {
-              ...tournament,
-              matches: tournament.format === 'knockout' ? propagateWinners(matches) : matches,
-            }
-          })
-          return { games: detached, tournaments }
-        }),
-
-      createTournament: (name, format, entries, rules) => {
-        const tournament: Tournament = {
-          id: newId(),
-          name: name.trim(),
-          format,
-          createdAt: Date.now(),
-          rules,
-          entries,
-          matches: createMatches(format, entries),
-        }
-        set((state) => ({ tournaments: [...state.tournaments, tournament] }))
-        return tournament.id
-      },
-
-      deleteTournament: (tournamentId) =>
-        set((state) => ({
-          tournaments: state.tournaments.filter((tournament) => tournament.id !== tournamentId),
-          games: state.games.filter((game) => game.tournamentId !== tournamentId),
-        })),
+        set((state) => ({ games: state.games.filter((game) => game.id !== gameId) })),
 
       addPractice: (session) =>
         set((state) => ({
@@ -400,11 +269,12 @@ export const useAppStore = create<AppState>()(
           })[]
           shares?: Record<string, string>
           soundOn?: boolean
-          hostedEvents?: HostedEvent[]
+          hostedEvents?: unknown[]
           eventGroups?: Record<string, string>
-          eventSeries?: Record<string, EventSeriesLink>
+          eventSeries?: Record<string, { matchKey?: string }>
           members?: (Omit<Member, 'avatar' | 'listed'> & Partial<Pick<Member, 'avatar' | 'listed'>>)[]
         }
+        // 大会の記録はもう使わないが、大会アプリ（モルメモ 大会）の Web 版が引き取れるよう今の形に直して残す
         return {
           ...state,
           // 以前はチーム名もメンバーとして登録していた。「チーム1」や番号だけの名前はプレイヤーの一覧に出さない
@@ -427,7 +297,7 @@ export const useAppStore = create<AppState>()(
             entries: withHandicap(tournament.entries),
             rules: withRules(tournament.rules, 1),
           })),
-        } as AppState
+        } as unknown as AppState
       },
     },
   ),

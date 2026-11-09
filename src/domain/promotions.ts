@@ -10,7 +10,7 @@
  */
 
 /** 掲載する面。試合中の入力画面は含めない */
-export type PromoSlot = 'rules' | 'tournament' | 'practice' | 'result'
+export type PromoSlot = 'rules' | 'practice' | 'result'
 
 export type Promotion = {
   id: string
@@ -44,7 +44,7 @@ export const PROMOTIONS: Promotion[] = [
     title: 'モルックセット',
     note: 'これから始めるなら。棒とスキットル 12 本の一式',
     url: rakutenSearch('モルック'),
-    slots: ['rules', 'tournament', 'result'],
+    slots: ['rules', 'result'],
   },
   {
     id: 'molkky-skittle',
@@ -58,7 +58,7 @@ export const PROMOTIONS: Promotion[] = [
     title: 'ラインテープ',
     note: '投擲ラインを引くのに。芝でも土でも使えるもの',
     url: rakutenSearch('ラインテープ 白'),
-    slots: ['tournament'],
+    slots: ['rules'],
   },
 ]
 
