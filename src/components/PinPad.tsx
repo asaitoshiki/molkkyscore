@@ -2,6 +2,7 @@ import { INITIAL_FORMATION } from '../domain/rules'
 
 /**
  * 実際のスキットルの並びどおりに番号を置く。
+ * 背の低い画面でも 4 段が収まるよう、ピンの大きさは画面の高さに合わせて縮める。
  * 盤面を見たまま指が動くよう、奥の列を上に描く。
  * 白木のスキットルを上から見た形にし、倒した（選んだ）ものは芝の緑に変える。
  */
@@ -22,7 +23,7 @@ export const PinPad = ({
             key={pin}
             aria-pressed={selected.includes(pin)}
             onClick={() => onToggle(pin)}
-            className={`tabular press h-[60px] w-[60px] rounded-full border-2 font-serif text-2xl font-semibold ${
+            className={`tabular press h-[clamp(46px,7.4vh,60px)] w-[clamp(46px,7.4vh,60px)] rounded-full border-2 font-serif text-2xl font-semibold ${
               selected.includes(pin)
                 ? 'border-accent bg-accent text-white [--press:var(--color-accent-deep)]'
                 : 'border-wood-deep bg-wood text-ink [--press:var(--color-wood-deep)]'

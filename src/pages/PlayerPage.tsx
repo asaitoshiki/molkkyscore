@@ -47,7 +47,6 @@ const PlayerView = ({ member }: { member: Member }) => {
       <header className="flex items-center gap-4">
         <Avatar avatar={member.avatar} size={64} />
         <div className="min-w-0 flex-1">
-          <p className="eyebrow text-muted">PLAYER</p>
           <TextInput
             key={member.name}
             aria-label="名前"
@@ -101,7 +100,7 @@ const PlayerView = ({ member }: { member: Member }) => {
         {stat.games === 0 ? (
           <p className="text-[13px] text-muted">試合でこの人を選ぶと、ここに成績がたまっていきます。</p>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-6 rounded border-2 border-rule bg-surface px-4 py-4">
             <dl className="grid grid-cols-3 gap-x-4 gap-y-4">
               {(
                 [
@@ -133,7 +132,7 @@ const PlayerView = ({ member }: { member: Member }) => {
       {recent.length > 0 && (
         <section>
           <SectionTitle>最近の試合</SectionTitle>
-          <ul className="divide-y divide-rule border-y border-rule">
+          <ul className="list-card">
             {recent.map((game) => {
               const winnerId = computeGameState(game).winnerEntryId
               const mine = game.entries.find((entry) => entry.memberIds.includes(member.id))!

@@ -16,8 +16,8 @@ export const PromoBlock = ({ slot }: { slot: PromoSlot }) => {
 
   return (
     <section className="pt-3">
-      <h2 className="eyebrow mb-3 border-t border-rule pt-3 text-muted">広告</h2>
-      <ul className="divide-y divide-rule border-y border-rule">
+      <h2 className="mb-2.5 text-[13px] font-bold text-muted">広告</h2>
+      <ul className="list-card">
         {items.map((item) => (
           <li key={item.id}>
             <a

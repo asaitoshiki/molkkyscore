@@ -62,7 +62,7 @@ const TimelineView = ({ gameId }: { gameId: string }) => {
         {timeline.length === 0 ? (
           <EmptyState>まだ投球がありません</EmptyState>
         ) : (
-          <ul className="divide-y divide-rule border-y border-rule">
+          <ul className="list-card">
             {timeline.map((item) => (
               <li key={item.index}>
                 <button
@@ -109,7 +109,7 @@ const TimelineView = ({ gameId }: { gameId: string }) => {
                       <Button variant="outline" onClick={() => setDraft([])}>
                         ミスにする
                       </Button>
-                      <Button onClick={() => save(item.index)}>この内容で直す</Button>
+                      <Button onClick={() => save(item.index)}>これで直す</Button>
                     </div>
                     <Button
                       variant="danger"

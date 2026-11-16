@@ -205,25 +205,26 @@ const GameView = ({ gameId }: { gameId: string }) => {
       )}
 
       <section className="relative flex flex-1 flex-col px-5 pt-5 pb-5">
-        {/* 手番が変わるたびに、次に投げるチーム（と人）を一瞬知らせる。ピンにかからないよう上に出す */}
-        <TurnCall
+        {/* 次に投げるチーム（と人）。手番が変わるたびに弾ませて知らせる。ピンには重ねない */}
+        <div
           key={game.throws.length}
-          team={team}
-          member={personOf(state.currentMemberId!)}
-          avatar={avatarOf(state.currentMemberId!)}
-        />
-        <div className="flex items-center justify-between gap-3">
-          <p className="flex min-w-0 items-center gap-2 text-[15px]">
-            <span className="eyebrow text-muted">NEXT</span>
-            <PersonAvatar avatar={avatarOf(thrower ?? state.currentMemberId!)} size={28} />
-            <span className="truncate">{team}</span>
-            {/* メンバーを入れたチームは、チーム名の横に今投げる人を大きく出す */}
-            <span className="truncate font-serif text-xl">{personOf(thrower ?? state.currentMemberId!)}</span>
-          </p>
-          <p className="tabular shrink-0 text-[12px] text-muted">
-            {game.rules.maxTurns !== null && `ターン ${state.round} / ${game.rules.maxTurns}　`}
-            残り {game.rules.targetScore - currentState.score}
-          </p>
+          className="next-card flex items-center gap-3 rounded border-2 border-sun-deep bg-sun-soft px-3 py-2.5"
+        >
+          <PersonAvatar avatar={avatarOf(thrower ?? state.currentMemberId!)} size={40} />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[11px] font-bold text-muted">
+              次に投げる{personOf(thrower ?? state.currentMemberId!) !== null && `・${team}`}
+            </p>
+            <p className="truncate text-[20px] leading-tight font-bold">
+              {personOf(thrower ?? state.currentMemberId!) ?? team}
+            </p>
+          </div>
+          <div className="shrink-0 text-right">
+            <p className="text-[11px] font-bold text-muted">
+              {game.rules.maxTurns !== null && `ターン ${state.round}/${game.rules.maxTurns}・`}残り
+            </p>
+            <Numeral className="text-2xl">{game.rules.targetScore - currentState.score}</Numeral>
+          </div>
         </div>
 
         {roster.length > 1 && (
@@ -234,8 +235,8 @@ const GameView = ({ gameId }: { gameId: string }) => {
                 <button
                   key={memberId}
                   onClick={() => setThrower(memberId)}
-                  className={`rounded-full border px-3 py-1 text-[12px] ${
-                    picked ? 'border-accent bg-accent text-paper' : 'border-rule text-muted'
+                  className={`rounded-full border-2 px-3 py-1 text-[12px] font-bold ${
+                    picked ? 'border-accent bg-accent text-white' : 'border-rule bg-surface text-muted'
                   }`}
                 >
                   {memberName(memberId)}
@@ -245,8 +246,23 @@ const GameView = ({ gameId }: { gameId: string }) => {
           </div>
         )}
 
-        <div className="flex flex-1 items-center justify-center py-5">
+        <div className="flex flex-1 items-center justify-center py-3">
           <PinPad selected={selectedPins} onToggle={togglePin} />
+        </div>
+
+        {/* 得点の合図。ピンにもボタンにも重ならないよう、専用の 1 行を空けておく */}
+        <div className="flex h-8 items-start justify-center">
+          {effect && (
+            <span
+              key={effect.token}
+              className="effect-pop-fade pointer-events-none rounded-full border-2 border-rule bg-surface px-3.5 py-0.5 text-[13px] font-bold whitespace-nowrap"
+            >
+              <span className="text-muted">{effect.name}</span>
+              <span className={`ml-2 ${effect.tone === 'alert' ? 'text-alert' : 'text-accent'}`}>
+                {effect.label}
+              </span>
+            </span>
+          )}
         </div>
 
         <p className="text-center text-[13px]">
@@ -276,22 +292,7 @@ const GameView = ({ gameId }: { gameId: string }) => {
 
       </section>
 
-      <div className="safe-bottom relative mt-auto border-t border-rule">
-        {effect && (
-          <span
-            key={effect.token}
-            className="effect-rise pointer-events-none absolute bottom-full left-1/2 mb-2 rounded-full border border-rule bg-surface px-3.5 py-1.5 text-[13px] whitespace-nowrap"
-          >
-            <span className="text-muted">{effect.name}</span>
-            <span
-              className={`ml-2 font-semibold ${
-                effect.tone === 'alert' ? 'text-alert' : 'text-accent'
-              }`}
-            >
-              {effect.label}
-            </span>
-          </span>
-        )}
+      <div className="safe-bottom mt-auto border-t border-rule">
         <ScoreTable seriesGames={seriesGames} currentGame={game} effect={effect} />
       </div>
     </div>
@@ -301,26 +302,6 @@ const GameView = ({ gameId }: { gameId: string }) => {
 /** 本人の分からない記録ではアバターを出さない */
 const PersonAvatar = ({ avatar, size }: { avatar: AvatarData | null; size: number }) =>
   avatar === null ? null : <Avatar avatar={avatar} size={size} />
-
-/** 手番の知らせ。表示し終えたら消えるので、押す操作の邪魔をしない */
-const TurnCall = ({
-  team,
-  member,
-  avatar,
-}: {
-  team: string
-  member: string | null
-  avatar: AvatarData | null
-}) => (
-  <div className="turn-call pointer-events-none absolute inset-x-4 top-2 z-10 flex justify-center">
-    <div className="flex items-center gap-3 rounded-full border-2 border-sun-deep bg-sun py-2 pr-6 pl-2 text-ink shadow-[0_4px_0_var(--color-sun-deep)]">
-      <PersonAvatar avatar={avatar} size={40} />
-      <span className="text-[12px] font-bold">次は</span>
-      <span className="text-[22px] leading-tight font-bold">{member ?? team}</span>
-      {member !== null && <span className="text-[12px] font-bold opacity-70">{team}</span>}
-    </div>
-  </div>
-)
 
 /** 1 秒ごとに今の時刻を返す。残り時間の表示に使う */
 const useNow = () => {
@@ -479,19 +460,24 @@ const ResultView = ({
         }
       />
 
-      <section className="border-b border-rule px-5 py-8 text-center">
+      <section className="px-5 pt-8 pb-6 text-center">
         <p className="eyebrow text-muted">
           {gameTitle(game.gameNumber, game.rules)}
           {timedOut && '・時間切れ'}
         </p>
         {winnerName === null ? (
-          <p className="mt-2 font-serif text-2xl">
+          <p className="mt-2 text-2xl font-bold">
             {timedOut || game.rules.maxTurns !== null ? '引き分け' : '勝者なしで終了'}
           </p>
         ) : (
-          <p className="mt-2 font-serif text-3xl leading-snug">
-            <span className="text-accent">{winnerName}</span> の勝利
-          </p>
+          <>
+            <span className="winner-pop mx-auto mt-3 flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-sun text-ink shadow-[0_4px_0_var(--color-sun-deep)]">
+              <Icon name="bracket" size={30} />
+            </span>
+            <p className="mt-3 text-3xl leading-snug font-bold">
+              <span className="text-accent">{winnerName}</span> の勝利
+            </p>
+          </>
         )}
         {/* 誤タップで決着してしまったときの戻り道。続きのゲームを始めたあとは並びが崩れるので出さない */}
         {/* 1 投もしないまま時間切れで終わったゲームは、戻す投球がないので打ち切りを取り消す */}
@@ -513,9 +499,9 @@ const ResultView = ({
       )}
 
 
-      <ol className="divide-y divide-rule border-b border-rule">
+      <ol className="list-card mx-5 mb-5">
         {result.standings.map((standing, rank) => (
-          <li key={standing.entry.id} className="flex items-center gap-3 px-5 py-3.5">
+          <li key={standing.entry.id} className="flex items-center gap-3 py-3.5">
             <Numeral className="w-5 text-center text-lg text-muted">{rank + 1}</Numeral>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[15px]">{standing.entry.name}</span>
@@ -620,7 +606,7 @@ const MatchVerdict = ({
     <section className="border-b border-rule bg-accent-soft/50 px-5 py-5 text-center">
       <p className="eyebrow text-accent">試合結果・{formatLabel(game.rules)}</p>
       {leaders.length === 1 ? (
-        <p className="mt-1.5 font-serif text-2xl">
+        <p className="mt-1.5 text-2xl font-bold">
           <span className="text-accent">{winner!.name}</span> の勝ち
         </p>
       ) : (

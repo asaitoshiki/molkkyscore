@@ -82,8 +82,7 @@ export const WatchInvite = ({
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-ink/80 px-6 py-10">
       <div className="m-auto w-full max-w-sm rounded border border-rule bg-paper px-6 py-7 text-center">
-        <p className="eyebrow text-muted">WATCH TOGETHER</p>
-        <p className="mt-1 font-serif text-2xl">観戦してもらう</p>
+        <p className="text-2xl font-bold">観戦してもらう</p>
         <p className="mt-2 text-[13px] text-muted">
           読み取るとブラウザで開きます。アプリを入れる必要はありません。
         </p>

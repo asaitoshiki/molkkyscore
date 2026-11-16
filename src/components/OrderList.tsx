@@ -97,7 +97,7 @@ export const OrderList = ({
 
   return (
     <ul
-      className={`relative divide-y divide-rule border-y border-rule ${drag === null ? '' : 'select-none'}`}
+      className={`relative list-card ${drag === null ? '' : 'select-none'}`}
     >
       {items.map((item, index) => {
         const lifted = drag !== null && drag.from === index

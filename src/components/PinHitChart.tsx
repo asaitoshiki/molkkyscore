@@ -9,7 +9,7 @@ export const PinHitChart = ({ hits }: { hits: number[] }) => {
 
   return (
     <figure className="m-0">
-      <figcaption className="eyebrow mb-5 text-muted">よく倒すスキットル</figcaption>
+      <figcaption className="mb-6 text-[12px] font-bold text-muted">よく倒すスキットル</figcaption>
       <div className="flex h-20 items-end gap-[3px] border-b border-rule">
         {PIN_NUMBERS.map((pin, index) => {
           const value = hits[index]
@@ -18,7 +18,7 @@ export const PinHitChart = ({ hits }: { hits: number[] }) => {
             <div
               key={pin}
               title={`${pin} 番　${value} 本`}
-              className="relative flex-1 bg-accent"
+              className="relative flex-1 rounded-t-md bg-accent"
               style={{ height: `${Math.max((value / max) * 100, 1.5)}%` }}
             >
               {tallest && (

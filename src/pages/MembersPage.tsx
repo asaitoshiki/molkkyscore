@@ -30,8 +30,7 @@ export const MembersPage = () => {
   return (
     <div className="space-y-6">
       <header>
-        <p className="eyebrow text-muted">PLAYERS</p>
-        <h1 className="mt-1 font-serif text-2xl">メンバー</h1>
+        <h1 className="text-2xl font-bold">メンバー</h1>
         <p className="mt-2 text-[13px] text-muted">
           よく遊ぶ人を登録しておくと、試合の準備で選ぶだけで済み、一人ひとりの成績がたまります。
         </p>
@@ -52,7 +51,7 @@ export const MembersPage = () => {
       {players.length === 0 ? (
         <EmptyState>まだ登録されたメンバーはいません</EmptyState>
       ) : (
-        <ul className="divide-y divide-rule border-y border-rule">
+        <ul className="list-card">
           {players.map((member) => {
             const stat = stats.get(member.id)!
             return (

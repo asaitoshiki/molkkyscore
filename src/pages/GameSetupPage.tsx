@@ -108,7 +108,7 @@ export const GameSetupPage = () => {
 
       <section className="flex flex-1 flex-col px-5 pt-6 pb-8">
         <div className="flex items-baseline justify-between">
-          <h1 className="font-serif text-2xl">参加チーム</h1>
+          <h1 className="text-2xl font-bold">参加チーム</h1>
           <span className="tabular text-[12px] text-muted">
             {names.length} / {MAX_TEAMS}
           </span>

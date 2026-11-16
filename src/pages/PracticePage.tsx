@@ -28,8 +28,7 @@ export const PracticePage = () => {
   return (
     <div className="space-y-7">
       <header>
-        <p className="eyebrow text-muted">PRACTICE</p>
-        <h1 className="mt-1 font-serif text-2xl">的当て練習</h1>
+        <h1 className="text-2xl font-bold">的当て練習</h1>
         <p className="mt-2 text-[13px] text-muted">
           狙うスキットルと距離を決めて、命中したかだけを記録する。
         </p>
@@ -57,12 +56,14 @@ export const PracticePage = () => {
 
           <section>
             <SectionTitle>狙うスキットル</SectionTitle>
-            <div className="grid grid-cols-6 gap-px border border-rule bg-rule">
+            <div className="grid grid-cols-6 gap-2">
               {PIN_NUMBERS.map((pin) => (
                 <button
                   key={pin}
-                  className={`tabular py-3 font-serif text-[15px] ${
-                    targetPin === pin ? 'bg-accent text-paper' : 'bg-surface text-ink'
+                  className={`tabular press aspect-square rounded-full border-2 font-serif text-[17px] font-semibold ${
+                    targetPin === pin
+                      ? 'border-accent bg-accent text-white [--press:var(--color-accent-deep)]'
+                      : 'border-wood-deep bg-wood text-ink [--press:var(--color-wood-deep)]'
                   }`}
                   onClick={() => setTargetPin(pin)}
                 >
@@ -126,7 +127,7 @@ export const PracticePage = () => {
         {practices.length === 0 ? (
           <EmptyState>保存した練習がここに並びます</EmptyState>
         ) : (
-          <ul className="divide-y divide-rule border-y border-rule">
+          <ul className="list-card">
             {[...practices]
               .sort((a, b) => b.createdAt - a.createdAt)
               .map((practice) => (

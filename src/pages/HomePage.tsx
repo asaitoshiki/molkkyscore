@@ -38,7 +38,7 @@ export const HomePage = () => {
       {ongoing.length > 0 && (
         <section>
           <SectionTitle>進行中</SectionTitle>
-          <ul className="divide-y divide-rule border-y border-rule">
+          <ul className="list-card">
             {ongoing.map((game) => {
               const teams = game.entries.map((entry) => entry.name).join(' 対 ')
               return (
@@ -77,23 +77,23 @@ export const HomePage = () => {
       )}
 
       <section>
-        <div className="mb-3 flex items-baseline justify-between border-t border-rule pt-3">
-          <h2 className="eyebrow text-muted">最近の試合</h2>
-          <Link to="/history" className="eyebrow text-accent">
+        <div className="mb-2.5 flex items-baseline justify-between">
+          <h2 className="text-[13px] font-bold text-muted">最近の試合</h2>
+          <Link to="/history" className="text-[13px] font-bold text-accent">
             すべて
           </Link>
         </div>
         {recent.length === 0 ? (
           <EmptyState>まだ記録がありません</EmptyState>
         ) : (
-          <ul className="divide-y divide-rule border-y border-rule">
+          <ul className="list-card">
             {recent.map((game) => {
               const summary = summarizeGame(game)
               return (
                 <li key={game.id}>
                   <Link to={`/games/${game.id}`} className="flex items-center justify-between py-3.5">
                     <span>
-                      <span className="block text-[15px]">{summary.winnerName ?? '勝者なし'}</span>
+                      <span className="block text-[15px]">{summary.winnerName === null ? '勝者なし' : `${summary.winnerName} の勝ち`}</span>
                       <span className="tabular block text-[12px] text-muted">
                         {summary.lines.map((line) => `${line.name} ${line.score}`).join('　')}
                       </span>
@@ -150,7 +150,7 @@ export const HomePage = () => {
         </span>
       </a>
 
-      <footer className="flex justify-between border-t border-rule pt-4 text-[11px] text-muted">
+      <footer className="flex justify-between text-[11px] text-muted">
         <Link to="/remove-ads">広告を表示しない</Link>
         <Link to="/privacy">プライバシーポリシー</Link>
       </footer>

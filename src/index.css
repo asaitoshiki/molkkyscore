@@ -100,21 +100,6 @@ button {
  * 得点が入った瞬間の合図。派手にせず、見逃さない程度にとどめる。
  * 動きを減らす設定の人には下の規則で止まる。
  */
-@keyframes score-rise {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, 4px) scale(0.92);
-  }
-  20% {
-    opacity: 1;
-    transform: translate(-50%, -2px) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -26px) scale(1);
-  }
-}
-
 @keyframes chip-pop {
   0%,
   100% {
@@ -145,33 +130,41 @@ button {
   }
 }
 
-@keyframes turn-call {
+/* 手番のカード。変わった瞬間だけ濃い色で弾ませる */
+@keyframes next-card {
   0% {
-    opacity: 0;
-    transform: translateY(-10px) scale(0.9);
+    transform: scale(0.94);
+    background-color: var(--color-sun);
   }
-  12% {
-    opacity: 1;
-    transform: translateY(0) scale(1.04);
-  }
-  20%,
-  75% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
+  35% {
+    transform: scale(1.03);
+    background-color: var(--color-sun);
   }
   100% {
-    opacity: 0;
-    transform: translateY(-6px) scale(1);
+    transform: scale(1);
   }
 }
 
-/* 手番の知らせ。少し見せてから消える */
-.turn-call {
-  animation: turn-call 1.6s ease-out forwards;
+.next-card {
+  animation: next-card 0.7s ease-out;
 }
 
-.effect-rise {
-  animation: score-rise 1s ease-out forwards;
+@keyframes winner-pop {
+  0% {
+    transform: scale(0.3) rotate(-20deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15) rotate(6deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
+
+.winner-pop {
+  animation: winner-pop 0.6s ease-out;
 }
 
 .effect-pop {
@@ -191,4 +184,39 @@ button {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
   }
+}
+
+/* 一覧は白いカードにまとめ、行の間だけ細い線で区切る */
+.list-card {
+  border: 2px solid var(--color-rule);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  padding-inline: 1rem;
+}
+.list-card > * + * {
+  border-top: 1px solid var(--color-rule);
+}
+
+/* 得点の合図。その場でふくらんで出て、消える */
+@keyframes pop-fade {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  15% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  30%,
+  75% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.effect-pop-fade {
+  animation: pop-fade 1.1s ease-out forwards;
 }

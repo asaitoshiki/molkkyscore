@@ -1,4 +1,5 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { HomePage } from './pages/HomePage'
 import { GameSetupPage } from './pages/GameSetupPage'
@@ -18,7 +19,16 @@ import { StatsPage } from './pages/StatsPage'
 import { useWidgetLaunch } from './native/widgetLaunch'
 import { useSharePurge } from './sync/useSharePurge'
 
+/** 画面を移ったら先頭から見せる。前の画面で下まで送った位置を持ち越さない */
+const useScrollReset = () => {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+}
+
 export const App = () => {
+  useScrollReset()
   useWidgetLaunch()
   useSharePurge()
 

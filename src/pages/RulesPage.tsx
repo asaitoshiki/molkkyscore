@@ -2,10 +2,9 @@ import type { ReactNode } from 'react'
 import { INITIAL_FORMATION } from '../domain/rules'
 
 /** 見出しと本文の組。本文は段落か箇条書きで受け取る。 */
-const Section = ({ label, title, children }: { label: string; title: string; children: ReactNode }) => (
-  <section className="border-t border-rule pt-4">
-    <p className="eyebrow text-muted">{label}</p>
-    <h2 className="mt-1 mb-3 font-serif text-xl">{title}</h2>
+const Section = ({ title, children }: { title: string; children: ReactNode }) => (
+  <section className="rounded border-2 border-rule bg-surface px-4 py-4">
+    <h2 className="mb-3 text-xl font-bold">{title}</h2>
     <div className="space-y-2.5 text-[14px] leading-relaxed">{children}</div>
   </section>
 )
@@ -23,7 +22,7 @@ const List = ({ items }: { items: string[] }) => (
 
 /** 用語の対訳。読み仮名と意味を並べる。 */
 const Glossary = ({ terms }: { terms: [string, string][] }) => (
-  <dl className="divide-y divide-rule border-y border-rule">
+  <dl className="list-card">
     {terms.map(([term, meaning]) => (
       <div key={term} className="grid grid-cols-[6.5rem_1fr] gap-3 py-2.5">
         <dt className="text-[13px] text-accent">{term}</dt>
@@ -36,15 +35,14 @@ const Glossary = ({ terms }: { terms: [string, string][] }) => (
 export const RulesPage = () => (
   <div className="space-y-7">
     <header>
-      <p className="eyebrow text-muted">RULES</p>
-      <h1 className="mt-1 font-serif text-3xl leading-tight">モルックのルール</h1>
+      <h1 className="text-2xl font-bold">モルックのルール</h1>
       <p className="mt-2 text-[13px] text-muted">
         フィンランド発祥の投擲競技。木の棒を下手投げで転がし、番号の書かれたスキットルを倒して
         ちょうど 50 点を目指す。
       </p>
     </header>
 
-    <Section label="EQUIPMENT" title="用具と配置">
+    <Section title="用具と配置">
       <List
         items={[
           '投げる棒を「モルック」、的になる番号つきの木のピンを「スキットル」と呼ぶ。スキットルは 1 から 12 までの 12 本。',
@@ -55,7 +53,7 @@ export const RulesPage = () => (
       <Formation />
     </Section>
 
-    <Section label="THROWING" title="投げ方">
+    <Section title="投げ方">
       <p className="text-muted">
         制限されているのは「下から投げること」と「ラインを越えないこと」の 2 点だけ。
         持ち方も回転も足の位置も自由に選んでよい。
@@ -103,7 +101,7 @@ export const RulesPage = () => (
       />
     </Section>
 
-    <Section label="SCORING" title="得点の数え方">
+    <Section title="得点の数え方">
       <List
         items={[
           'スキットルが 1 本だけ倒れたら、そのスキットルに書かれた数字がそのまま得点になる。12 番を 1 本倒せば 12 点。',
@@ -115,7 +113,7 @@ export const RulesPage = () => (
       />
     </Section>
 
-    <Section label="RESET" title="スキットルの立て直し">
+    <Section title="スキットルの立て直し">
       <List
         items={[
           '倒れたスキットルは、倒れたその場所で立て直す。元の位置には戻さない。',
@@ -126,7 +124,7 @@ export const RulesPage = () => (
       />
     </Section>
 
-    <Section label="WINNING" title="勝敗と失格">
+    <Section title="勝敗と失格">
       <List
         items={[
           'ちょうど 50 点に到達した人（チーム）の勝ち。',
@@ -138,7 +136,7 @@ export const RulesPage = () => (
       />
     </Section>
 
-    <Section label="TEAM" title="チーム戦">
+    <Section title="チーム戦">
       <List
         items={[
           'チームの得点はメンバー全員の合計。チームとして 50 点ちょうどを目指す。',
@@ -148,7 +146,7 @@ export const RulesPage = () => (
       />
     </Section>
 
-    <Section label="GLOSSARY" title="用語">
+    <Section title="用語">
       <Glossary
         terms={[
           ['モルック', '投げる木の棒。競技名でもある'],

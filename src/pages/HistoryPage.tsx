@@ -12,14 +12,13 @@ export const HistoryPage = () => {
   return (
     <div className="space-y-6">
       <header>
-        <p className="eyebrow text-muted">HISTORY</p>
-        <h1 className="mt-1 font-serif text-2xl">試合履歴</h1>
+        <h1 className="text-2xl font-bold">試合履歴</h1>
       </header>
 
       {sorted.length === 0 ? (
         <EmptyState>まだ記録がありません</EmptyState>
       ) : (
-        <ul className="divide-y divide-rule border-y border-rule">
+        <ul className="list-card">
           {sorted.map((game) => {
             const summary = summarizeGame(game)
             return (
@@ -31,7 +30,7 @@ export const HistoryPage = () => {
                       {game.finishedAt === null ? (
                         <span className="text-muted">進行中</span>
                       ) : (
-                        summary.winnerName ?? '勝者なし'
+                        (summary.winnerName === null ? '勝者なし' : `${summary.winnerName} の勝ち`)
                       )}
                     </p>
                     <time className="tabular text-[12px] text-faint">

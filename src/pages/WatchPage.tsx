@@ -60,8 +60,7 @@ const LiveView = ({
       <section className="px-5 py-6 text-center">
         {state.finished ? (
           <>
-            <p className="eyebrow text-muted">GAME OVER</p>
-            <p className="mt-1 font-serif text-2xl">
+            <p className="text-2xl font-bold">
               {state.winnerEntryId === null
                 ? '勝者なしで終了'
                 : `${entryOf(state.winnerEntryId).name} の勝利`}
@@ -70,7 +69,7 @@ const LiveView = ({
         ) : (
           <>
             <p className="eyebrow text-muted">いま投げている</p>
-            <p className="mt-1 font-serif text-2xl">
+            <p className="text-2xl font-bold">
               {thrower!.name}
               {thrower!.memberIds.length > 1 && (
                 <span className="ml-2 text-[15px] text-muted">

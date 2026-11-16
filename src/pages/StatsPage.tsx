@@ -20,14 +20,13 @@ export const StatsPage = () => {
   return (
     <div className="space-y-6">
       <header>
-        <p className="eyebrow text-muted">RECORDS</p>
-        <h1 className="mt-1 font-serif text-2xl">戦績</h1>
+        <h1 className="text-2xl font-bold">戦績</h1>
       </header>
 
       {stats.length === 0 ? (
         <EmptyState>試合を 1 つ終えると集計されます</EmptyState>
       ) : (
-        <ul className="divide-y divide-rule border-y border-rule">
+        <ul className="list-card">
           {stats.map((stat, rank) => {
             const open = openId === stat.member.id
             return (
