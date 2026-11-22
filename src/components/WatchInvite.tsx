@@ -34,6 +34,8 @@ export const WatchInvite = ({
   const sharedId = useAppStore((state) => state.shares[seriesId])
   const startShare = useAppStore((state) => state.startShare)
   const endShare = useAppStore((state) => state.endShare)
+  const openInput = useAppStore((state) => state.openInputs[seriesId] ?? false)
+  const setOpenInput = useAppStore((state) => state.setOpenInput)
   // 共有中ならその鍵を使い続ける。配ったリンクが変わらないように
   const [shareId] = useState(() => sharedId ?? newShareId())
   const [status, setStatus] = useState<Status>('preparing')
@@ -48,7 +50,8 @@ export const WatchInvite = ({
       setTimeout(() => reject(new Error('timeout')), CONNECT_TIMEOUT_MS),
     )
     const { seriesGames: games, members: people } = opening.current
-    Promise.race([publishWatch(shareId, games, people), timeout])
+    // 入力を許すかは、開いたあとに切り替えても試合画面の送信で届く
+    Promise.race([publishWatch(shareId, games, people, false), timeout])
       .then(() => {
         startShare(seriesId, shareId)
         setStatus('ready')
@@ -99,6 +102,21 @@ export const WatchInvite = ({
           <>
             <img src={image} alt="観戦用の QR コード" className="mx-auto mt-5 w-52 rounded" />
             <p className="mt-4 break-all text-[11px] text-faint">{url}</p>
+            {/* 記録係が投げる番のときなど、周りの人に入力を任せたいとき用 */}
+            <label className="mt-4 flex items-start gap-2.5 rounded border-2 border-rule bg-surface px-3 py-2.5 text-left text-[13px]">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 accent-accent"
+                checked={openInput}
+                onChange={(event) => setOpenInput(seriesId, event.target.checked)}
+              />
+              <span>
+                <span className="block font-bold">観戦する人も点数を入れられる</span>
+                <span className="block text-[11px] text-muted">
+                  リンクを知っている人なら誰でも入れられます。記録はこの端末に届いてから残ります。
+                </span>
+              </span>
+            </label>
           </>
         )}
 

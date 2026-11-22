@@ -26,6 +26,8 @@ type AppState = {
   soundOn: boolean
   /** 観戦に共有中のセット。キーはセットの識別子、値は観戦リンクの鍵 */
   shares: Record<string, string>
+  /** 観戦する人も点数を入れられるようにしたセット。キーはセットの識別子 */
+  openInputs: Record<string, boolean>
   /** 前回の全画面広告から何ゲーム終えたか */
   gamesSinceInterstitial: number
 
@@ -33,6 +35,7 @@ type AppState = {
   setSoundOn: (soundOn: boolean) => void
   startShare: (seriesId: string, shareId: string) => void
   endShare: (seriesId: string) => void
+  setOpenInput: (seriesId: string, open: boolean) => void
   countFinishedGame: () => void
   resetInterstitialCount: () => void
 
@@ -93,6 +96,7 @@ export const useAppStore = create<AppState>()(
       adFree: false,
       soundOn: true,
       shares: {},
+      openInputs: {},
       gamesSinceInterstitial: 0,
 
       setAdFree: (adFree) => set({ adFree }),
@@ -105,7 +109,13 @@ export const useAppStore = create<AppState>()(
       endShare: (seriesId) =>
         set((state) => ({
           shares: Object.fromEntries(Object.entries(state.shares).filter(([key]) => key !== seriesId)),
+          openInputs: Object.fromEntries(
+            Object.entries(state.openInputs).filter(([key]) => key !== seriesId),
+          ),
         })),
+
+      setOpenInput: (seriesId, open) =>
+        set((state) => ({ openInputs: { ...state.openInputs, [seriesId]: open } })),
 
       countFinishedGame: () =>
         set((state) => ({ gamesSinceInterstitial: state.gamesSinceInterstitial + 1 })),
@@ -268,6 +278,7 @@ export const useAppStore = create<AppState>()(
             rules: Partial<GameRules>
           })[]
           shares?: Record<string, string>
+          openInputs?: Record<string, boolean>
           soundOn?: boolean
           hostedEvents?: unknown[]
           eventGroups?: Record<string, string>
@@ -284,6 +295,7 @@ export const useAppStore = create<AppState>()(
             listed: member.listed ?? !/^(チーム\d+|\d+)$/.test(member.name),
           })),
           shares: state.shares ?? {},
+          openInputs: state.openInputs ?? {},
           soundOn: state.soundOn ?? true,
           hostedEvents: state.hostedEvents ?? [],
           eventGroups: state.eventGroups ?? {},

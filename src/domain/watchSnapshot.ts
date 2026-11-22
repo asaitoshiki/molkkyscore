@@ -1,3 +1,4 @@
+import { computeGameState } from './game'
 import { withGameDefaults } from './legacy'
 import type { LegacyGame } from './legacy'
 import type { Game, Member } from './types'
@@ -18,6 +19,8 @@ export type WatchRecord = {
   /** これを過ぎたら観戦側は「終了」と見なす */
   expiresAt: number
   payload: string
+  /** 観戦する人も点数を入れられるか。database.rules.json はこれを見て書き込みを許す */
+  openInput: boolean
 }
 
 /** 試合（セット）の記録を送るときの中身。観戦と大会の提出で同じ形を使う */
@@ -51,11 +54,13 @@ export const buildWatchRecord = (
   games: Game[],
   members: Member[],
   now: number,
+  openInput: boolean,
 ): WatchRecord => ({
   ownerUid,
   updatedAt: now,
   expiresAt: now + SHARE_TTL_MS,
   payload: encodeSeries(games, members),
+  openInput,
 })
 
 /** セットで最後に何かが起きた時刻。観戦の期限はここから数える */
@@ -74,13 +79,14 @@ export type WatchState =
   | { kind: 'loading' }
   | { kind: 'missing' }
   | { kind: 'ended' }
-  | { kind: 'live'; games: Game[]; memberNames: Record<string, string> }
+  | { kind: 'live'; games: Game[]; memberNames: Record<string, string>; openInput: boolean }
 
 /** データベースから届いた値を、観戦画面の状態に直す */
 export const toWatchState = (record: WatchRecord | null, now: number): WatchState => {
   if (record === null) return { kind: 'missing' }
   if (record.expiresAt < now) return { kind: 'ended' }
-  return { kind: 'live', ...decodeSeries(record.payload) }
+  // 入力を許す前の版から届いた記録には openInput が無い
+  return { kind: 'live', ...decodeSeries(record.payload), openInput: record.openInput ?? false }
 }
 
 /**
@@ -91,4 +97,45 @@ export const newShareId = (): string => {
   const alphabet = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   const bytes = crypto.getRandomValues(new Uint8Array(20))
   return Array.from(bytes, (byte) => alphabet[byte % alphabet.length]).join('')
+}
+
+/**
+ * 観戦する人が送ってきた 1 投。
+ * どの局面に対する入力かを gameId と base（その時点の投球数）で示し、
+ * 記録係の端末が今の局面と一致したときだけ受け付ける。
+ * 二人が同時に入れたときや、記録係が先に入れたときに二重に記録しないため
+ */
+export type WatchThrow = {
+  uid: string
+  gameId: string
+  base: number
+  /** 空の配列（ミス）が消えないよう JSON 文字列で送る */
+  pins: string
+  at: number
+}
+
+export const buildWatchThrow = (uid: string, game: Game, pins: number[], now: number): WatchThrow => ({
+  uid,
+  gameId: game.id,
+  base: game.throws.length,
+  pins: JSON.stringify(pins),
+  at: now,
+})
+
+/** 届いた 1 投を今の局面に記録してよいか。ずれていれば捨てる */
+export const acceptsWatchThrow = (seriesGames: Game[], input: WatchThrow): boolean => {
+  const current = seriesGames.at(-1)!
+  return (
+    current.id === input.gameId &&
+    current.throws.length === input.base &&
+    !computeGameState(current).finished
+  )
+}
+
+/** 送られてきたピン番号を確かめて戻す。1〜12 の重複なし以外は受け付けない */
+export const pinsOfWatchThrow = (input: WatchThrow): number[] => {
+  const pins = JSON.parse(input.pins) as number[]
+  const valid = pins.every((pin) => Number.isInteger(pin) && pin >= 1 && pin <= 12)
+  if (!valid || new Set(pins).size !== pins.length) throw new Error(`不正なピン番号: ${input.pins}`)
+  return pins
 }

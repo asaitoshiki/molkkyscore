@@ -24,7 +24,8 @@ import type { Entry, Game } from '../domain/types'
 import { shareImage } from '../share/canvas'
 import { renderResultCard } from '../share/resultCard'
 import { renderScoreSheet } from '../share/scoreSheetImage'
-import { publishWatch } from '../sync/watchChannel'
+import { publishWatch, subscribeWatchThrows } from '../sync/watchChannel'
+import { acceptsWatchThrow, pinsOfWatchThrow } from '../domain/watchSnapshot'
 import { useSound } from '../sound/useSound'
 import { useAppStore } from '../store/useAppStore'
 
@@ -67,10 +68,22 @@ const GameView = ({ gameId }: { gameId: string }) => {
   // 観戦に共有しているあいだは、記録が変わるたびに送る。
   // 電波が途切れても試合は止めない（届かなかった分は次の送信で上書きされる）
   const shareId = useAppStore((state) => state.shares[game.seriesId])
+  const openInput = useAppStore((state) => state.openInputs[game.seriesId] ?? false)
   useEffect(() => {
     if (shareId === undefined) return
-    publishWatch(shareId, seriesGames, members).catch(() => undefined)
-  }, [shareId, seriesGames, members])
+    publishWatch(shareId, seriesGames, members, openInput).catch(() => undefined)
+  }, [shareId, seriesGames, members, openInput])
+
+  // 観戦する人の入力を受け付けているあいだは、届いた 1 投を記録する。
+  // 届いた時点の最新の局面で確かめ、ずれた入力（二重の入力など）は捨てる
+  useEffect(() => {
+    if (shareId === undefined || !openInput) return
+    return subscribeWatchThrows(shareId, (input) => {
+      const latest = gamesOfSeries(useAppStore.getState().games, game.seriesId)
+      if (!acceptsWatchThrow(latest, input)) return
+      useAppStore.getState().recordThrow(latest.at(-1)!.id, pinsOfWatchThrow(input))
+    })
+  }, [shareId, openInput, game.seriesId])
 
   // 合図は流し終えたら片付ける
   useEffect(() => {

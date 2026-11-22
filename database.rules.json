@@ -6,7 +6,17 @@
       "$shareId": {
         ".read": true,
         ".write": "auth != null && (!data.exists() || data.child('ownerUid').val() === auth.uid)",
-        ".validate": "newData.hasChildren(['ownerUid', 'updatedAt', 'expiresAt', 'payload']) && newData.child('ownerUid').val() === auth.uid && newData.child('payload').isString() && newData.child('payload').val().length < 200000"
+        ".validate": "newData.hasChildren(['ownerUid', 'updatedAt', 'expiresAt', 'payload']) && newData.child('ownerUid').val() === auth.uid && newData.child('payload').isString() && newData.child('payload').val().length < 200000 && (!newData.child('openInput').exists() || newData.child('openInput').isBoolean())"
+      }
+    },
+    "watchInput": {
+      "$shareId": {
+        ".read": "auth != null && root.child('watch').child($shareId).child('ownerUid').val() === auth.uid",
+        ".write": "auth != null && root.child('watch').child($shareId).child('ownerUid').val() === auth.uid && !newData.exists()",
+        "$throwId": {
+          ".write": "auth != null && ((!data.exists() && root.child('watch').child($shareId).child('openInput').val() === true && root.child('watch').child($shareId).child('expiresAt').val() > now) || (root.child('watch').child($shareId).child('ownerUid').val() === auth.uid && !newData.exists()))",
+          ".validate": "newData.hasChildren(['uid', 'gameId', 'base', 'pins', 'at']) && newData.child('uid').val() === auth.uid && newData.child('gameId').isString() && newData.child('gameId').val().length < 64 && newData.child('base').isNumber() && newData.child('pins').isString() && newData.child('pins').val().length < 64"
+        }
       }
     },
     "events": {

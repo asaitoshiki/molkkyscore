@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_RULES } from './rules'
 import {
   SHARE_TTL_MS,
+  acceptsWatchThrow,
   buildWatchRecord,
+  buildWatchThrow,
   isShareExpired,
   newShareId,
+  pinsOfWatchThrow,
   toWatchState,
 } from './watchSnapshot'
 import type { Game, Member } from './types'
@@ -39,22 +42,23 @@ const game: Game = {
 
 describe('観戦用の記録', () => {
   it('送って受け取ると、ミスも null もそのまま戻る', () => {
-    const record = buildWatchRecord('uid', [game], members, 1000)
+    const record = buildWatchRecord('uid', [game], members, 1000, false)
     const state = toWatchState(record, 1000)
     expect(state).toEqual({
       kind: 'live',
       games: [game],
       memberNames: { m1: 'たろう', m2: 'はなこ' },
+      openInput: false,
     })
   })
 
   it('試合に出ていないメンバーの名前は送らない', () => {
-    const record = buildWatchRecord('uid', [game], members, 1000)
+    const record = buildWatchRecord('uid', [game], members, 1000, false)
     expect(record.payload).not.toContain('関係ない人')
   })
 
   it('期限を過ぎたら終了と見なす', () => {
-    const record = buildWatchRecord('uid', [game], members, 1000)
+    const record = buildWatchRecord('uid', [game], members, 1000, false)
     expect(toWatchState(record, 1000 + SHARE_TTL_MS).kind).toBe('live')
     expect(toWatchState(record, 1000 + SHARE_TTL_MS + 1).kind).toBe('ended')
   })
@@ -73,5 +77,33 @@ describe('観戦用の記録', () => {
     expect(isShareExpired([game], 2 + SHARE_TTL_MS)).toBe(false)
     expect(isShareExpired([game], 3 + SHARE_TTL_MS)).toBe(true)
     expect(isShareExpired([], 0 + SHARE_TTL_MS + 1)).toBe(true)
+  })
+})
+
+describe('観戦する人の入力', () => {
+  it('入れたときと局面が同じなら受け付け、ミス（空の配列）もそのまま戻る', () => {
+    const input = buildWatchThrow('viewer', game, [], 5)
+    expect(acceptsWatchThrow([game], input)).toBe(true)
+    expect(pinsOfWatchThrow(input)).toEqual([])
+  })
+
+  it('先に別の人が入れて投球数が進んでいたら捨てる', () => {
+    const input = buildWatchThrow('viewer', game, [3], 5)
+    const advanced: Game = {
+      ...game,
+      throws: [...game.throws, { entryId: 'e1', memberId: 'm1', pins: [5], at: 6 }],
+    }
+    expect(acceptsWatchThrow([advanced], input)).toBe(false)
+  })
+
+  it('次のゲームに移っていたら、前のゲームへの入力は捨てる', () => {
+    const input = buildWatchThrow('viewer', game, [3], 5)
+    const next: Game = { ...game, id: 'g2', gameNumber: 2, throws: [] }
+    expect(acceptsWatchThrow([game, next], input)).toBe(false)
+  })
+
+  it('1〜12 以外や重複したピン番号は受け付けない', () => {
+    expect(() => pinsOfWatchThrow({ ...buildWatchThrow('v', game, [], 0), pins: '[13]' })).toThrow()
+    expect(() => pinsOfWatchThrow({ ...buildWatchThrow('v', game, [], 0), pins: '[2,2]' })).toThrow()
   })
 })
