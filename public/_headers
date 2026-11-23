@@ -1,0 +1,8 @@
+# Cloudflare Pages の配信設定（GitHub Pages では読まれない）
+# 更新を確実に届けるため、サービスワーカーと入口のページは毎回確かめさせる
+/sw.js
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache
+/
+  Cache-Control: no-cache
