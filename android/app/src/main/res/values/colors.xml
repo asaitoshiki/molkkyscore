@@ -10,4 +10,7 @@
     <color name="widget_wood">#DDC39A</color>
     <color name="widget_wood_cut">#F0E2C6</color>
     <color name="widget_wood_edge">#A88B62</color>
+
+    <!-- お知らせの通知のアクセント色。アプリの緑に揃える -->
+    <color name="notify_accent">#21844D</color>
 </resources>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 通知欄の小さなアイコン。斜めに切った頭のスキットルを白一色で描く -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M7,7.5L17,4.5L17,20A1,1 0,0 1,16 21L8,21A1,1 0,0 1,7 20Z" />
+</vector>

@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "785626497777",
+    "firebase_url": "https://molkkyscore-223e5-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "molkkyscore-223e5",
+    "storage_bucket": "molkkyscore-223e5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:785626497777:android:1c6856056298010059df50",
+        "android_client_info": {
+          "package_name": "io.github.asaitoshiki.molkkyscore"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBVNq-XEMLvx3KW5vTcguWHGFunD9j0o0s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

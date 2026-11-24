@@ -16,6 +16,7 @@ import { PlayerPage } from './pages/PlayerPage'
 import { PracticePage } from './pages/PracticePage'
 import { RulesPage } from './pages/RulesPage'
 import { StatsPage } from './pages/StatsPage'
+import { usePushNotifications } from './native/pushNotifications'
 import { useWidgetLaunch } from './native/widgetLaunch'
 import { useSharePurge } from './sync/useSharePurge'
 
@@ -30,6 +31,7 @@ const useScrollReset = () => {
 export const App = () => {
   useScrollReset()
   useWidgetLaunch()
+  usePushNotifications()
   useSharePurge()
 
   return (
