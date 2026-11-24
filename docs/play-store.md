@@ -111,9 +111,9 @@ base64 -w 0 molkkyscore-release.keystore > keystore.base64.txt
 | スクリーンショット | スマホ用に最低 2 枚（推奨 4〜8 枚） |
 | 簡単な説明 | 80 文字以内 |
 | 詳しい説明 | 4000 文字以内 |
-| プライバシーポリシー URL | `https://asaitoshiki.github.io/molkkyscore/#/privacy` |
+| プライバシーポリシー URL | `https://molmemo.pages.dev/#/privacy` |
 
-スクリーンショットは Web 版（<https://asaitoshiki.github.io/molkkyscore/>）を
+スクリーンショットは Web 版（<https://molmemo.pages.dev/>）を
 スマホのブラウザで開いて撮れば足りる。
 
 ### 申告が必要なもの

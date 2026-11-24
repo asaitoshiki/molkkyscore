@@ -151,6 +151,6 @@
 取得が要るので、法人・個人事業の実体が必要になる。
 個人で出すなら、14 日は素直に通す。
 
-その間、Web 版（<https://asaitoshiki.github.io/molkkyscore/>）は
+その間、Web 版（<https://molmemo.pages.dev/>）は
 審査なしで誰でも使える。テスターへの案内も、まず Web 版を触ってもらってから
 アプリ版に入ってもらうと話が早い。

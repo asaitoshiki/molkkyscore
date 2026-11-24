@@ -56,33 +56,22 @@ src/
 
 ## Web に公開する
 
-`.github/workflows/deploy.yml` が `main` への push を受けてビルドし、GitHub Pages に公開する。
-はじめて使うときだけ Settings → Pages → Source を「GitHub Actions」に設定する。
+Cloudflare Pages（プロジェクト名 `molmemo`）が GitHub の `main` への push を受けてビルドし、
+https://molmemo.pages.dev/ に公開する。ビルドの設定は Cloudflare のダッシュボードにある。
 
-公開先は https://asaitoshiki.github.io/molkkyscore/ 。
+| 項目 | 値 |
+| --- | --- |
+| Build command | `npm run build` |
+| Build output directory | `dist` |
+| 環境変数 | `NODE_VERSION=22`、`VITE_BASE=./` |
 
-### いずれ Cloudflare Pages へ移す
+配信のキャッシュ設定は `public/_headers`。
 
-観戦 URL のような「人に配るリンク」を作る段になったら移す。それまでは
-GitHub Pages のままでよい。移転すると URL が変わり、配ったリンクが切れるため、
-引っ越しは一度だけにする。
+観戦リンクを開く人の匿名ログインのため、Firebase の Authentication → 承認済みドメインに
+`molmemo.pages.dev` を入れておく。
 
-移す理由は 3 つ。
-
-- **URL から `#` が消える** — GitHub Pages はサーバー側でパスを振り分けられないため
-  HashRouter を使っている。配る前提のリンクには `#` がないほうがよい
-- **非公開リポジトリでも無料** — GitHub Pages は有料プランが必要
-- **商用利用が問題にならない** — GitHub Pages は主に商用目的での利用を想定していない
-
-移すときにやること。
-
-1. Cloudflare Pages で GitHub 連携（ビルド `npm run build`、出力 `dist`）
-2. `src/main.tsx` の `HashRouter` を `BrowserRouter` に変える
-3. `.github/workflows/deploy.yml` を削除する（Android APK の方は残す）
-
-承知のうえで受け入れる点。ビルドは月 500 回までで同時 1 本。ビルドのログが
-GitHub と Cloudflare の 2 か所に分かれる。ブランチごとにプレビュー URL が
-自動で作られる。転送量は逆に無制限になる。
+以前の公開先 https://asaitoshiki.github.io/molkkyscore/ も `.github/workflows/deploy.yml` で
+当面は残す。Web 版で記録していた人のデータは、そちらのブラウザに保存されているため。
 
 ## 観戦
 

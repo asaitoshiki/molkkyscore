@@ -4,7 +4,7 @@
 **スコアを記録し、戦績を残す**アプリです。大会の運営（対戦表・本部・コートの記録）は別アプリ「モルメモ 大会」（https://asaitoshiki.github.io/molmemo-taikai/）に分けました。下の大会まわりの説明は、モルメモ 大会のものです。
 この文書は、Unity で作るモルックゲームと見た目・ルール・データをそろえるための説明です。
 
-- Web 版：https://asaitoshiki.github.io/molkkyscore/
+- Web 版：https://molmemo.pages.dev/
 - Android 版：同じ中身を Capacitor でアプリにしたもの（Play ストア準備中）
 - ソース：https://github.com/asaitoshiki/molkkyscore （React + TypeScript）
 
