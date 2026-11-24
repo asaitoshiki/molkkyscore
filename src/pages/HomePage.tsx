@@ -4,6 +4,8 @@ import { SkittleMark } from '../components/SkittleMark'
 import { EmptyState, SectionTitle } from '../components/ui'
 import { TAIKAI_APP_URL } from '../domain/sharing'
 import { summarizeGame } from '../domain/stats'
+import { hasUnreadNews } from '../domain/news'
+import { useNews } from '../sync/news'
 import { useAppStore } from '../store/useAppStore'
 
 export const HomePage = () => {
@@ -18,9 +20,12 @@ export const HomePage = () => {
 
   return (
     <div className="space-y-8">
-      <header className="flex items-baseline justify-between">
-        <h1 className="font-serif text-2xl font-semibold text-accent">モルメモ</h1>
-        <p className="text-[12px] text-muted">スコアと戦績を、その場で残す。</p>
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="font-serif text-2xl font-semibold text-accent">モルメモ</h1>
+          <p className="text-[12px] text-muted">スコアと戦績を、その場で残す。</p>
+        </div>
+        <NewsBell />
       </header>
 
       {/* いちばん使う「試合を始める」を、画面の真ん中に大きく置く */}
@@ -155,5 +160,25 @@ export const HomePage = () => {
         <Link to="/privacy">プライバシーポリシー</Link>
       </footer>
     </div>
+  )
+}
+
+/** お知らせへの入口。まだ見ていないお知らせがあれば赤い点を付ける */
+const NewsBell = () => {
+  const news = useNews()
+  const seenNewsId = useAppStore((state) => state.seenNewsId)
+  const unread = news.kind === 'ready' && hasUnreadNews(news.news, seenNewsId)
+
+  return (
+    <Link
+      to="/news"
+      aria-label={unread ? 'お知らせ（新しいお知らせがあります）' : 'お知らせ'}
+      className="press relative flex h-11 w-11 items-center justify-center rounded-full border-2 border-rule bg-surface text-ink [--press:var(--color-rule)]"
+    >
+      <Icon name="bell" size={20} />
+      {unread && (
+        <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-paper bg-alert" />
+      )}
+    </Link>
   )
 }

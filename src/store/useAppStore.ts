@@ -24,6 +24,8 @@ type AppState = {
   adFree: boolean
   /** 効果音を鳴らすか */
   soundOn: boolean
+  /** 最後にお知らせを開いたときの、先頭のお知らせ。未読の印に使う */
+  seenNewsId: string | null
   /** 観戦に共有中のセット。キーはセットの識別子、値は観戦リンクの鍵 */
   shares: Record<string, string>
   /** 観戦する人も点数を入れられるようにしたセット。キーはセットの識別子 */
@@ -33,6 +35,7 @@ type AppState = {
 
   setAdFree: (adFree: boolean) => void
   setSoundOn: (soundOn: boolean) => void
+  markNewsSeen: (newsId: string) => void
   startShare: (seriesId: string, shareId: string) => void
   endShare: (seriesId: string) => void
   setOpenInput: (seriesId: string, open: boolean) => void
@@ -95,6 +98,7 @@ export const useAppStore = create<AppState>()(
       practices: [],
       adFree: false,
       soundOn: true,
+      seenNewsId: null,
       shares: {},
       openInputs: {},
       gamesSinceInterstitial: 0,
@@ -102,6 +106,8 @@ export const useAppStore = create<AppState>()(
       setAdFree: (adFree) => set({ adFree }),
 
       setSoundOn: (soundOn) => set({ soundOn }),
+
+      markNewsSeen: (newsId) => set({ seenNewsId: newsId }),
 
       startShare: (seriesId, shareId) =>
         set((state) => ({ shares: { ...state.shares, [seriesId]: shareId } })),
@@ -280,6 +286,7 @@ export const useAppStore = create<AppState>()(
           shares?: Record<string, string>
           openInputs?: Record<string, boolean>
           soundOn?: boolean
+          seenNewsId?: string | null
           hostedEvents?: unknown[]
           eventGroups?: Record<string, string>
           eventSeries?: Record<string, { matchKey?: string }>
@@ -297,6 +304,7 @@ export const useAppStore = create<AppState>()(
           shares: state.shares ?? {},
           openInputs: state.openInputs ?? {},
           soundOn: state.soundOn ?? true,
+          seenNewsId: state.seenNewsId ?? null,
           hostedEvents: state.hostedEvents ?? [],
           eventGroups: state.eventGroups ?? {},
           // コート番号で記録していた頃の試合は、今の大会の形に結び付けられないので外す

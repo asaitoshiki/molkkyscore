@@ -32,6 +32,8 @@ const paths = {
   grip: 'M5 9.5h14M5 14.5h14',
   chevronLeft: 'M14 6l-6 6 6 6',
   chevronDown: 'M6 9l6 6 6-6',
+  // お知らせ
+  bell: 'M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15ZM10 20.5a2 2 0 0 0 4 0',
   // 観戦してもらうための QR
   edit: 'M4 20h4L19 9l-4-4L4 16v4ZM13.5 6.5l4 4',
   sound: 'M4 9v6h4l5 4V5L8 9H4ZM16 9.5a3.5 3.5 0 0 1 0 5M18.5 7a7 7 0 0 1 0 10',

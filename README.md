@@ -73,6 +73,25 @@ https://molmemo.pages.dev/ に公開する。ビルドの設定は Cloudflare �
 以前の公開先 https://asaitoshiki.github.io/molkkyscore/ も `.github/workflows/deploy.yml` で
 当面は残す。Web 版で記録していた人のデータは、そちらのブラウザに保存されているため。
 
+## お知らせ
+
+ホーム右上のベルから開くお知らせは、`public/news.json` を読んで出している。
+新しいものを配列の先頭に足して `main` に push すると、Cloudflare Pages に公開され、
+アプリを作り直さなくても全員に届く（まだ見ていない人のベルには赤い点が付く）。
+
+```json
+{
+  "id": "2026-12-01-xxx",
+  "date": "2026-12-01",
+  "title": "見出し",
+  "body": "本文（改行も使える）",
+  "path": "/rules"
+}
+```
+
+`id` は重ならない文字列にする。`path` は省略でき、付けると「開く」からその画面へ移る。
+プッシュ通知で知らせるときは、通知のカスタムデータに `path` = `/news` を付ける。
+
 ## 観戦
 
 記録している人が QR を出し、周りの人はそれを読んでブラウザで開く。観戦側に

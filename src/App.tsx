@@ -10,6 +10,7 @@ import { RemoveAdsPage } from './pages/RemoveAdsPage'
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage'
 import { WatchPage } from './pages/WatchPage'
 import { MovedToTaikai } from './pages/MovedToTaikai'
+import { NewsPage } from './pages/NewsPage'
 import { HistoryPage } from './pages/HistoryPage'
 import { MembersPage } from './pages/MembersPage'
 import { PlayerPage } from './pages/PlayerPage'
@@ -40,6 +41,7 @@ export const App = () => {
       <Route path="/games/new" element={<GameSetupPage />} />
       <Route path="/remove-ads" element={<RemoveAdsPage />} />
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/news" element={<NewsPage />} />
       <Route path="/watch/:shareId" element={<WatchPage />} />
       {/* 大会の機能は「モルメモ 大会」に移した。配り済みのコートや本部のリンクはそちらへ送る */}
       <Route path="/e/*" element={<MovedToTaikai />} />

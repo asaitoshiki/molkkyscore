@@ -6,3 +6,7 @@
   Cache-Control: no-cache
 /
   Cache-Control: no-cache
+# お知らせはアプリ版（端末内のファイルから動く）からも読むので、ほかの場所からの読み込みを許す
+/news.json
+  Cache-Control: no-cache
+  Access-Control-Allow-Origin: *
