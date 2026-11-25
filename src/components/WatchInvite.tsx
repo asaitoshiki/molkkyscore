@@ -90,6 +90,38 @@ export const WatchInvite = ({
           読み取るとブラウザで開きます。アプリを入れる必要はありません。
         </p>
 
+        {/* QR を渡す前に、読んだ人ができることを決める。記録係が投げる番のときなどは入力を任せられる */}
+        <div className="mt-5 text-left">
+          <p className="mb-2 text-[12px] font-bold text-muted">QR を読んだ人ができること</p>
+          <div className="grid grid-cols-2 gap-2">
+            {(
+              [
+                [false, '見るだけ', '点数の画面を見られる'],
+                [true, '点数も入れる', '試合の点数を入れられる'],
+              ] as const
+            ).map(([open, label, note]) => (
+              <button
+                key={label}
+                aria-pressed={openInput === open}
+                onClick={() => setOpenInput(seriesId, open)}
+                className={`rounded border-2 px-3 py-2.5 text-left ${
+                  openInput === open ? 'border-accent bg-accent-soft' : 'border-rule bg-surface'
+                }`}
+              >
+                <span className={`block text-[14px] font-bold ${openInput === open ? 'text-accent' : ''}`}>
+                  {label}
+                </span>
+                <span className="block text-[11px] text-muted">{note}</span>
+              </button>
+            ))}
+          </div>
+          {openInput && (
+            <p className="mt-2 text-[11px] text-muted">
+              リンクを知っている人なら誰でも入れられます。入った点数はこの端末に届いてから記録され、あとから変えることもできます。
+            </p>
+          )}
+        </div>
+
         {status === 'preparing' && <p className="mt-8 mb-6 text-[13px] text-muted">つないでいます…</p>}
 
         {status === 'failed' && (
@@ -102,21 +134,6 @@ export const WatchInvite = ({
           <>
             <img src={image} alt="観戦用の QR コード" className="mx-auto mt-5 w-52 rounded" />
             <p className="mt-4 break-all text-[11px] text-faint">{url}</p>
-            {/* 記録係が投げる番のときなど、周りの人に入力を任せたいとき用 */}
-            <label className="mt-4 flex items-start gap-2.5 rounded border-2 border-rule bg-surface px-3 py-2.5 text-left text-[13px]">
-              <input
-                type="checkbox"
-                className="mt-0.5 h-4 w-4 accent-accent"
-                checked={openInput}
-                onChange={(event) => setOpenInput(seriesId, event.target.checked)}
-              />
-              <span>
-                <span className="block font-bold">観戦する人も点数を入れられる</span>
-                <span className="block text-[11px] text-muted">
-                  リンクを知っている人なら誰でも入れられます。記録はこの端末に届いてから残ります。
-                </span>
-              </span>
-            </label>
           </>
         )}
 
