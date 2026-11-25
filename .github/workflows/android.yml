@@ -1,13 +1,15 @@
 # Android の APK を作る。GitHub のランナーには Android SDK が入っているため、
 # 手元に Android Studio がなくてもここでビルドできる。
 # Actions タブの "Android APK" から実行し、成果物の apk を受け取る。
+# 同じ apk をリリース「apk-latest」にも置き、決まった URL からいつでも最新版を取れるようにする。
 name: Android APK
 
 on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  # リリース「apk-latest」を作り直すため
+  contents: write
 
 jobs:
   build:
@@ -46,3 +48,17 @@ jobs:
           name: molkkyscore-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+      # 決まった名前で置き直す。URL はいつも
+      # https://github.com/<owner>/<repo>/releases/download/apk-latest/molkkyscore-debug.apk
+      - name: リリース「apk-latest」に置く
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk molkkyscore-debug.apk
+          gh release delete apk-latest --yes --cleanup-tag || true
+          gh release create apk-latest molkkyscore-debug.apk \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "最新の APK（動作確認用）" \
+            --notes "main の $(git rev-parse --short HEAD) から作った動作確認用の APK です。"
