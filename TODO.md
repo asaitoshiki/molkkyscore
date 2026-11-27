@@ -6,6 +6,9 @@
 
 ## 高
 
+- [ ] **Firebase に `com.molmemo.app` の Android アプリを登録し、`google-services.json` を差し替える**（利用者が登録・ダウンロード → AI が差し替え）。
+  差し替えるまで Android のビルドは失敗する（google-services の設定とパッケージ名が合わないため）
+- [ ] **Play Console で `com.molmemo.app` のアプリを作成する**（利用者）。アプリ名・日本語・アプリ・無料
 - [ ] **実機での確認**（利用者＋AI）: 最新 APK で、観戦の QR → 友達の端末で観戦と点数入力、テスト通知、お知らせ
 - [ ] **リリース用の署名の鍵を作る**（利用者）: 手順は `docs/play-store.md` の 2〜3。GitHub Secrets に
   `ANDROID_KEYSTORE_BASE64`・`ANDROID_KEYSTORE_PASSWORD`・`ANDROID_KEY_ALIAS`・`ANDROID_KEY_PASSWORD` を登録

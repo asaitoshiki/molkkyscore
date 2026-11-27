@@ -211,7 +211,7 @@ npm run sync          # Web をビルドして android/ へ反映
 npm run open:android  # Android Studio で開く
 ```
 
-アプリ ID は `io.github.asaitoshiki.molkkyscore`（`capacitor.config.ts`）。
+アプリ ID（パッケージ名）は `com.molmemo.app`（`capacitor.config.ts`）。
 
 ストアに出すには署名した AAB が必要になる。鍵（keystore）は作成した本人が
 保管し、リポジトリには入れない。紛失すると同じアプリとして更新できなくなる。
