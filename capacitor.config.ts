@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli'
 
 const config: CapacitorConfig = {
-  appId: 'io.github.asaitoshiki.molkkyscore',
+  appId: 'com.molmemo.app',
   appName: 'モルメモ',
   webDir: 'dist',
   android: {

@@ -5,6 +5,13 @@
 
 ---
 
+## 2026-11-27 パッケージ名を `com.molmemo.app` にする
+
+- **決定**: アプリ ID（パッケージ名）を `io.github.asaitoshiki.molkkyscore` から `com.molmemo.app` に変える。Google Play に登録する前に変えた
+- **理由**: パッケージ名はストアの URL に出るため、GitHub のユーザー名（利用者の名前）とリポジトリ名が分かってしまう。Play に登録すると二度と変えられない
+- **採らなかった案**: 今のまま登録する（名前が出る）
+- **影響**: 新しい ID のアプリは別のアプリ扱いで、旧 ID のテスト版の記録は引き継がれない。Firebase に新しい ID の Android アプリを登録し直し、`android/app/google-services.json` を差し替える必要がある
+
 ## 2026-11-27 Google Play では無料で配布し、広告除去の価格はストアから取得する
 
 - 無料版には全画面広告と楽天の紹介リンクがあり、非消費型商品 `molkkyscore.adfree` の買い切りで両方を非表示にする。

@@ -8,9 +8,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:785626497777:android:1c6856056298010059df50",
+        "mobilesdk_app_id": "1:785626497777:android:861a33615940a90b59df50",
         "android_client_info": {
-          "package_name": "io.github.asaitoshiki.molkkyscore"
+          "package_name": "com.molmemo.app"
         }
       },
       "oauth_client": [],

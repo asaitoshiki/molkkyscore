@@ -6,6 +6,7 @@
 
 ## 高
 
+- [ ] **Play Console で `com.molmemo.app` のアプリを作成する**（利用者）。アプリ名・日本語・アプリ・無料
 - [ ] **実機での確認**（利用者＋AI）: 最新 APK で、観戦の QR → 友達の端末で観戦と点数入力、テスト通知、お知らせ
 - [ ] **リリース用の署名の鍵を作る**（利用者）: 手順は `docs/play-store.md` の 2〜3。GitHub Secrets に
   `ANDROID_KEYSTORE_BASE64`・`ANDROID_KEYSTORE_PASSWORD`・`ANDROID_KEY_ALIAS`・`ANDROID_KEY_PASSWORD` を登録

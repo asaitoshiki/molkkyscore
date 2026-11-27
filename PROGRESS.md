@@ -1,6 +1,6 @@
 # PROGRESS.md — 開発状況
 
-最終更新: 2026-11-27（作業の起点は `main` の `fed5b94` と PR #1）
+最終更新: 2026-11-27（PR #1〜#3 をマージした時点）
 
 ## ひとことで
 
@@ -38,7 +38,7 @@ Node.js 22 で型チェック・lint・本番ビルドが成功。vitest は 12 
 | Firebase 承認済みドメインに `molmemo.pages.dev` | 設定済み（利用者が 2026-11-24 に実施と報告） |
 | Firebase の `database.rules.json` の公開 | 公開済み（同上）。観戦者の入力用 `watchInput` を含む版 |
 | GitHub Pages（旧 URL） | 稼働中（当面残す） |
-| FCM 用の Android アプリ登録（`google-services.json`） | 済み |
+| FCM 用の Android アプリ登録（`google-services.json`） | `com.molmemo.app` で登録済み（2026-11-27） |
 | AdMob の本番 ID | **未設定**（Google のテスト用 ID のまま） |
 | 楽天アフィリエイト ID | `src/domain/promotions.ts` に設定済み（利用者本人の ID かは未確認） |
 | リリース用の署名の鍵（GitHub Secrets） | **未作成** |
@@ -74,8 +74,8 @@ Node.js 22 で型チェック・lint・本番ビルドが成功。vitest は 12 
 
 ## 次の作業者へ（引き継ぎメモ）
 
-- 2026-11-27 時点で、管理ドキュメントは Pull Request #1（ブランチ `docs/ai-shared-workflow`）にあり、まだ `main` に入っていない可能性がある。
-  収益化の作業ブランチは PR #1 のコミットを取り込んでいる。レビュー時に PR #1 の状態を確認する
+- 2026-11-27: 管理ドキュメント（PR #1）、Google Play 向けの広告と課金（PR #2、Codex）、パッケージ名の変更（PR #3）は `main` に入った
+- アプリ ID は `com.molmemo.app`。Play Console のアプリはまだ作成していない（`TODO.md`）
 - 次の作業は `TODO.md` の「高」から。鍵・ID・登録など利用者にしかできないものは、手順を案内して待つ
 
 ## 関連リポジトリ

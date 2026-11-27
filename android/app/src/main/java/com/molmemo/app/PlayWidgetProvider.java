@@ -1,4 +1,4 @@
-package io.github.asaitoshiki.molkkyscore;
+package com.molmemo.app;
 
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;

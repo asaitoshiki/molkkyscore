@@ -6,10 +6,10 @@ def releaseVersionCode = (System.getenv("ANDROID_VERSION_CODE") ?: "1") as int
 def releaseVersionName = System.getenv("ANDROID_VERSION_NAME") ?: "1.0"
 
 android {
-    namespace = "io.github.asaitoshiki.molkkyscore"
+    namespace = "com.molmemo.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "io.github.asaitoshiki.molkkyscore"
+        applicationId "com.molmemo.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode releaseVersionCode
