@@ -15,8 +15,13 @@
 ## 中（ストア公開まで）
 
 - [ ] プライバシーポリシーの連絡先メールアドレスを入れる（利用者が決める → AI が `src/pages/PrivacyPolicyPage.tsx` に記載）
-- [ ] AdMob の本番 ID に差し替える（利用者が発行 → AI が `AndroidManifest.xml` と `src/ads/admob.ts` を変更）
-- [ ] Google Play デベロッパー登録と、商品 `molkkyscore.adfree` の登録（利用者）
+- [ ] AdMob の本番 ID に差し替える（利用者が https://admob.google.com でアプリを登録し、アプリ ID と
+  インタースティシャルの広告ユニット ID を発行 → AI が `android/app/src/main/AndroidManifest.xml` の
+  `com.google.android.gms.ads.APPLICATION_ID` と `src/ads/admob.ts` の `INTERSTITIAL_UNIT` を変更）
+- [ ] Google Play デベロッパー登録と、お支払いプロファイル（販売者アカウント）の登録（利用者）
+- [ ] Play Console にアプリ内アイテム `molkkyscore.adfree`（480 円・非消費型）を登録（利用者）。
+  価格を変えるときは `src/domain/billing.ts` の `AD_FREE_PRICE` も合わせる
+- [ ] 楽天アフィリエイト ID（`src/domain/promotions.ts`）が利用者本人のものか確かめる
 - [ ] クローズドテスト（12 人・14 日）を回す（利用者）。進め方は `docs/closed-testing.md`
 - [ ] ストア掲載用のスクリーンショットと説明文（`docs/play-store.md`）
 

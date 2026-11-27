@@ -24,7 +24,7 @@ Google Play への公開に向けて、利用者にしか用意できないも�
 | 観戦者の点数入力 | QR を出すときに「見るだけ／点数も入れる」を選ぶ。入力は記録係の端末に届いてから記録 | 同上、`src/domain/watchSnapshot.ts` |
 | お知らせ | ホーム右上のベル。`public/news.json` を読み、未読なら赤い点 | `src/pages/NewsPage.tsx`、`src/sync/news.ts` |
 | プッシュ通知 | Firebase Cloud Messaging。起動時に許可を聞く。`path` 付きで送ると押したときにその画面へ | `src/native/pushNotifications.ts` |
-| 広告と課金 | ゲームの区切りの全画面広告（2 ゲームおき）、480 円の広告除去（買い切り） | `src/ads/`、`src/billing/`、`src/pages/RemoveAdsPage.tsx` |
+| 広告と課金 | ゲームの区切りの全画面広告（3 ゲームおき）、楽天アフィリエイトの紹介リンク、480 円の広告除去（買い切り） | `src/ads/`、`src/billing/`、`src/pages/RemoveAdsPage.tsx` |
 | ホーム画面ウィジェット | Android の「今すぐ PLAY」 | `android/.../PlayWidgetProvider.java`、`src/native/widgetLaunch.ts` |
 | 旧リンクの案内 | 大会の古いリンク（`#/e/…` など）は大会アプリへ送る | `src/pages/MovedToTaikai.tsx` |
 
@@ -40,6 +40,7 @@ Google Play への公開に向けて、利用者にしか用意できないも�
 | GitHub Pages（旧 URL） | 稼働中（当面残す） |
 | FCM 用の Android アプリ登録（`google-services.json`） | 済み |
 | AdMob の本番 ID | **未設定**（Google のテスト用 ID のまま） |
+| 楽天アフィリエイト ID | `src/domain/promotions.ts` に設定済み（利用者本人の ID かは未確認） |
 | リリース用の署名の鍵（GitHub Secrets） | **未作成** |
 | Google Play デベロッパー登録 | 未確認 |
 | Play Console の商品 `molkkyscore.adfree` | 未確認 |
@@ -58,6 +59,24 @@ Google Play への公開に向けて、利用者にしか用意できないも�
 - 360×640 くらいの小さな画面で 3 チーム以上だと、試合画面の得点表の下の行はスクロールが要る
 - `docs/app-overview.md`（Unity 向けの説明）の画面表に、大会アプリへ移した「大会」の行が残っている
 - プライバシーポリシーの連絡先が仮の文言のまま（ストア申請に必須）
+
+## 収益化の方針（2026-11-27 に利用者と合意）
+
+| 項目 | 決めたこと |
+| --- | --- |
+| 全画面広告（AdMob） | アプリ版だけ。ゲームの区切り（「次のゲームへ」）に 3 ゲームおき。投げている最中とバナーは出さない |
+| 紹介リンク（楽天） | ルール・的当て練習・結果画面。アプリ版・Web 版とも |
+| 広告除去 | 480 円の買い切り（商品 ID `molkkyscore.adfree`）。買うと全画面広告も紹介リンクも出ない |
+| 観戦の QR | アプリ版だけ（Web 版との違いを作る） |
+
+いまは仕組みだけ入っていて、広告はテスト用・課金はストア未登録のため、**収益はまだ発生しない**。
+本番にする手順は `TODO.md` の「中」と `README.md` の「広告と課金」。
+
+## 次の作業者へ（引き継ぎメモ）
+
+- 2026-11-27 時点で、管理ドキュメントは Pull Request #1（ブランチ `docs/ai-shared-workflow`）にあり、まだ `main` に入っていない可能性がある。
+  始める前に PR #1 がマージ済みか確かめ、未マージなら利用者に確認する
+- 次の作業は `TODO.md` の「高」から。鍵・ID・登録など利用者にしかできないものは、手順を案内して待つ
 
 ## 関連リポジトリ
 

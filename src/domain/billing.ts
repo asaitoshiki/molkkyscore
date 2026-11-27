@@ -8,5 +8,5 @@ export const AD_FREE_PRODUCT_ID = 'molkkyscore.adfree'
 /** 表示価格。ストアに登録する価格と揃える */
 export const AD_FREE_PRICE = '¥480'
 
-/** 何ゲームおきに全画面広告を挟むか */
-export const INTERSTITIAL_INTERVAL = 2
+/** 何ゲームおきに全画面広告を挟むか。遊ぶ人の邪魔にならないよう 3 にしている（DECISIONS.md） */
+export const INTERSTITIAL_INTERVAL = 3
