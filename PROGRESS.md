@@ -24,7 +24,7 @@ Google Play への公開に向けて、利用者にしか用意できないも�
 | 観戦者の点数入力 | QR を出すときに「見るだけ／点数も入れる」を選ぶ。入力は記録係の端末に届いてから記録 | 同上、`src/domain/watchSnapshot.ts` |
 | お知らせ | ホーム右上のベル。`public/news.json` を読み、未読なら赤い点 | `src/pages/NewsPage.tsx`、`src/sync/news.ts` |
 | プッシュ通知 | Firebase Cloud Messaging。起動時に許可を聞く。`path` 付きで送ると押したときにその画面へ | `src/native/pushNotifications.ts` |
-| 広告と課金 | ゲームの区切りの全画面広告（3 ゲームおき）、楽天アフィリエイトの紹介リンク、広告除去（買い切り・ストア価格表示） | `src/ads/`、`src/billing/`、`src/pages/RemoveAdsPage.tsx` |
+| 広告と課金 | ゲームの区切りの全画面広告（2 ゲームおき）、楽天アフィリエイトの紹介リンク、広告除去（買い切り・ストア価格表示） | `src/ads/`、`src/billing/`、`src/pages/RemoveAdsPage.tsx` |
 | ホーム画面ウィジェット | Android の「今すぐ PLAY」 | `android/.../PlayWidgetProvider.java`、`src/native/widgetLaunch.ts` |
 | 旧リンクの案内 | 大会の古いリンク（`#/e/…` など）は大会アプリへ送る | `src/pages/MovedToTaikai.tsx` |
 
@@ -64,7 +64,7 @@ Node.js 22 で型チェック・lint・本番ビルドが成功。vitest は 12 
 
 | 項目 | 決めたこと |
 | --- | --- |
-| 全画面広告（AdMob） | アプリ版だけ。ゲームの区切り（「次のゲームへ」）に 3 ゲームおき。投げている最中とバナーは出さない |
+| 全画面広告（AdMob） | アプリ版だけ。ゲームの区切り（「次のゲームへ」）に 2 ゲームおき。投げている最中とバナーは出さない |
 | 紹介リンク（楽天） | ルール・的当て練習・結果画面。アプリ版・Web 版とも |
 | 広告除去 | 価格未確定の買い切り（商品 ID `molkkyscore.adfree`）。買うと全画面広告も紹介リンクも出ない |
 | 観戦の QR | アプリ版だけ（Web 版との違いを作る） |

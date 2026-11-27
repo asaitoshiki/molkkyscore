@@ -2,4 +2,4 @@
 export const AD_FREE_PRODUCT_ID = 'molkkyscore.adfree'
 
 /** 何ゲームおきに全画面広告を挟むか */
-export const INTERSTITIAL_INTERVAL = 3
+export const INTERSTITIAL_INTERVAL = 2
