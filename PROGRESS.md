@@ -5,7 +5,7 @@
 ## ひとことで
 
 Web 版（https://molmemo.pages.dev/ ）と Android 版（動作確認用の APK）が動いている。
-Google Play への公開に向けて、利用者にしか用意できないもの（連絡先・広告 ID・署名の鍵・開発者登録）が残っている。
+Google Play への公開に向けて、利用者にしか用意できないもの（連絡先・広告 ID・販売者アカウント・商品登録）が残っている。
 
 ## 実装済みの機能
 
@@ -41,8 +41,8 @@ Node.js 22 で型チェック・lint・本番ビルドが成功。vitest は 12 
 | FCM 用の Android アプリ登録（`google-services.json`） | `com.molmemo.app` で登録済み（2026-11-27） |
 | AdMob の本番 ID | **未設定**（Google のテスト用 ID のまま） |
 | 楽天アフィリエイト ID | `src/domain/promotions.ts` に設定済み（利用者本人の ID かは未確認） |
-| リリース用の署名の鍵（GitHub Secrets） | **未作成** |
-| Google Play デベロッパー登録 | 未確認 |
+| リリース用の署名の鍵（GitHub Secrets） | 登録済み（2026-11-27。鍵ファイルは利用者が保管） |
+| Google Play デベロッパー登録 | 済み。Play Console にアプリ「モルメモ」（`com.molmemo.app`）を作成済み（2026-11-27） |
 | Play Console の商品 `molkkyscore.adfree` | 未確認 |
 
 ## 実機で確かめていないこと（未確認）
@@ -53,8 +53,6 @@ Node.js 22 で型チェック・lint・本番ビルドが成功。vitest は 12 
 
 ## 既知の問題
 
-- 動作確認用の APK は毎回ちがう鍵で署名されるため、上書きインストールできない（入れ直すと端末の記録が消える）。
-  リリース用の鍵を作り、APK もその鍵で署名すれば直る（`TODO.md`）
 - Web 版の旧 URL（github.io）で記録した分は、新しい URL（molmemo.pages.dev）には移らない
 - 360×640 くらいの小さな画面で 3 チーム以上だと、試合画面の得点表の下の行はスクロールが要る
 - `docs/app-overview.md`（Unity 向けの説明）の画面表に、大会アプリへ移した「大会」の行が残っている
