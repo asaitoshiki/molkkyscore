@@ -3,6 +3,21 @@
 モルックのスコア記録・戦績管理をまとめたアプリ。大会の運営は別アプリ「[モルメモ 大会](https://github.com/asaitoshiki/molmemo-taikai)」に分けた。
 まず Web（PWA）として作り、そのままスマホのアプリストア配信へつなげる想定で構成している。
 
+- Web 版: https://molmemo.pages.dev/
+- 最新の APK（動作確認用）: https://github.com/asaitoshiki/molkkyscore/releases/download/apk-latest/molkkyscore-debug.apk
+
+## AI と開発するとき
+
+Claude Code・ChatGPT・Codex など、どの AI からでも続きを始められるよう、次のファイルで情報を共有している。
+
+| ファイル | 中身 |
+| --- | --- |
+| [AGENTS.md](AGENTS.md) | すべての AI に共通する開発ルール・コーディング規約・テスト方法 |
+| [CLAUDE.md](CLAUDE.md) | Claude Code 向けの補足（AGENTS.md を読み込む） |
+| [PROGRESS.md](PROGRESS.md) | 今の開発状況・実装済み・未確認・既知の問題 |
+| [TODO.md](TODO.md) | これからのタスクと優先順位 |
+| [DECISIONS.md](DECISIONS.md) | 設計上の決定・理由・採らなかった案 |
+
 ## できること
 
 | 機能 | 内容 |
@@ -15,15 +30,31 @@
 | 試合履歴 | 途中中断した試合の再開、過去の試合の振り返り |
 | 戦績・統計 | 勝率ランキング、平均得点、ミス率、50 点超過回数、スキットル番号別の撃破数 |
 | メンバー管理 | よく遊ぶメンバーの登録・改名・削除 |
-| 観戦 | QR を読むと、周りの人が自分の端末でスコアを追える（QR を出せるのはアプリ版だけ） |
+| 観戦 | QR を読むと、周りの人が自分の端末でスコアを追える。点数も入れてもらえる（QR を出せるのはアプリ版だけ） |
+| お知らせ | ホーム右上のベルから。アプリ版はプッシュ通知も受け取れる |
 | 画像で共有 | 試合結果カードとスコアシートを画像にして共有・保存 |
 | ルール説明 | 初期配置図つきの公式ルール解説。投げ方の可否まで記載 |
 | 広告と課金 | ゲームの区切りだけに出る全画面広告と、買い切りで消す導線（実配信はネイティブ化後） |
 | 的当て練習 | 狙うスキットルと距離を決めて命中率を記録 |
 
-データは端末の localStorage に保存する。サーバー不要・オフラインで動作する。
+データは端末の localStorage に保存する。記録はオフラインで動作し、ネットを使うのは観戦（Firebase）とお知らせだけ。
 
-## 開発
+## 利用技術
+
+| 分野 | 使っているもの |
+| --- | --- |
+| 画面 | React 19、TypeScript、Vite、Tailwind CSS v4、react-router（HashRouter） |
+| 状態と保存 | zustand（persist で localStorage に保存） |
+| アプリ化 | Capacitor 8（Android。iOS は未着手） |
+| 通信 | Firebase Realtime Database・匿名認証（観戦）、Firebase Cloud Messaging（プッシュ通知） |
+| 広告と課金 | AdMob（`@capacitor-community/admob`）、`cordova-plugin-purchase` |
+| PWA | vite-plugin-pwa |
+| テスト・検査 | vitest、oxlint、tsc |
+| 公開 | Cloudflare Pages（Web）、GitHub Actions（APK・AAB、旧 GitHub Pages） |
+
+## 環境構築と実行
+
+Node.js 22 を使う（Cloudflare Pages と GitHub Actions も 22）。
 
 ```bash
 npm install
@@ -32,6 +63,13 @@ npm test           # ルール計算のテスト
 npm run typecheck  # 型チェック
 npm run build      # 本番ビルド（dist/）
 npm run preview    # ビルド結果の確認
+npm run lint       # oxlint
+```
+
+Firebase を使う機能を手元で試すときは、Firebase エミュレーターにつなぐ版を作れる（詳しくは AGENTS.md）。
+
+```bash
+VITE_FIREBASE_EMULATOR=127.0.0.1 npm run build
 ```
 
 ## 構成
@@ -45,10 +83,23 @@ src/
     scoresheet.ts   投球記録を参加者 × ラウンドの表に組み直す
     series.ts       連戦のゲームごとの得点と合計を集計する
     timeline.ts     投球を時系列に並べ、訂正と巻き戻しの材料にする
+    watchSnapshot.ts 観戦で送る記録と、観戦者の入力の形
+    news.ts         お知らせの形と未読の判定
   store/      zustand + localStorage による永続化
+  sync/       Firebase（観戦）とお知らせの読み込み
+  native/     アプリ版だけの機能（プッシュ通知、ウィジェットからの起動）
+  ads/        広告（AdMob と Web の代替画面）
+  billing/    広告除去の買い切り
+  sound/      効果音
   share/      スコアを画像に描き出す（キャンバス描画と共有）
   components/ 画面をまたいで使う部品
   pages/      画面
+public/
+  news.json   お知らせ（main に入ると全員に届く）
+  _headers    Cloudflare Pages の配信設定
+android/      Capacitor の Android プロジェクト
+database.rules.json  Firebase Realtime Database のルール（変えたらコンソールで公開する）
+docs/         ストア公開の手順、クローズドテスト、Unity 向けのアプリ説明
 ```
 
 試合の状態（得点・連続ミス・手番）は保存せず、投球記録の配列から毎回導出している。
@@ -95,19 +146,19 @@ https://molmemo.pages.dev/ に公開する。ビルドの設定は Cloudflare �
 ## 観戦
 
 記録している人が QR を出し、周りの人はそれを読んでブラウザで開く。観戦側に
-インストールは要らない。見せるのはセット単位で、鍵は `seriesId`。
+インストールは要らない。見せるのはセット単位で、リンクの鍵は推測できないランダムな文字列（共有キー）。
 
 **QR を出せるのはアプリ版だけにしている。** Web 版とアプリ版で体験がほぼ
 変わらないと、広告を消す課金に理由が立たない。「みんなに見せながら記録できる
 のはアプリ版」という線を引くことで、記録係の道具という位置づけをはっきりさせる。
 
-観戦画面（`/watch/:seriesId`）は読み取り専用で、得点表は記録画面と同じ部品を
-使い回している。状態は投球記録から毎回導出しているので、観戦側へ送るのは
-投球そのものだけで済む。
+観戦の記録は Firebase Realtime Database の `watch/{共有キー}` に送り、最後の投球から 12 時間で
+期限切れになる。中身は投球とメンバー名だけで、観戦側でも同じ計算で同じ画面になる。
+得点表は記録画面と同じ部品を使い回している。
 
-**端末をまたいだ同期はまだ入っていない。** いまは同じ端末の中でしか見えない。
-Firebase など外部の保存先を繋ぐのが次の段階になる。そのときは、通信が
-途切れても記録だけは止まらないようにする（観戦のために記録を人質に取らない）。
+QR を出すときに「見るだけ／点数も入れる」を選べる。「点数も入れる」にすると、観戦者は
+`watchInput/{共有キー}` に 1 投を送り、記録係の端末が今の局面と合うときだけ記録する
+（二重の入力を防ぐ。詳しくは DECISIONS.md）。通信が途切れても記録係の記録は止まらない。
 
 ## 広告と課金
 
@@ -131,7 +182,7 @@ Capacitor と AdMob の配線は済んでいる。端末の上では実際の広
 反映は「購入を復元する」に任せている。
 
 購入ボタンと復元ボタンは、端末のストアが使えないとき（Web）は無効になり、
-代わりに表示確認用のトグルが出る。アプリ版ではトグルは出ない。
+開発中（`npm run dev`）だけ表示確認用のトグルが出る。公開版には出ない（無料で広告を消せてしまうため）。
 
 ストア公開前にやること。
 
@@ -147,8 +198,11 @@ Capacitor と AdMob の配線は済んでいる。端末の上では実際の広
 
 手元に Android Studio がなくても、GitHub のランナーで APK を作れる。
 Actions タブの **Android APK** → Run workflow を実行すると、数分で
-成果物 `molkkyscore-debug-apk` が付く。zip を展開した `app-debug.apk` を
-端末に移し、提供元不明のアプリの許可を出してから開くとインストールできる。
+成果物 `molkkyscore-debug-apk` が付き、同じ APK がリリース `apk-latest` にも置かれる。
+https://github.com/asaitoshiki/molkkyscore/releases/download/apk-latest/molkkyscore-debug.apk を
+端末で開き、提供元不明のアプリの許可を出すとインストールできる。
+
+動作確認用の APK は毎回ちがう鍵で署名されるため、上書きインストールはできない（PROGRESS.md の既知の問題）。
 
 手元にビルド環境がある場合（Android Studio と JDK 21）。
 
@@ -172,7 +226,4 @@ npx cap open ios
 
 ## 今後の展開
 
-1. **Web（現在）** — PWA としてホーム画面に追加できる。GitHub Pages などに静的配信できる
-2. **ネイティブ package 化** — Capacitor でこの Web 資産をそのまま iOS / Android アプリにする
-3. **ストア申請** — アイコン・スクリーンショット・プライバシーポリシーを整えて App Store / Google Play へ
-4. **その後の候補** — クラウド同期とアカウント、オンライン対戦、試合のシェア画像生成
+今の状況は [PROGRESS.md](PROGRESS.md)、これからのタスクは [TODO.md](TODO.md) を参照。
