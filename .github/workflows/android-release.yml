@@ -20,7 +20,8 @@ on:
         default: '1'
 
 permissions:
-  contents: read
+  # AAB をリリース「aab-<版>」にも置くため
+  contents: write
 
 jobs:
   bundle:
@@ -77,3 +78,17 @@ jobs:
           name: molkkyscore-${{ inputs.version_name }}-aab
           path: android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
+
+      # 決まった場所にも置き、ログインしなくても取れるようにする
+      - name: リリース「aab-<版>」に置く
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: aab-${{ inputs.version_name }}-${{ inputs.version_code }}
+        run: |
+          cp android/app/build/outputs/bundle/release/app-release.aab "molmemo-${{ inputs.version_name }}.aab"
+          gh release delete "$TAG" --yes --cleanup-tag || true
+          gh release create "$TAG" "molmemo-${{ inputs.version_name }}.aab" \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "ストア提出用 AAB ${{ inputs.version_name }}（${{ inputs.version_code }}）" \
+            --notes "Play Console にアップロードする AAB です。"

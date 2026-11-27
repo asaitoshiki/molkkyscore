@@ -85,7 +85,7 @@ npm run build       # 本番ビルド（dist/）
 | https://molmemo.pages.dev/ （本番の Web 版） | Cloudflare Pages が `main` への push を受けてビルド |
 | https://asaitoshiki.github.io/molkkyscore/ （旧 Web 版） | `.github/workflows/deploy.yml`。旧 URL の利用者の記録のため当面残す |
 | 最新の APK | Actions「Android APK」を手動で実行 → リリース `apk-latest` に置かれる |
-| ストア用 AAB | Actions「Android Release」。署名の鍵が GitHub Secrets に必要 |
+| ストア用 AAB | Actions「Android Release」（版と version_code を入力）→ リリース `aab-<版>-<code>` にも置かれる。署名の鍵は GitHub Secrets |
 
 - `public/news.json`（お知らせ）は `main` に入ると、アプリを作り直さずに全員に届く
 - `database.rules.json` を変えたら、**Firebase コンソールで手で公開しないと本番に反映されない**。Pull Request にその旨を書く

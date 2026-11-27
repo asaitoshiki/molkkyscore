@@ -184,7 +184,7 @@ Actions タブの **Android APK** → Run workflow を実行すると、数分�
 https://github.com/asaitoshiki/molkkyscore/releases/download/apk-latest/molkkyscore-debug.apk を
 端末で開き、提供元不明のアプリの許可を出すとインストールできる。
 
-動作確認用の APK は毎回ちがう鍵で署名されるため、上書きインストールはできない（PROGRESS.md の既知の問題）。
+動作確認用の APK もストア用と同じ鍵（GitHub の Secrets）で署名しているので、前の版の上から入れ直せる。
 
 手元にビルド環境がある場合（Android Studio と JDK 21）。
 

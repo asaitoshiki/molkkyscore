@@ -6,12 +6,8 @@
 
 ## 高
 
-- [ ] **Play Console で `com.molmemo.app` のアプリを作成する**（利用者）。アプリ名・日本語・アプリ・無料
+- [ ] **内部テストに AAB を上げる**（AI が Actions「Android Release」で AAB を作る → 利用者が Play Console の「内部テスト」にアップロード）
 - [ ] **実機での確認**（利用者＋AI）: 最新 APK で、観戦の QR → 友達の端末で観戦と点数入力、テスト通知、お知らせ
-- [ ] **リリース用の署名の鍵を作る**（利用者）: 手順は `docs/play-store.md` の 2〜3。GitHub Secrets に
-  `ANDROID_KEYSTORE_BASE64`・`ANDROID_KEYSTORE_PASSWORD`・`ANDROID_KEY_ALIAS`・`ANDROID_KEY_PASSWORD` を登録
-- [ ] **動作確認用の APK もリリース用の鍵で署名する**（AI）: 上の鍵ができたら `.github/workflows/android.yml` を変える。
-  上書きインストールできるようになり、記録が消えなくなる
 
 ## 中（ストア公開まで）
 
@@ -19,7 +15,7 @@
 - [ ] AdMob の本番 ID に差し替える（利用者が https://admob.google.com でアプリを登録し、アプリ ID と
   インタースティシャルの広告ユニット ID を発行 → AI が `android/app/src/main/AndroidManifest.xml` の
   `com.google.android.gms.ads.APPLICATION_ID` と `src/ads/admob.ts` の `INTERSTITIAL_UNIT` を変更）
-- [ ] Google Play デベロッパー登録と、お支払いプロファイル（販売者アカウント）の登録（利用者）
+- [ ] お支払いプロファイル（販売者アカウント）の登録（利用者。デベロッパー登録とアプリ作成は済み）
 - [ ] 価格を決め、Play Console に `molkkyscore.adfree` の非消費型の購入オプションを登録・有効化する（利用者）。
   アプリはストアの表示価格を使う
 - [ ] Play 内部テストとライセンステスターで広告、購入、保留、キャンセル、復元、オフラインでの広告除去を確認する（利用者＋AI）。
