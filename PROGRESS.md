@@ -38,7 +38,7 @@ Google Play への公開に向けて、利用者にしか用意できないも�
 | Firebase 承認済みドメインに `molmemo.pages.dev` | 設定済み（利用者が 2026-11-24 に実施と報告） |
 | Firebase の `database.rules.json` の公開 | 公開済み（同上）。観戦者の入力用 `watchInput` を含む版 |
 | GitHub Pages（旧 URL） | 稼働中（当面残す） |
-| FCM 用の Android アプリ登録（`google-services.json`） | **登録し直しが必要**（パッケージ名を `com.molmemo.app` に変えたため。今のファイルは旧 ID のもの） |
+| FCM 用の Android アプリ登録（`google-services.json`） | `com.molmemo.app` で登録済み（2026-11-27） |
 | AdMob の本番 ID | **未設定**（Google のテスト用 ID のまま） |
 | 楽天アフィリエイト ID | `src/domain/promotions.ts` に設定済み（利用者本人の ID かは未確認） |
 | リリース用の署名の鍵（GitHub Secrets） | **未作成** |
@@ -53,7 +53,6 @@ Google Play への公開に向けて、利用者にしか用意できないも�
 
 ## 既知の問題
 
-- パッケージ名を `com.molmemo.app` に変えたが、`google-services.json` が旧 ID のままなので、差し替えるまで Android のビルドは失敗する
 - 動作確認用の APK は毎回ちがう鍵で署名されるため、上書きインストールできない（入れ直すと端末の記録が消える）。
   リリース用の鍵を作り、APK もその鍵で署名すれば直る（`TODO.md`）
 - Web 版の旧 URL（github.io）で記録した分は、新しい URL（molmemo.pages.dev）には移らない
