@@ -8,13 +8,12 @@
 
 ## 0. 出す前に必ず差し替えるもの
 
-テスト用のまま出すと、広告が表示されない、または審査に落ちる。
+内部テストでは Google のテスト広告 ID を使用する。製品版の準備時に次の ID を差し替える。
 
 | 場所 | いまの値 | 差し替え先 |
 | --- | --- | --- |
 | `android/app/src/main/AndroidManifest.xml` の `com.google.android.gms.ads.APPLICATION_ID` | Google のテスト ID | AdMob で発行したアプリ ID |
 | `src/ads/admob.ts` の `INTERSTITIAL_UNIT` | Google のテスト ID | AdMob で発行した広告ユニット ID |
-| `src/ads/admob.ts` の `AdMob.initialize({ initializeForTesting: true })` | テスト扱い | `false`（または指定を外す） |
 
 課金の商品 ID は `src/domain/billing.ts` の `AD_FREE_PRODUCT_ID`
 （`molkkyscore.adfree`）。Play Console 側にも同じ ID で登録する。
@@ -131,8 +130,8 @@ base64 -w 0 molkkyscore-release.keystore > keystore.base64.txt
 **収益化 → アプリ内アイテム → アプリ内商品** で新規作成。
 
 - 商品 ID：`molkkyscore.adfree`（コードと必ず一致させる）
-- 種類：**管理対象商品**（買い切り）
-- 価格：¥480（`src/domain/billing.ts` の `AD_FREE_PRICE` と揃える）
+- 種類：**1 回限りの商品**。購入オプションは **購入**（非消費型）
+- 価格は未確定。Play Console で価格と販売地域を設定する。アプリはストアが返す表示価格を使う
 
 商品を有効化しないと、アプリ側から購入できない。
 
@@ -140,8 +139,14 @@ base64 -w 0 molkkyscore-release.keystore > keystore.base64.txt
 
 ## 7. テスト配信 → 公開
 
-1. **テスト → 内部テスト** に AAB を上げ、自分の端末で購入と広告を確かめる。
-   （課金はテスターとして登録した Google アカウントなら実際には課金されない）
+1. **テスト → 内部テスト** に署名済み AAB を上げる。課金に使う Google アカウントを
+   内部テストと **ライセンステスト** の両方に登録し、テスト参加リンクからインストールする。
+   Google Play の購入画面でテスト用の支払い方法が表示されることを確認する。
+   - 未購入で「次のゲームへ」を 3 回押すと区切りにテスト広告が出る。閉じると次のゲームが開く。
+     広告を取得できないときも試合を続けられる。
+   - 広告除去画面の価格が決済画面と一致する。キャンセル・保留中は広告ありのままで、支払い確定後に両方の広告が消える。
+   - 購入後にオフラインで再起動しても広告は出ない。同じアカウントで再インストールし、購入を復元できる。
+   - 購入が取り消された場合は、通信できる状態で復元すると広告ありに戻る。
 2. **テスト → クローズドテスト** に切り替え、12 人以上を 14 日間走らせる
    （個人アカウントの場合。詳しくは [closed-testing.md](./closed-testing.md)）。
 3. **製品版** に AAB を上げて審査へ。審査は数日〜1 週間ほど。
@@ -150,7 +155,7 @@ base64 -w 0 molkkyscore-release.keystore > keystore.base64.txt
 
 ## 更新を出すとき
 
-1. コードを直して `main` に push する（Web 版は自動で更新される）。
+1. 作業用ブランチから `main` 向け PR を出してレビュー後にマージする（Web 版は自動で更新される）。
 2. **Android Release** を、`version_code` を前回 +1 にして実行する。
 3. 出てきた AAB を Play Console の製品版に上げる。
 
@@ -160,4 +165,4 @@ base64 -w 0 molkkyscore-release.keystore > keystore.base64.txt
 
 - 鍵を失う = そのアプリを更新できなくなる。バックアップは複数箇所に。
 - `version_code` は増やす一方。下げたり同じ数字は使えない。
-- テスト用の広告 ID のまま製品版に出すと、AdMob の規約違反になりうる。
+- 製品版は AdMob の本番 ID を使う。

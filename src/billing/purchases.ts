@@ -1,57 +1,74 @@
 import { Capacitor } from '@capacitor/core'
 import { AD_FREE_PRODUCT_ID } from '../domain/billing'
+import { useAppStore } from '../store/useAppStore'
 
-/** ストアの課金は端末の上でしか動かない。Web では購入画面を案内だけにする。 */
-export const isStoreAvailable = () =>
-  Capacitor.isNativePlatform() && typeof CdvPurchase !== 'undefined'
+export const isStorePlatform = () => Capacitor.isNativePlatform()
 
-const storePlatform = () =>
-  Capacitor.getPlatform() === 'ios'
+const product = () => ({
+  id: AD_FREE_PRODUCT_ID,
+  platform: Capacitor.getPlatform() === 'ios'
     ? CdvPurchase.Platform.APPLE_APPSTORE
-    : CdvPurchase.Platform.GOOGLE_PLAY
+    : CdvPurchase.Platform.GOOGLE_PLAY,
+})
 
-/** Cordova のプラグインは deviceready のあとでないと使えない。 */
-const whenDeviceReady = () =>
-  new Promise<void>((resolve) => document.addEventListener('deviceready', () => resolve(), { once: true }))
+const offer = () => CdvPurchase.store.get(AD_FREE_PRODUCT_ID, product().platform)?.getOffer()
+const listeners = new Set<() => void>()
+let snapshot: { ready: boolean; price?: string } = { ready: false }
 
-/**
- * 起動時に一度だけ呼ぶ。購入済みだと分かったときに onOwned が呼ばれる。
- *
- * 購入していない状態は通知しない。通信できないときに「未購入」と判定して
- * 広告を出してしまうと、支払った人の体験を壊すため。
- * 取り消しや返金の反映は「購入を復元する」に任せる。
- */
-export const initializePurchases = async (onOwned: () => void) => {
-  if (!isStoreAvailable()) return
-  await whenDeviceReady()
+export const getPurchaseOptions = () => snapshot
+export const subscribePurchaseOptions = (listener: () => void) => {
+  listeners.add(listener)
+  return () => { listeners.delete(listener) }
+}
+
+const updateOptions = (ready: boolean) => {
+  snapshot = { ready, price: offer()?.pricingPhases[0]?.price }
+  listeners.forEach((listener) => listener())
+}
+
+const syncOwned = () => {
+  // 通信できない起動時も、端末に保存した購入済みの状態は維持する。
+  if (CdvPurchase.store.owned(product())) useAppStore.getState().setAdFree(true)
+}
+
+export const initializePurchases = async () => {
+  if (!isStorePlatform()) return
+  // Capacitor の Cordova プラグインは deviceready のあとで利用できる。
+  await new Promise<void>((resolve) =>
+    document.addEventListener('deviceready', () => resolve(), { once: true }),
+  )
+  if (typeof CdvPurchase === 'undefined') return
 
   const { store, ProductType } = CdvPurchase
-  const notifyWhenOwned = () => store.owned(AD_FREE_PRODUCT_ID) && onOwned()
-
-  store.register([
-    { id: AD_FREE_PRODUCT_ID, type: ProductType.NON_CONSUMABLE, platform: storePlatform() },
-  ])
-  store
-    .when()
+  store.register([{ ...product(), type: ProductType.NON_CONSUMABLE }])
+  store.when()
+    .productUpdated(() => updateOptions(snapshot.ready))
     .approved((transaction) => transaction.finish())
-    .finished(notifyWhenOwned)
-    .receiptsReady(notifyWhenOwned)
+    .finished(syncOwned)
+    .receiptsReady(syncOwned)
 
-  await store.initialize([storePlatform()])
-  notifyWhenOwned()
+  await store.initialize([product().platform])
+  updateOptions(store.checkSupport(product().platform, 'order'))
+  syncOwned()
 }
 
-/** 購入する。成功なら null、失敗なら利用者に見せる文言を返す。 */
+/** 購入の確定と広告の停止は、ストアから届く購入イベントで行う。 */
 export const purchaseAdFree = async (): Promise<string | null> => {
-  const offer = CdvPurchase.store.get(AD_FREE_PRODUCT_ID)?.getOffer()
-  if (!offer) return '商品を読み込めませんでした。通信状況を確認してからお試しください。'
+  if (!snapshot.ready || !snapshot.price) return '価格を取得できませんでした。'
+  const purchaseOffer = offer()
+  if (!purchaseOffer) return '商品を読み込めませんでした。'
 
-  const error = await CdvPurchase.store.order(offer)
-  return error === undefined ? null : error.message
+  const error = await CdvPurchase.store.order(purchaseOffer)
+  if (!error || error.code === CdvPurchase.ErrorCode.PAYMENT_CANCELLED) return null
+  return '購入できませんでした。時間をおいてお試しください。'
 }
 
-/** 機種変更などのあとに購入を引き継ぐ。ストア審査で必須の導線。 */
 export const restoreAdFree = async (): Promise<string | null> => {
+  if (!snapshot.ready) return 'ストアに接続できませんでした。'
   const error = await CdvPurchase.store.restorePurchases()
-  return error === undefined ? null : error.message
+  if (error) return '購入を復元できませんでした。通信状況をご確認ください。'
+
+  const owned = CdvPurchase.store.owned(product())
+  if (owned || Capacitor.getPlatform() === 'android') useAppStore.getState().setAdFree(owned)
+  return owned ? null : 'このストアアカウントの購入が見つかりませんでした。'
 }

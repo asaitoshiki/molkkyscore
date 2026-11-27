@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { isNative } from '../ads/admob'
-import { InterstitialAd } from '../ads/InterstitialAd'
+import { isNative, showInterstitial } from '../ads/admob'
 import { Avatar } from '../components/Avatar'
 import { WatchInvite } from '../components/WatchInvite'
 import { AppBar } from '../components/AppBar'
@@ -131,6 +130,7 @@ const GameView = ({ gameId }: { gameId: string }) => {
   if (state.finished) {
     return (
       <ResultView
+        key={game.id}
         game={game}
         seriesGames={seriesGames}
         onNext={() => navigate(`/games/${addGameToSeries(game.seriesId)}`, { replace: true })}
@@ -424,14 +424,24 @@ const ResultView = ({
   const [showingAd, setShowingAd] = useState(false)
   const [busy, setBusy] = useState(false)
 
+  const adAttempt = useRef<AbortController | null>(null)
+  useEffect(() => () => adAttempt.current?.abort(), [])
+
   // 広告はゲームの区切りだけに出す。入力中に割り込ませない
-  const goNext = () => {
-    countFinishedGame()
-    const due = !adFree && gamesSinceInterstitial + 1 >= INTERSTITIAL_INTERVAL
-    if (due) {
-      resetInterstitialCount()
-      setShowingAd(true)
-      return
+  const goNext = async () => {
+    if (adAttempt.current && !adAttempt.current.signal.aborted) return
+    if (isNative() && !adFree) {
+      countFinishedGame()
+      if (gamesSinceInterstitial + 1 >= INTERSTITIAL_INTERVAL) {
+        resetInterstitialCount()
+        const attempt = new AbortController()
+        adAttempt.current = attempt
+        setShowingAd(true)
+        await showInterstitial(attempt.signal).catch(() => undefined)
+        if (attempt.signal.aborted) return
+        adAttempt.current = null
+        setShowingAd(false)
+      }
     }
     onNext()
   }
@@ -533,8 +543,6 @@ const ResultView = ({
         ))}
       </ol>
 
-      {showingAd && <InterstitialAd onClose={onNext} />}
-
       {/* 操作ボタンより上に置く。押し間違いで試合の進行を妨げないため。広告除去を買った人には出さない */}
       {!adFree && (
         <div className="px-5">
@@ -558,10 +566,10 @@ const ResultView = ({
           </Button>
         ) : (
           <div className="grid grid-cols-2 gap-2">
-            <Button variant="outline" onClick={onFinish}>
+            <Button variant="outline" disabled={showingAd} onClick={onFinish}>
               ゲーム終了
             </Button>
-            <Button onClick={goNext}>次のゲームへ</Button>
+            <Button disabled={showingAd} onClick={goNext}>次のゲームへ</Button>
           </div>
         )}
       </div>
