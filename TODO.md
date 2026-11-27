@@ -20,8 +20,11 @@
   インタースティシャルの広告ユニット ID を発行 → AI が `android/app/src/main/AndroidManifest.xml` の
   `com.google.android.gms.ads.APPLICATION_ID` と `src/ads/admob.ts` の `INTERSTITIAL_UNIT` を変更）
 - [ ] Google Play デベロッパー登録と、お支払いプロファイル（販売者アカウント）の登録（利用者）
-- [ ] Play Console にアプリ内アイテム `molkkyscore.adfree`（480 円・非消費型）を登録（利用者）。
-  価格を変えるときは `src/domain/billing.ts` の `AD_FREE_PRICE` も合わせる
+- [ ] 価格を決め、Play Console に `molkkyscore.adfree` の非消費型の購入オプションを登録・有効化する（利用者）。
+  アプリはストアの表示価格を使う
+- [ ] Play 内部テストとライセンステスターで広告、購入、保留、キャンセル、復元、オフラインでの広告除去を確認する（利用者＋AI）。
+  確認手順は `docs/play-store.md`
+- [ ] AdMob の「プライバシーとメッセージ」で同意メッセージを設定し、対象地域で必要になる同意設定の再表示方法を確認する
 - [ ] 楽天アフィリエイト ID（`src/domain/promotions.ts`）が利用者本人のものか確かめる
 - [ ] クローズドテスト（12 人・14 日）を回す（利用者）。進め方は `docs/closed-testing.md`
 - [ ] ストア掲載用のスクリーンショットと説明文（`docs/play-store.md`）
